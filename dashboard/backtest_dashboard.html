@@ -1,0 +1,1186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Agribalyse Backtest · % Diff Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500&family=Sora:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #fafbfc;
+      --surf: #ffffff;
+      --surf2: #eef1f6;
+      --bord: #d8dce5;
+      --txt: #1a1c2a;
+      --dim: #6a6e85;
+      --accent: #4757e8;
+      --blue: #2b7cf7;
+      --orange: #e85a14;
+      --cell-text: rgba(20, 24, 40, 0.82);
+      --grid: rgba(20, 24, 40, 0.05);
+      --row-sep: rgba(20, 24, 40, 0.04);
+      --sel-bg: rgba(71, 87, 232, 0.10);
+    }
+    html, body { height: 100%; background: var(--bg); color: var(--txt); font-family: 'Sora', sans-serif; overflow: hidden; }
+    #root { height: 100%; display: flex; flex-direction: column; }
+
+    .header {
+      padding: 14px 22px 12px;
+      background: var(--surf);
+      border-bottom: 1px solid var(--bord);
+      display: flex;
+      align-items: center;
+      gap: 28px;
+      flex-shrink: 0;
+    }
+    .header h1 { font-size: 13px; font-weight: 600; letter-spacing: 0.04em; }
+    .header-sub { font-size: 10px; color: var(--dim); font-family: 'JetBrains Mono', monospace; margin-top: 2px; }
+    .legend { display: flex; gap: 14px; align-items: center; }
+    .legend-item { display: flex; align-items: center; gap: 5px; font-size: 9.5px; color: var(--dim); font-family: 'JetBrains Mono', monospace; }
+    .swatch { width: 28px; height: 9px; border-radius: 2px; }
+    .swatch-blue { background: linear-gradient(to right, rgba(74,143,255,0.15), rgba(74,143,255,0.85)); }
+    .swatch-orange { background: linear-gradient(to right, rgba(255,112,48,0.15), rgba(255,112,48,0.85)); }
+    .header-stats { margin-left: auto; display: flex; gap: 22px; }
+    .stat-item { text-align: right; }
+    .stat-n { font-family: 'JetBrains Mono', monospace; font-size: 20px; font-weight: 500; line-height: 1; color: var(--txt); }
+    .stat-lbl { font-size: 8.5px; color: var(--dim); text-transform: uppercase; letter-spacing: 0.06em; margin-top: 2px; }
+
+    .tabs { display: flex; gap: 4px; margin-left: 24px; }
+    .tab {
+      background: transparent; border: 1px solid var(--bord);
+      color: var(--dim); cursor: pointer;
+      font-family: 'JetBrains Mono', monospace; font-size: 10px;
+      padding: 5px 12px; border-radius: 3px;
+      letter-spacing: 0.04em; text-transform: uppercase;
+      transition: all 0.15s;
+    }
+    .tab:hover { color: var(--txt); border-color: var(--dim); }
+    .tab.active { background: var(--accent); border-color: var(--accent); color: #ffffff; }
+
+    .cfs-summary { display: flex; gap: 18px; margin-left: auto; }
+    .cfs-summary-item { text-align: right; }
+    .cfs-summary-n { font-family: 'JetBrains Mono', monospace; font-size: 18px; font-weight: 500; color: var(--txt); }
+    .cfs-summary-lbl { font-size: 8.5px; color: var(--dim); text-transform: uppercase; letter-spacing: 0.06em; margin-top: 2px; }
+
+    .main { flex: 1; overflow: hidden; display: flex; flex-direction: column; }
+    .table-wrap { flex: 1; overflow: auto; }
+
+    table { border-collapse: separate; border-spacing: 0; width: max-content; }
+
+    thead th {
+      position: sticky; top: 0; z-index: 10;
+      background: var(--surf);
+      border-bottom: 2px solid var(--bord);
+      font-size: 9.5px; font-weight: 500; color: var(--dim);
+      font-family: 'JetBrains Mono', monospace;
+      text-align: center; vertical-align: bottom;
+      padding: 0 2px 6px;
+      cursor: pointer; user-select: none;
+      transition: color 0.15s;
+    }
+    thead th:hover { color: var(--accent); }
+    thead th.sorted { color: var(--accent); }
+
+    .th-wrap { height: 180px; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; gap: 5px; }
+    .th-info-slot { height: 14px; display: flex; align-items: center; justify-content: center; }
+    .th-text { writing-mode: vertical-lr; transform: rotate(180deg); font-size: 10px; white-space: nowrap; letter-spacing: 0.01em; color: var(--txt); }
+    .th-mean { font-size: 8.5px; color: var(--dim); }
+
+    th.name-col, td.name-col {
+      position: sticky; left: 0; z-index: 5;
+      background: var(--surf);
+      border-right: 1px solid var(--bord);
+      min-width: 208px; max-width: 208px;
+      padding: 0 10px 0 14px;
+    }
+    thead th.name-col { z-index: 20; text-align: left; font-size: 9px; text-transform: uppercase; letter-spacing: 0.06em; vertical-align: bottom; padding-bottom: 6px; }
+    td.name-col { cursor: pointer; }
+    .pcode { font-family: 'JetBrains Mono', monospace; font-size: 8px; color: var(--dim); display: block; margin-bottom: 1px; }
+    .pname { font-size: 11px; color: var(--txt); display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 186px; }
+
+    tbody tr { border-bottom: 1px solid var(--row-sep); cursor: pointer; }
+    tbody tr:hover td, tbody tr:hover th { background: var(--surf2) !important; }
+    tbody tr.sel td, tbody tr.sel th { background: var(--sel-bg) !important; }
+    tbody tr.sel td.name-col { border-right-color: var(--accent); }
+
+    td.data-cell {
+      width: 44px; min-width: 44px; max-width: 44px; height: 30px;
+      text-align: center; vertical-align: middle;
+      position: relative;
+      border-right: 1px solid var(--grid);
+      transition: filter 0.1s;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 8px;
+      color: var(--cell-text);
+      overflow: hidden;
+    }
+    td.data-cell:hover { filter: saturate(1.25) contrast(1.05); }
+    .xdot { position: absolute; top: 2px; right: 2px; width: 3px; height: 3px; border-radius: 50%; background: rgba(20,24,40,0.6); }
+
+    .tooltip {
+      position: fixed; pointer-events: none; z-index: 1000;
+      background: #ffffff; border: 1px solid var(--bord);
+      border-radius: 6px; padding: 9px 12px;
+      font-family: 'JetBrains Mono', monospace;
+      box-shadow: 0 12px 28px rgba(20, 24, 40, 0.18), 0 2px 6px rgba(20, 24, 40, 0.08);
+      max-width: 320px;
+    }
+    .tt-cat { font-size: 10px; color: var(--dim); margin-bottom: 2px; }
+    .tt-val { font-size: 15px; font-weight: 600; }
+    .tt-prod { font-size: 10px; color: var(--txt); margin-top: 5px; border-top: 1px solid var(--bord); padding-top: 5px; }
+    .tt-reason { margin-top: 6px; padding-top: 6px; border-top: 1px solid var(--bord); }
+    .tt-tag { display: inline-block; font-size: 8px; color: var(--accent); border: 1px solid var(--accent); border-radius: 2px; padding: 1px 5px; letter-spacing: 0.04em; text-transform: uppercase; margin-bottom: 4px; }
+    .tt-short { font-size: 10.5px; color: var(--txt); line-height: 1.5; font-family: 'Sora', sans-serif; }
+    .tt-hint { font-size: 9px; color: var(--dim); margin-top: 4px; font-style: italic; }
+
+    .info-icon {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 13px; height: 13px; border-radius: 50%;
+      border: 1px solid var(--dim); color: var(--dim);
+      font-size: 9px; font-family: 'JetBrains Mono', monospace; font-weight: 500;
+      cursor: help; line-height: 1;
+      transition: all 0.15s;
+    }
+    .info-icon:hover { border-color: var(--accent); color: var(--accent); background: rgba(71, 87, 232, 0.08); }
+    .info-icon.active { border-color: var(--accent); color: var(--accent); background: rgba(71, 87, 232, 0.12); }
+
+    .cell-info {
+      position: absolute; top: 2px; left: 2px;
+      width: 9px; height: 9px; border-radius: 50%;
+      border: 1px solid rgba(20,24,40,0.45);
+      font-size: 7px; line-height: 8px; text-align: center;
+      color: rgba(20,24,40,0.7);
+      font-family: 'JetBrains Mono', monospace; font-weight: 500;
+      pointer-events: none;
+    }
+
+    .method-popover {
+      position: fixed; z-index: 1100;
+      background: #ffffff; border: 1px solid var(--bord);
+      border-radius: 8px; padding: 12px 14px 12px;
+      box-shadow: 0 16px 40px rgba(20, 24, 40, 0.18), 0 2px 8px rgba(20, 24, 40, 0.08);
+      width: 360px;
+      font-family: 'Sora', sans-serif;
+    }
+    .mp-hdr { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 6px; }
+    .mp-cat { font-size: 12px; font-weight: 600; color: var(--txt); }
+    .mp-close { background: none; border: 1px solid var(--bord); color: var(--dim); cursor: pointer; font-size: 9px; padding: 1px 6px; border-radius: 3px; font-family: 'JetBrains Mono', monospace; }
+    .mp-close:hover { border-color: var(--dim); color: var(--txt); background: var(--surf2); }
+    .mp-meta { font-family: 'JetBrains Mono', monospace; font-size: 9px; color: var(--dim); margin-bottom: 8px; display: flex; gap: 10px; flex-wrap: wrap; }
+    .mp-meta strong { color: var(--txt); font-weight: 600; }
+    .mp-tag { display: inline-block; font-size: 8.5px; color: var(--accent); border: 1px solid var(--accent); border-radius: 2px; padding: 2px 6px; letter-spacing: 0.04em; text-transform: uppercase; margin-bottom: 8px; font-family: 'JetBrains Mono', monospace; }
+    .mp-long { font-size: 11.5px; color: var(--txt); line-height: 1.55; }
+    .mp-badge { display: inline-block; margin-top: 8px; font-size: 9px; color: #2a8a4a; border: 1px solid rgba(42,138,74,0.4); background: rgba(42,138,74,0.06); border-radius: 2px; padding: 2px 6px; font-family: 'JetBrains Mono', monospace; letter-spacing: 0.03em; }
+    .mp-empty { font-size: 10px; color: var(--dim); font-style: italic; }
+
+    .detail {
+      background: var(--surf);
+      border-top: 2px solid var(--accent);
+      padding: 12px 20px 14px;
+      flex-shrink: 0;
+    }
+    .detail-hdr { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 8px; }
+    .detail-code { font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--accent); margin-right: 6px; }
+    .detail-name { font-size: 12px; font-weight: 600; color: var(--txt); }
+    .detail-close {
+      background: none; border: 1px solid var(--bord);
+      color: var(--dim); cursor: pointer; font-size: 10px;
+      padding: 2px 10px; border-radius: 3px;
+      font-family: 'JetBrains Mono', monospace;
+      transition: all 0.15s;
+    }
+    .detail-close:hover { border-color: var(--dim); color: var(--txt); background: var(--surf2); }
+    .bars { display: flex; flex-direction: column; gap: 3px; max-height: 210px; overflow-y: auto; }
+    .bar-row { display: flex; align-items: center; gap: 8px; height: 16px; }
+    .bar-lbl { font-family: 'JetBrains Mono', monospace; font-size: 9.5px; color: var(--txt); width: 140px; text-align: right; flex-shrink: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .bar-track { flex: 1; height: 9px; background: rgba(20,24,40,0.06); border-radius: 2px; overflow: hidden; }
+    .bar-fill { height: 100%; border-radius: 2px; }
+    .bar-val { font-family: 'JetBrains Mono', monospace; font-size: 9.5px; width: 72px; flex-shrink: 0; font-weight: 500; }
+
+    .dist-container { flex: 1; overflow-y: auto; padding: 10px 18px 16px; display: flex; flex-direction: column; gap: 10px; }
+    .dist-card { background: var(--surf); border: 1px solid var(--bord); border-radius: 4px; padding: 8px 14px 6px; }
+    .dist-hdr { display: flex; justify-content: space-between; align-items: baseline; gap: 14px; margin-bottom: 2px; flex-wrap: wrap; }
+    .dist-label { font-size: 12px; font-weight: 600; color: var(--txt); }
+    .dist-stats { font-family: 'JetBrains Mono', monospace; font-size: 9.5px; color: var(--dim); display: flex; gap: 12px; flex-wrap: wrap; }
+    .dist-stats .below { color: #1f5db8; }
+    .dist-stats .above { color: #b8451a; }
+    .dist-svg { width: 100%; height: 180px; display: block; }
+    .dist-svg .axis { fill: var(--dim); font-family: 'JetBrains Mono', monospace; font-size: 9px; }
+    .dist-svg .axis-zero { fill: var(--txt); }
+
+    /* CF tab: raw SP/EF values, no deltas. */
+    th.cf-stat-col {
+      padding: 8px 0 6px;
+      border-bottom: 2px solid var(--bord);
+      border-left: 1px solid var(--bord);
+      cursor: pointer; user-select: none;
+      min-width: 200px;
+    }
+    th.cf-stat-col.sorted .cf-stat-hdr { color: var(--accent); }
+    .cf-stat-hdr {
+      display: flex; align-items: center; justify-content: center; gap: 4px;
+      font-size: 11px; font-weight: 600; color: var(--txt);
+      letter-spacing: 0.04em; text-transform: uppercase;
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .cf-stat-sub {
+      display: grid; grid-template-columns: 1fr 1fr;
+      margin-top: 4px;
+      font-size: 8.5px; color: var(--dim); letter-spacing: 0.06em; text-transform: uppercase;
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .cf-stat-sub span { text-align: right; padding: 0 10px; }
+    td.cf-val-cell {
+      min-width: 100px;
+      padding: 6px 10px;
+      text-align: right;
+      vertical-align: middle;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 10.5px;
+      color: var(--cell-text);
+      border-bottom: 1px solid var(--row-sep);
+    }
+    td.cf-val-cell + td.cf-val-cell { border-left: 1px dashed var(--grid); }
+    td.cf-val-cell--ef { color: var(--txt); }
+    tbody tr:hover td.cf-val-cell { background: var(--surf2); }
+    /* Flow decomposition drill-down. */
+    .flow-panel {
+      background: var(--surf);
+      border-top: 2px solid var(--blue);
+      padding: 12px 20px 14px;
+      flex-shrink: 0;
+      max-height: 320px;
+      overflow-y: auto;
+    }
+    .flow-hdr { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 6px; gap: 14px; flex-wrap: wrap; }
+    .flow-hdr-left { display: flex; align-items: baseline; gap: 10px; }
+    .flow-method { font-size: 12px; font-weight: 600; color: var(--txt); }
+    .flow-score { font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--dim); }
+    .flow-hint { font-size: 9.5px; color: var(--dim); font-style: italic; }
+    .flow-table { border-collapse: collapse; width: 100%; font-family: 'JetBrains Mono', monospace; font-size: 10px; }
+    .flow-table th { text-align: left; padding: 4px 8px 6px; color: var(--dim); font-weight: 500; border-bottom: 1px solid var(--bord); white-space: nowrap; }
+    .flow-table th.num, .flow-table td.num { text-align: right; }
+    .flow-table td { padding: 3px 8px; border-bottom: 1px solid var(--row-sep); }
+    .flow-table td.name { font-family: 'Sora', sans-serif; font-size: 11px; color: var(--txt); max-width: 320px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .flow-sub { font-size: 9px; color: var(--dim); margin-left: 6px; }
+    .flow-sp-missing { color: var(--dim); }
+    .flow-delta { color: var(--dim); }
+    .flow-delta.pos { color: var(--orange); }
+    .flow-delta.neg { color: var(--blue); }
+    .flow-share-cell { width: 180px; }
+    .flow-share-bar { display: flex; align-items: center; gap: 6px; }
+    .flow-share-track { flex: 1; height: 8px; background: rgba(20,24,40,0.06); border-radius: 2px; overflow: hidden; }
+    .flow-share-fill { height: 100%; background: var(--blue); border-radius: 2px; }
+    .flow-share-fill.neg { background: var(--orange); }
+    .flow-share-pct { width: 44px; text-align: right; color: var(--dim); }
+    .flow-empty { padding: 8px 0; font-size: 10.5px; color: var(--dim); font-style: italic; }
+    td.data-cell.decomp-open { box-shadow: inset 0 0 0 2px var(--blue); }
+  </style>
+</head>
+<body>
+<div id="root"></div>
+<script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<script type="text/babel">
+const { useState, useMemo, useEffect } = React;
+
+// Data source: outputs/backtest_pass1.csv (regenerated by scripts/rescore_dashboard.py).
+// Columns: code,name,mapped_to,type,resolution,<19 method short IDs matching CATS[0]>.
+const DATA_CSV_URL = 'backtest_pass1.csv';
+const REASONS_URL = 'outlier_reasons.json';
+// Outlier threshold (percent). Matches docs/OUTLIERS_BY_METHOD.md (|computed/ref - 1| > 0.75).
+const OUTLIER_PCT = 50;
+
+function parseCSV(text) {
+  const lines = text.trim().split(/\r?\n/);
+  if (lines.length < 2) return { headers: [], rows: [] };
+  const split = (line) => {
+    // Minimal CSV split supporting quoted fields with commas.
+    const out = []; let cur = ''; let q = false;
+    for (let i = 0; i < line.length; i++) {
+      const ch = line[i];
+      if (ch === '"') { if (q && line[i+1] === '"') { cur += '"'; i++; } else { q = !q; } }
+      else if (ch === ',' && !q) { out.push(cur); cur = ''; }
+      else { cur += ch; }
+    }
+    out.push(cur);
+    return out;
+  };
+  const headers = split(lines[0]);
+  const rows = lines.slice(1).map(line => {
+    const cells = split(line);
+    const obj = {};
+    headers.forEach((h, i) => obj[h] = cells[i] ?? '');
+    return obj;
+  });
+  return { headers, rows };
+}
+
+const CATS = [
+  ['climate',    'Climate Change'],
+  ['ozone',      'Ozone Depletion'],
+  ['radiation',  'Ionising Radiation'],
+  ['photo_ox',   'Photochem. Oxidant'],
+  ['pm',         'Particulate Matter'],
+  ['ht_nc',      'HT: Non-Carcinog.'],
+  ['ht_c',       'HT: Carcinog.'],
+  ['acid',       'Acidification'],
+  ['e_fw',       'Eutro. Freshwater'],
+  ['e_m',        'Eutro. Marine'],
+  ['e_t',        'Eutro. Terrestrial'],
+  ['ecotox',     'Ecotox. Freshwater'],
+  ['land',       'Land Use'],
+  ['water',      'Water Use'],
+  ['energy',     'Energy (non-ren.)'],
+  ['mater',      'Materials'],
+  ['cc_bio',     'CC: Biogenic'],
+  ['cc_fos',     'CC: Fossil'],
+  ['cc_luc',     'CC: LULUC'],
+];
+
+const CF_DATA_CSV_URL = 'cf_stats.csv';
+
+// Stats rendered in the CF-stats tab. We only display Min/Max/Mean of
+// the raw SP and EF CF distributions side-by-side. The previously
+// shown delta percentages (diff_count, diff_min, diff_max, diff_mean,
+// diff_median, diff_std) were misleading: for min/max/mean/median/std
+// the diff_<stat> column is the max of per-flow relative diffs, not
+// (ef_<stat> - sp_<stat>) / max(...), so a row with sp_max == ef_max
+// could still read +100% if any single matched flow had a large
+// per-flow disagreement. The CSV still emits all those columns for
+// forensic use; the dashboard just doesn't render them.
+const CF_STATS = [
+  ['min',  'Min'],
+  ['max',  'Max'],
+  ['mean', 'Mean'],
+];
+
+function fmtAbs(v) {
+  if (v === '' || v == null || !Number.isFinite(v)) return '—';
+  if (Math.abs(v) >= 1000 || (Math.abs(v) > 0 && Math.abs(v) < 0.001)) return v.toExponential(3);
+  return v.toFixed(4);
+}
+
+// PRODUCTS loaded at runtime from DATA_CSV_URL. Columns in CSV must match
+// CATS[][0] short IDs above, in order.
+
+// SAT_PCT: |%diff| at which background hits max intensity. Larger = outliers
+// more visible (typical 10-50% diffs stay faint; 200-500% diffs saturate).
+const SAT_PCT = 500;
+const DOT_PCT = 300;
+function cellBg(v, sat = SAT_PCT) {
+  const abs = Math.abs(v);
+  const norm = Math.min(1, Math.sqrt(abs / sat));
+  const alpha = 0.10 + norm * 0.62;
+  if (v < -0.05) return `rgba(43,124,247,${alpha.toFixed(3)})`;
+  if (v > 0.05)  return `rgba(232,90,20,${alpha.toFixed(3)})`;
+  return 'rgba(20,24,40,0.025)';
+}
+
+function fmtVal(v) {
+  const sign = v > 0 ? '+' : '';
+  return `${sign}${v.toFixed(2)}%`;
+}
+
+function valColor(v) {
+  if (v < -0.05) return '#1f5db8';
+  if (v > 0.05)  return '#b8451a';
+  return '#6a6e85';
+}
+
+function CfsView({ rows, sortCol, sortDir, onColClick, loadState, loadError }) {
+  if (loadState === 'loading') {
+    return <div style={{ padding: '14px 22px', color: 'var(--dim)', fontFamily: 'JetBrains Mono, monospace', fontSize: 12 }}>Loading {CF_DATA_CSV_URL}…</div>;
+  }
+  if (loadState === 'error') {
+    return (
+      <div style={{ padding: '14px 22px', color: '#b8451a', fontFamily: 'JetBrains Mono, monospace', fontSize: 12 }}>
+        <div>Failed to load {CF_DATA_CSV_URL}: {loadError}</div>
+        <div style={{ marginTop: 4, color: 'var(--dim)' }}>Run <code>dds-compare-cfs</code> to regenerate.</div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th className="name-col">METHOD</th>
+            {CF_STATS.map(([stat, label]) => (
+              <th
+                key={stat}
+                colSpan={2}
+                className={`cf-stat-col${sortCol === stat ? ' sorted' : ''}`}
+                onClick={() => onColClick(stat)}
+              >
+                <div className="cf-stat-hdr">
+                  <span>{label}</span>
+                  {sortCol === stat && <span>{sortDir > 0 ? '↑' : '↓'}</span>}
+                </div>
+                <div className="cf-stat-sub">
+                  <span>SimaPro</span>
+                  <span>EF3.1</span>
+                </div>
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map(row => (
+            <tr key={row.method}>
+              <td className="name-col"><span className="pname">{row.method}</span></td>
+              {CF_STATS.map(([stat]) => {
+                const sp = row[`sp_${stat}`];
+                const ef = row[`ef_${stat}`];
+                return (
+                  <React.Fragment key={stat}>
+                    <td className="cf-val-cell">{fmtAbs(sp)}</td>
+                    <td className="cf-val-cell cf-val-cell--ef">{fmtAbs(ef)}</td>
+                  </React.Fragment>
+                );
+              })}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+function pickYTicks(yMax) {
+  const candidates = [10, 25, 50, 100, 200, 500, 1000, 2000, 5000, 10000];
+  // Exclude ticks within ~20% of yMax to avoid label collision with the ±yMax edge label.
+  const inside = candidates.filter(c => c < yMax * 0.80);
+  // Keep last 2 — the coarsest ticks closest to yMax — so the chart never gets crowded.
+  // (With 3 ticks at large yMax the lowest tick is too close to the 0 line.)
+  return inside.slice(-2);
+}
+
+function DistributionCard({ id, label, sorted }) {
+  const n = sorted.length;
+  const W = 1200, H = 180;
+  const padTop = 10, padBottom = 22, padLeft = 60, padRight = 14;
+  const innerW = W - padLeft - padRight;
+  const innerH = H - padTop - padBottom;
+
+  if (n === 0) {
+    return (
+      <div className="dist-card">
+        <div className="dist-hdr"><span className="dist-label">{label}</span><span className="dist-stats">no data</span></div>
+      </div>
+    );
+  }
+
+  const min = sorted[0];
+  const max = sorted[n - 1];
+  const median = n % 2 === 1 ? sorted[(n - 1) / 2] : (sorted[n / 2 - 1] + sorted[n / 2]) / 2;
+  const below = sorted.filter(v => v < 0).length;
+  const above = sorted.filter(v => v > 0).length;
+  const xMax = Math.max(Math.abs(min), Math.abs(max), 0.001);
+
+  // Histogram: symmetric value range [-xMax, +xMax] split into NBINS bins.
+  // X = bin centre (value, % diff). Y = number of products in that bin.
+  const NBINS = 100;
+  const binWidth = (2 * xMax) / NBINS;
+  const counts = new Array(NBINS).fill(0);
+  for (const v of sorted) {
+    let idx = Math.floor((v + xMax) / binWidth);
+    if (idx < 0) idx = 0;
+    if (idx >= NBINS) idx = NBINS - 1;
+    counts[idx]++;
+  }
+  const maxCount = Math.max(1, ...counts);
+  const midX = padLeft + innerW / 2;
+  const baseY = padTop + innerH;
+
+  const pts = counts.map((c, i) => {
+    const centre = -xMax + (i + 0.5) * binWidth;
+    const x = padLeft + ((centre + xMax) / (2 * xMax)) * innerW;
+    const y = baseY - (c / maxCount) * innerH;
+    return { x, y, centre, count: c };
+  });
+
+  // Split bins at zero so negative bins fill blue (under-predict) and
+  // positive bins fill orange (over-predict).
+  const negPts = pts.filter(p => p.centre < 0);
+  const posPts = pts.filter(p => p.centre >= 0);
+
+  const fmtPath = (segments) => {
+    if (segments.length === 0) return '';
+    const first = segments[0];
+    const last = segments[segments.length - 1];
+    const inner = segments.map(p => `L${p.x.toFixed(1)} ${p.y.toFixed(1)}`).join(' ');
+    return `M${first.x.toFixed(1)} ${baseY.toFixed(1)} ${inner} L${last.x.toFixed(1)} ${baseY.toFixed(1)} Z`;
+  };
+
+  const negPath = fmtPath(negPts);
+  const posPath = fmtPath(posPts);
+  const linePts = pts.map(p => `${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' ');
+
+  const ticks = pickYTicks(xMax);
+  const yTickCount = maxCount > 4 ? (Math.round(maxCount / 2)) : null;
+
+  return (
+    <div className="dist-card">
+      <div className="dist-hdr">
+        <span className="dist-label">{label}</span>
+        <span className="dist-stats">
+          <span>n={n}</span>
+          <span className="below">↓ {below.toLocaleString()} ({(below / n * 100).toFixed(1)}%)</span>
+          <span className="above">↑ {above.toLocaleString()} ({(above / n * 100).toFixed(1)}%)</span>
+          <span>median {fmtVal(median)}</span>
+          <span>min {fmtVal(min)}</span>
+          <span>max {fmtVal(max)}</span>
+        </span>
+      </div>
+      <svg viewBox={`0 0 ${W} ${H}`} className="dist-svg" preserveAspectRatio="none">
+        {/* Vertical gridlines + x-axis tick labels (value ticks). */}
+        {ticks.map(t => {
+          const xPos = midX + (t / xMax) * (innerW / 2);
+          const xNeg = midX - (t / xMax) * (innerW / 2);
+          return (
+            <g key={t}>
+              <line x1={xPos} y1={padTop} x2={xPos} y2={baseY} stroke="rgba(20,24,40,0.06)" strokeDasharray="2 3" vectorEffect="non-scaling-stroke"/>
+              <line x1={xNeg} y1={padTop} x2={xNeg} y2={baseY} stroke="rgba(20,24,40,0.06)" strokeDasharray="2 3" vectorEffect="non-scaling-stroke"/>
+              <text x={xPos} y={H - 6} textAnchor="middle" className="axis">+{t}%</text>
+              <text x={xNeg} y={H - 6} textAnchor="middle" className="axis">-{t}%</text>
+            </g>
+          );
+        })}
+        {/* Edge value labels at the symmetric ±xMax extremes. */}
+        <text x={padLeft} y={H - 6} textAnchor="start" className="axis">-{xMax.toFixed(xMax >= 100 ? 0 : xMax >= 10 ? 1 : 2)}%</text>
+        <text x={W - padRight} y={H - 6} textAnchor="end" className="axis">+{xMax.toFixed(xMax >= 100 ? 0 : xMax >= 10 ? 1 : 2)}%</text>
+        {/* Y-axis count labels: 0 baseline and max bin count. */}
+        <text x={padLeft - 6} y={padTop + 8} textAnchor="end" className="axis">{maxCount.toLocaleString()}</text>
+        {yTickCount !== null && (
+          <g>
+            <line x1={padLeft} y1={baseY - innerH / 2} x2={W - padRight} y2={baseY - innerH / 2} stroke="rgba(20,24,40,0.06)" strokeDasharray="2 3" vectorEffect="non-scaling-stroke"/>
+            <text x={padLeft - 6} y={baseY - innerH / 2 + 3} textAnchor="end" className="axis">{yTickCount.toLocaleString()}</text>
+          </g>
+        )}
+        <text x={padLeft - 6} y={baseY + 3} textAnchor="end" className="axis axis-zero">0</text>
+        {/* Baseline (horizontal) + zero line (vertical). */}
+        <line x1={padLeft} y1={baseY} x2={W - padRight} y2={baseY} stroke="rgba(20,24,40,0.45)" vectorEffect="non-scaling-stroke"/>
+        <line x1={midX} y1={padTop} x2={midX} y2={baseY} stroke="rgba(20,24,40,0.45)" vectorEffect="non-scaling-stroke"/>
+        <text x={midX} y={H - 6} textAnchor="middle" className="axis axis-zero">0</text>
+        {/* Filled histogram areas. */}
+        <path d={negPath} fill="rgba(43,124,247,0.22)"/>
+        <path d={posPath} fill="rgba(232,90,20,0.22)"/>
+        {/* Outline (frequency polygon). */}
+        <polyline points={linePts} fill="none" stroke="var(--accent)" strokeWidth="1.2" strokeLinejoin="round" vectorEffect="non-scaling-stroke"/>
+      </svg>
+    </div>
+  );
+}
+
+function FlowDecompositionPanel({ productCode, methodId, data, state, error, onClose }) {
+  const cat = CATS.find(c => c[0] === methodId);
+  const methodLabel = cat ? cat[1] : methodId;
+  const method = data && data.methods ? data.methods[methodId] : null;
+
+  function fmtSci(v) {
+    if (v === null || v === undefined || !Number.isFinite(v)) return '—';
+    const abs = Math.abs(v);
+    if (abs !== 0 && (abs < 1e-3 || abs >= 1e4)) return v.toExponential(3);
+    return v.toPrecision(4);
+  }
+
+  // Relative gap between our EF CF and SimaPro's CF, as (EF − SP) / |SP|.
+  // Positive ⇒ our CF is higher. null ⇒ no comparable SimaPro CF.
+  function cfDeltaPct(ef, sp) {
+    if (sp === null || sp === undefined || !Number.isFinite(sp) || sp === 0) return null;
+    if (ef === null || ef === undefined || !Number.isFinite(ef)) return null;
+    return ((ef - sp) / Math.abs(sp)) * 100;
+  }
+  function fmtDelta(d) {
+    if (d === null) return '—';
+    if (Math.abs(d) < 0.5) return '0%';
+    return (d > 0 ? '+' : '') + d.toFixed(0) + '%';
+  }
+
+  let body;
+  if (state === 'loading') {
+    body = <div className="flow-empty">loading decomp/{productCode}.json…</div>;
+  } else if (state === 'missing') {
+    body = <div className="flow-empty">no decomposition file for this product. Run <code>dds-build-flow-decomp</code>.</div>;
+  } else if (state === 'error') {
+    body = <div className="flow-empty">failed to load decomposition: {error}</div>;
+  } else if (!method) {
+    body = <div className="flow-empty">method "{methodId}" not in decomposition file. Re-run <code>dds-build-flow-decomp</code>.</div>;
+  } else if (!method.flows || method.flows.length === 0) {
+    body = <div className="flow-empty">no characterised flows for this method (score = {fmtSci(method.score)}).</div>;
+  } else {
+    body = (
+      <table className="flow-table">
+        <thead>
+          <tr>
+            <th>Flow</th>
+            <th className="num">Inventory (pre-CF)</th>
+            <th className="num">EF CF</th>
+            <th className="num">SimaPro CF</th>
+            <th className="num">Δ%</th>
+            <th className="num">Contribution (post-CF)</th>
+            <th className="flow-share-cell">Share of |Σcontrib|</th>
+          </tr>
+        </thead>
+        <tbody>
+          {method.flows.map((f, i) => {
+            const pct = (f.share || 0) * 100;
+            const neg = f.contribution < 0;
+            const spCf = (f.sp_cf === undefined ? null : f.sp_cf);
+            const delta = cfDeltaPct(f.cf, spCf);
+            const spTitle = spCf === null
+              ? 'no comparable SimaPro CF for this flow'
+              : `SimaPro CF · match: ${f.sp_match_provenance || 'unknown'}`;
+            const rowKey = `${f.flow_name}|${f.compartment || ''}|${f.sub_compartment || ''}|${i}`;
+            return (
+              <tr key={rowKey}>
+                <td className="name" title={`${f.flow_name} · ${f.compartment}${f.sub_compartment ? ' / ' + f.sub_compartment : ''}`}>
+                  {f.flow_name}
+                  {f.sub_compartment && <span className="flow-sub">{f.sub_compartment}</span>}
+                </td>
+                <td className="num">{fmtSci(f.inventory)} {f.unit}</td>
+                <td className="num">{fmtSci(f.cf)}</td>
+                <td className={'num' + (spCf === null ? ' flow-sp-missing' : '')} title={spTitle}>{fmtSci(spCf)}</td>
+                <td className={'num flow-delta' + (delta === null ? '' : (delta > 0.5 ? ' pos' : (delta < -0.5 ? ' neg' : '')))}>{fmtDelta(delta)}</td>
+                <td className="num">{fmtSci(f.contribution)}</td>
+                <td className="flow-share-cell">
+                  <div className="flow-share-bar">
+                    <div className="flow-share-track">
+                      <div className={`flow-share-fill${neg ? ' neg' : ''}`} style={{ width: `${pct.toFixed(1)}%` }} />
+                    </div>
+                    <span className="flow-share-pct">{pct.toFixed(1)}%</span>
+                  </div>
+                </td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+    );
+  }
+
+  const scoreStr = method ? `score ${fmtSci(method.score)}` : '';
+  const totalStr = method ? `· Σ|contrib| ${fmtSci(method.total_abs_contribution)}` : '';
+  const truncStr = method && method.flows && method.total_abs_contribution > 0
+    ? (() => {
+        const shown = method.flows.reduce((a, f) => a + Math.abs(f.contribution), 0);
+        if (shown <= 0) return '';
+        const cov = (shown / method.total_abs_contribution) * 100;
+        return cov < 99.5 ? `· top ${method.flows.length} cover ${cov.toFixed(0)}%` : '';
+      })()
+    : '';
+
+  return (
+    <div className="flow-panel">
+      <div className="flow-hdr">
+        <div className="flow-hdr-left">
+          <span className="flow-method">Flow decomposition · {methodLabel}</span>
+          <span className="flow-score">{scoreStr} {totalStr} {truncStr}</span>
+        </div>
+        <button className="detail-close" onClick={onClose}>✕ close</button>
+      </div>
+      <div className="flow-hint">Inventory is the pre-CF biosphere amount; Contribution is EF&nbsp;CF × Inventory. SimaPro&nbsp;CF is SimaPro's factor for the same flow under this method (— = no comparable match; hover for match quality). Δ% = (EF&nbsp;CF − SimaPro&nbsp;CF) / |SimaPro&nbsp;CF|. Share is |contribution| / Σ|contribution| (truncated rows excluded from numerator).</div>
+      {body}
+    </div>
+  );
+}
+
+function DistributionsView({ products, loadState, loadError }) {
+  const charts = useMemo(() => {
+    if (products.length === 0) return [];
+    return CATS.map(([id, label], ci) => {
+      const values = [];
+      for (const p of products) {
+        const v = p.vals[ci];
+        if (Number.isFinite(v)) values.push(v);
+      }
+      values.sort((a, b) => a - b);
+      return { id, label, sorted: values };
+    });
+  }, [products]);
+
+  if (loadState === 'loading') {
+    return <div style={{ padding: '14px 22px', color: 'var(--dim)', fontFamily: 'JetBrains Mono, monospace', fontSize: 12 }}>Loading {DATA_CSV_URL}…</div>;
+  }
+  if (loadState === 'error') {
+    return (
+      <div style={{ padding: '14px 22px', color: '#b8451a', fontFamily: 'JetBrains Mono, monospace', fontSize: 12 }}>
+        Failed to load {DATA_CSV_URL}: {loadError}
+      </div>
+    );
+  }
+
+  return (
+    <div className="dist-container">
+      {charts.map(c => <DistributionCard key={c.id} {...c} />)}
+    </div>
+  );
+}
+
+function App() {
+  const [PRODUCTS, setProducts] = useState([]);
+  const [loadState, setLoadState] = useState('loading');  // loading | ok | error
+  const [loadError, setLoadError] = useState(null);
+  const [selected, setSelected] = useState(null);
+  const [tooltip, setTooltip] = useState(null);
+  const [sortCol, setSortCol] = useState(null);
+  const [sortDir, setSortDir] = useState(1);
+  const [reasons, setReasons] = useState({});
+  const [popover, setPopover] = useState(null);  // { id, x, y }
+  const [activeTab, setActiveTab] = useState('backtest');
+  const [decompProduct, setDecompProduct] = useState(null);   // product code (string)
+  const [decompMethod, setDecompMethod] = useState(null);     // short id, e.g. 'climate'
+  const [decompData, setDecompData] = useState(null);         // parsed JSON for decompProduct
+  const [decompState, setDecompState] = useState('idle');     // idle | loading | ok | missing | error
+  const [decompError, setDecompError] = useState(null);
+  const [CF_ROWS, setCfRows] = useState([]);
+  const [cfLoadState, setCfLoadState] = useState('loading');
+  const [cfLoadError, setCfLoadError] = useState(null);
+  const [cfSortCol, setCfSortCol] = useState(null);
+  const [cfSortDir, setCfSortDir] = useState(1);
+
+  useEffect(() => {
+    fetch(DATA_CSV_URL)
+      .then(r => {
+        if (!r.ok) throw new Error(`HTTP ${r.status}`);
+        return r.text();
+      })
+      .then(text => {
+        const { rows } = parseCSV(text);
+        const ids = CATS.map(c => c[0]);
+        const products = rows.map(r => ({
+          code: r.code,
+          name: r.name,
+          resolution: r.resolution,
+          mapped_to: r.mapped_to,
+          vals: ids.map(id => {
+            const raw = r[id];
+            const n = raw === '' || raw == null ? NaN : parseFloat(raw);
+            return Number.isFinite(n) ? n : 0;
+          }),
+        }));
+        setProducts(products);
+        setLoadState('ok');
+      })
+      .catch(err => {
+        setLoadError(err.message || String(err));
+        setLoadState('error');
+      });
+  }, []);
+
+  useEffect(() => {
+    fetch(REASONS_URL)
+      .then(r => r.ok ? r.json() : {})
+      .then(setReasons)
+      .catch(() => setReasons({}));
+  }, []);
+
+  useEffect(() => {
+    if (!decompProduct) { setDecompData(null); setDecompState('idle'); return; }
+    if (decompData && decompData.code === decompProduct) { setDecompState('ok'); return; }
+    setDecompState('loading');
+    setDecompError(null);
+    fetch(`decomp/${encodeURIComponent(decompProduct)}.json`)
+      .then(r => {
+        if (r.status === 404) { setDecompState('missing'); setDecompData(null); return null; }
+        if (!r.ok) throw new Error(`HTTP ${r.status}`);
+        return r.json();
+      })
+      .then(data => {
+        if (data) { setDecompData(data); setDecompState('ok'); }
+      })
+      .catch(err => {
+        setDecompError(err.message || String(err));
+        setDecompState('error');
+        setDecompData(null);
+      });
+  }, [decompProduct]);
+
+  useEffect(() => {
+    fetch(CF_DATA_CSV_URL)
+      .then(r => {
+        if (!r.ok) throw new Error(`HTTP ${r.status}`);
+        return r.text();
+      })
+      .then(text => {
+        const { rows } = parseCSV(text);
+        const num = (s) => (s === '' || s == null ? NaN : parseFloat(s));
+        const parsed = rows.map(r => {
+          const out = { method: r.method, alignment: r.alignment };
+          ['sp', 'ef'].forEach(prefix => {
+            CF_STATS.forEach(([stat]) => { out[`${prefix}_${stat}`] = num(r[`${prefix}_${stat}`]); });
+          });
+          return out;
+        });
+        setCfRows(parsed);
+        setCfLoadState('ok');
+      })
+      .catch(err => {
+        setCfLoadError(err.message || String(err));
+        setCfLoadState('error');
+      });
+  }, []);
+
+  useEffect(() => {
+    if (!popover) return;
+    const handler = (e) => {
+      if (e.target.closest('.method-popover')) return;
+      if (e.target.closest('.info-icon')) return;
+      setPopover(null);
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [popover]);
+
+  function handleInfoClick(e, id) {
+    e.stopPropagation();  // prevent column sort
+    const rect = e.currentTarget.getBoundingClientRect();
+    const popWidth = 340;
+    const x = Math.min(window.innerWidth - popWidth - 12, Math.max(8, rect.left - popWidth / 2 + rect.width / 2));
+    const y = rect.bottom + 8;
+    setPopover(p => (p && p.id === id) ? null : { id, x, y });
+  }
+
+  const colMeans = useMemo(() =>
+    CATS.map((_, ci) => {
+      if (PRODUCTS.length === 0) return '—';
+      const vals = PRODUCTS.map(p => Math.abs(p.vals[ci]));
+      return (vals.reduce((a, b) => a + b, 0) / vals.length).toFixed(1);
+    }), [PRODUCTS]);
+
+  const rows = useMemo(() => {
+    if (sortCol === null) return PRODUCTS;
+    const ci = CATS.findIndex(c => c[0] === sortCol);
+    return [...PRODUCTS].sort((a, b) => sortDir * (a.vals[ci] - b.vals[ci]));
+  }, [PRODUCTS, sortCol, sortDir]);
+
+  function handleColClick(id) {
+    if (sortCol === id) setSortDir(d => -d);
+    else { setSortCol(id); setSortDir(1); }
+  }
+
+  const detailProduct = selected !== null ? PRODUCTS.find(p => p.code === selected) : null;
+
+  const detailRows = useMemo(() => {
+    if (!detailProduct) return [];
+    return CATS.map((cat, i) => ({ label: cat[1], val: detailProduct.vals[i] }))
+               .sort((a, b) => Math.abs(b.val) - Math.abs(a.val));
+  }, [detailProduct]);
+
+  const detailMax = detailRows.length ? Math.max(...detailRows.map(r => Math.abs(r.val))) : 1;
+
+  const cfSummary = useMemo(() => {
+    const both = CF_ROWS.filter(r => r.alignment === 'both').length;
+    const spOnly = CF_ROWS.filter(r => r.alignment === 'sp_only').length;
+    const efOnly = CF_ROWS.filter(r => r.alignment === 'ef_only').length;
+    return { both, spOnly, efOnly };
+  }, [CF_ROWS]);
+
+  const cfRowsSorted = useMemo(() => {
+    if (cfSortCol === null) return [...CF_ROWS].sort((a, b) => a.method.localeCompare(b.method));
+    // Sort by SP value of the chosen stat; fall back to EF if SP is
+    // missing (sp_only / ef_only methods). NaNs sink to the bottom.
+    const spKey = `sp_${cfSortCol}`;
+    const efKey = `ef_${cfSortCol}`;
+    const score = (r) => {
+      const v = Number.isFinite(r[spKey]) ? r[spKey] : r[efKey];
+      return Number.isFinite(v) ? v : (cfSortDir === 1 ? Infinity : -Infinity);
+    };
+    return [...CF_ROWS].sort((a, b) => cfSortDir * (score(a) - score(b)));
+  }, [CF_ROWS, cfSortCol, cfSortDir]);
+
+  function handleCfColClick(stat) {
+    if (cfSortCol === stat) setCfSortDir(d => -d);
+    else { setCfSortCol(stat); setCfSortDir(1); }
+  }
+
+  return (
+    <>
+      {loadState !== 'ok' && (
+        <div style={{
+          padding: '10px 18px',
+          background: loadState === 'error' ? 'rgba(255,80,80,0.12)' : 'rgba(255,255,255,0.06)',
+          color: loadState === 'error' ? '#ff9090' : '#bbb',
+          fontFamily: 'JetBrains Mono, monospace', fontSize: 13,
+        }}>
+          {loadState === 'loading' && `Loading ${DATA_CSV_URL}…`}
+          {loadState === 'error' && (
+            <>
+              <div>Failed to load {DATA_CSV_URL}: {loadError}</div>
+              <div style={{ marginTop: 4, opacity: 0.7 }}>
+                Serve via HTTP (e.g. <code>cd outputs &amp;&amp; python -m http.server 8000</code>)
+                then open <code>http://localhost:8000/backtest_dashboard.html</code>.
+              </div>
+            </>
+          )}
+        </div>
+      )}
+      <div className="header">
+        <div>
+          <h1>{
+            activeTab === 'backtest' ? 'AGRIBALYSE BACKTEST · % DIFFERENCE BY IMPACT CATEGORY'
+            : activeTab === 'cfs' ? 'CF STATS · SIMAPRO vs EF3.1'
+            : 'DISTRIBUTIONS · % DIFFERENCE PER IMPACT CATEGORY'
+          }</h1>
+          <div className="header-sub">
+            {activeTab === 'backtest' && `Sentier model vs. Agribalyse 3.2 · ${PRODUCTS.length} products · ${CATS.length} categories`}
+            {activeTab === 'cfs' && `Per-method CF distribution · ${CF_ROWS.length} methods · ${CF_STATS.length} stats`}
+            {activeTab === 'distributions' && `Sorted % diffs per impact · ${PRODUCTS.length} products · ${CATS.length} charts`}
+          </div>
+          {activeTab === 'backtest' && (
+            <div className="legend" style={{ marginTop: 8 }}>
+              <div className="legend-item"><div className="swatch swatch-orange" /><span>model &gt; agribalyse (over)</span></div>
+              <div className="legend-item"><div className="swatch swatch-blue" /><span>model &lt; agribalyse (under)</span></div>
+              <div className="legend-item"><span>· dot = |val| &gt; {DOT_PCT}%</span></div>
+            </div>
+          )}
+          {activeTab === 'cfs' && (
+            <div className="legend" style={{ marginTop: 8 }}>
+              <div className="legend-item"><span>Raw CF distribution stats per method — no deltas.</span></div>
+            </div>
+          )}
+          {activeTab === 'distributions' && (
+            <div className="legend" style={{ marginTop: 8 }}>
+              <div className="legend-item"><div className="swatch swatch-orange" /><span>↑ over (model &gt; ref)</span></div>
+              <div className="legend-item"><div className="swatch swatch-blue" /><span>↓ under (model &lt; ref)</span></div>
+              <div className="legend-item"><span>· x = % diff (100 bins, symmetric ±max) · y = product count per bin</span></div>
+            </div>
+          )}
+        </div>
+        <div className="tabs">
+          <button className={'tab' + (activeTab === 'backtest' ? ' active' : '')} onClick={() => setActiveTab('backtest')}>Product %diff</button>
+          <button className={'tab' + (activeTab === 'cfs' ? ' active' : '')} onClick={() => setActiveTab('cfs')}>CF stats</button>
+          <button className={'tab' + (activeTab === 'distributions' ? ' active' : '')} onClick={() => setActiveTab('distributions')}>Distributions</button>
+        </div>
+        {activeTab === 'backtest' && (
+          <div className="header-stats">
+            <div className="stat-item"><div className="stat-n">{PRODUCTS.length}</div><div className="stat-lbl">Products</div></div>
+            <div className="stat-item"><div className="stat-n">{CATS.length}</div><div className="stat-lbl">Categories</div></div>
+          </div>
+        )}
+        {activeTab === 'cfs' && (
+          <div className="cfs-summary">
+            <div className="cfs-summary-item">
+              <div className="cfs-summary-n">{cfSummary.both}</div>
+              <div className="cfs-summary-lbl">Aligned</div>
+            </div>
+            <div className="cfs-summary-item">
+              <div className="cfs-summary-n">{cfSummary.spOnly}</div>
+              <div className="cfs-summary-lbl">SP only</div>
+            </div>
+            <div className="cfs-summary-item">
+              <div className="cfs-summary-n">{cfSummary.efOnly}</div>
+              <div className="cfs-summary-lbl">EF only</div>
+            </div>
+          </div>
+        )}
+        {activeTab === 'distributions' && (
+          <div className="header-stats">
+            <div className="stat-item"><div className="stat-n">{PRODUCTS.length}</div><div className="stat-lbl">Products</div></div>
+            <div className="stat-item"><div className="stat-n">{CATS.length}</div><div className="stat-lbl">Charts</div></div>
+          </div>
+        )}
+      </div>
+
+      <div className="main">
+        {activeTab === 'backtest' && (
+          <>
+            <div className="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th className="name-col">Product</th>
+                    {CATS.map(([id, label], ci) => {
+                      const reason = reasons[id];
+                      const hasOutliers = reason && reason.count > 0;
+                      return (
+                        <th key={id} className={sortCol === id ? 'sorted' : ''} onClick={() => handleColClick(id)}>
+                          <div className="th-wrap">
+                            <span className="th-info-slot">
+                              {hasOutliers && (
+                                <span
+                                  className={`info-icon ${popover && popover.id === id ? 'active' : ''}`}
+                                  onClick={(e) => handleInfoClick(e, id)}
+                                  title={`Why ${label} has outliers`}
+                                >i</span>
+                              )}
+                            </span>
+                            <span className="th-text">{label}</span>
+                            <span className="th-mean">μ={colMeans[ci]}</span>
+                            {sortCol === id && <span>{sortDir > 0 ? '↑' : '↓'}</span>}
+                          </div>
+                        </th>
+                      );
+                    })}
+                  </tr>
+                </thead>
+                <tbody>
+                  {rows.map(product => (
+                    <tr
+                      key={product.code}
+                      className={selected === product.code ? 'sel' : ''}
+                      onClick={() => setSelected(s => {
+                        const next = s === product.code ? null : product.code;
+                        if (next === null) { setDecompProduct(null); setDecompMethod(null); }
+                        return next;
+                      })}
+                    >
+                      <td className="name-col">
+                        <span className="pcode">{product.code}</span>
+                        <span className="pname" title={product.name}>{product.name}</span>
+                      </td>
+                      {product.vals.map((v, ci) => {
+                        const isOutlier = Math.abs(v) > OUTLIER_PCT;
+                        const catId = CATS[ci][0];
+                        const hasReason = isOutlier && reasons[catId] && reasons[catId].short;
+                        return (
+                          <td
+                            key={ci}
+                            className={`data-cell${decompProduct === product.code && decompMethod === CATS[ci][0] ? ' decomp-open' : ''}`}
+                            style={{ background: cellBg(v) }}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              const short = CATS[ci][0];
+                              if (decompProduct === product.code && decompMethod === short) {
+                                setDecompMethod(null);
+                              } else {
+                                setSelected(product.code);
+                                setDecompProduct(product.code);
+                                setDecompMethod(short);
+                              }
+                            }}
+                            onMouseEnter={e => setTooltip({ x: e.clientX, y: e.clientY, v, ci, pname: product.name })}
+                            onMouseLeave={() => setTooltip(null)}
+                            onMouseMove={e => setTooltip(t => t ? { ...t, x: e.clientX, y: e.clientY } : null)}
+                          >
+                            {hasReason && <div className="cell-info">i</div>}
+                            {Math.abs(v) > DOT_PCT && <div className="xdot" />}
+                            {fmtVal(v)}
+                          </td>
+                        );
+                      })}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {detailProduct && (
+              <div className="detail">
+                <div className="detail-hdr">
+                  <div>
+                    <span className="detail-code">{detailProduct.code}</span>
+                    <span className="detail-name">{detailProduct.name}</span>
+                  </div>
+                  <button className="detail-close" onClick={() => setSelected(null)}>✕ close</button>
+                </div>
+                <div className="bars">
+                  {detailRows.map(({ label, val }) => {
+                    const barPct = Math.min(100, Math.sqrt(Math.abs(val)) / Math.sqrt(detailMax) * 100);
+                    return (
+                      <div className="bar-row" key={label}>
+                        <span className="bar-lbl">{label}</span>
+                        <div className="bar-track">
+                          <div className="bar-fill" style={{ width: `${barPct}%`, background: cellBg(val) }} />
+                        </div>
+                        <span className="bar-val" style={{ color: valColor(val) }}>{fmtVal(val)}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {decompMethod && decompProduct && (
+              <FlowDecompositionPanel
+                productCode={decompProduct}
+                methodId={decompMethod}
+                data={decompData}
+                state={decompState}
+                error={decompError}
+                onClose={() => setDecompMethod(null)}
+              />
+            )}
+          </>
+        )}
+        {activeTab === 'distributions' && (
+          <DistributionsView
+            products={PRODUCTS}
+            loadState={loadState}
+            loadError={loadError}
+          />
+        )}
+        {activeTab === 'cfs' && (
+          <CfsView
+            rows={cfRowsSorted}
+            sortCol={cfSortCol}
+            sortDir={cfSortDir}
+            onColClick={handleCfColClick}
+            loadState={cfLoadState}
+            loadError={cfLoadError}
+          />
+        )}
+      </div>
+
+      {activeTab === 'backtest' && tooltip && (() => {
+        const catId = CATS[tooltip.ci][0];
+        const reason = reasons[catId];
+        const isOutlier = Math.abs(tooltip.v) > OUTLIER_PCT;
+        const showReason = isOutlier && reason && reason.short;
+        const ttW = 320, ttH = showReason ? 180 : 90;
+        const margin = 10;
+        let left = tooltip.x + 14;
+        if (left + ttW + margin > window.innerWidth) left = Math.max(margin, tooltip.x - ttW - 14);
+        let top = tooltip.y - 60;
+        if (top < margin) top = tooltip.y + 18;
+        if (top + ttH + margin > window.innerHeight) top = Math.max(margin, window.innerHeight - ttH - margin);
+        return (
+          <div className="tooltip" style={{ left, top }}>
+            <div className="tt-cat">{CATS[tooltip.ci][1]}</div>
+            <div className="tt-val" style={{ color: valColor(tooltip.v) }}>{fmtVal(tooltip.v)}</div>
+            <div className="tt-prod">{tooltip.pname}</div>
+            {showReason && (
+              <div className="tt-reason">
+                {reason.tag && <span className="tt-tag">{reason.tag.replace(/_/g, ' ')}</span>}
+                <div className="tt-short">{reason.short}</div>
+                <div className="tt-hint">click ⓘ in column header for full detail</div>
+              </div>
+            )}
+          </div>
+        );
+      })()}
+
+      {activeTab === 'backtest' && popover && (() => {
+        const cat = CATS.find(c => c[0] === popover.id);
+        const reason = reasons[popover.id];
+        if (!cat || !reason) return null;
+        return (
+          <div className="method-popover" style={{ left: popover.x, top: popover.y }}>
+            <div className="mp-hdr">
+              <div className="mp-cat">{cat[1]}</div>
+              <button className="mp-close" onClick={() => setPopover(null)}>✕</button>
+            </div>
+            <div className="mp-meta">
+              <span><strong>{reason.count}</strong> outliers</span>
+              {reason.direction && <span>{reason.direction}</span>}
+              {reason.median_pct != null && <span>median <strong>{reason.median_pct > 0 ? '+' : ''}{reason.median_pct}%</strong></span>}
+            </div>
+            {reason.tag && <div className="mp-tag">{reason.tag.replace(/_/g, ' ')}</div>}
+            <div className="mp-long">{reason.long || reason.short}</div>
+            {reason.not_a_bug && <div className="mp-badge">✓ not a calc/mapping defect</div>}
+          </div>
+        );
+      })()}
+    </>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script>
+</body>
+</html>

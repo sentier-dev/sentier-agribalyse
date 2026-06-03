@@ -1,0 +1,128 @@
+{
+  "name": "agribalyse-3.2-custom-technosphere-fixes",
+  "description": "Manual technosphere fixes extracted from Notebook 2 (Import Agribalyse). Handles unit conversions (m³→L, s→h, MJ→kWh), obsolete dataset renames, and unit abbreviation fixes. These are the residuals that Brightway's built-in strategies + randonneur packages cannot resolve.",
+  "source": "Agribalyse_import/Notebooks/2 - Import Agribalyse.ipynb, cell 9c2a8dca",
+  "created": "2026-04-20",
+  "replace": [
+    {
+      "source": {
+        "name": "Transmission network, long-distance {UCTE}| transmission network construction, long-distance | Cut-off, U"
+      },
+      "target": {
+        "name": "transmission network construction, electricity, medium voltage",
+        "reference product": "transmission network, electricity, medium voltage",
+        "location": "RoW"
+      },
+      "comment": "Dataset no longer available in ecoinvent 3.9.1"
+    },
+    {
+      "source": {
+        "name": "Electricity, medium voltage {FR}| electricity, from municipal waste incineration to generic market for | Cut-off, U"
+      },
+      "target": {
+        "name": "electricity, from municipal waste incineration to generic market for electricity, medium voltage",
+        "location": "FR",
+        "reference product": "electricity, medium voltage"
+      }
+    },
+    {
+      "source": {
+        "name": "Polystyrene, general purpose {RER}| polystyrene production, general purpose | Cut-off,"
+      },
+      "target": {
+        "name": "polystyrene production, general purpose",
+        "location": "RER",
+        "reference product": "polystyrene, general purpose"
+      }
+    },
+    {
+      "source": {
+        "name": "market for operation, reefer, freezing",
+        "unit": "kgy"
+      },
+      "target": {
+        "unit": "kilogram day"
+      },
+      "conversion_factor": 365.24,
+      "comment": "Approximate unit conversion from kilogram-year to kilogram-day"
+    },
+    {
+      "source": { "name": "market for drying of maize grain", "unit": "standard cubic meter" },
+      "target": { "unit": "litre" },
+      "conversion_factor": 1000,
+      "comment": "ecoinvent dries litres, not cubic meters; AGB SimaPro encodes m3, normalised to 'standard cubic meter' upstream, so 1 m3 = 1000 L"
+    },
+    {
+      "source": { "name": "drying of feed grain", "unit": "standard cubic meter" },
+      "target": { "unit": "litre" },
+      "conversion_factor": 1000,
+      "comment": "ecoinvent dries litres, not cubic meters; AGB SimaPro encodes m3, normalised to 'standard cubic meter' upstream, so 1 m3 = 1000 L"
+    },
+    {
+      "source": { "name": "drying of bread grain, seed and legumes", "unit": "standard cubic meter" },
+      "target": { "unit": "litre" },
+      "conversion_factor": 1000,
+      "comment": "ecoinvent dries litres, not cubic meters; AGB SimaPro encodes m3, normalised to 'standard cubic meter' upstream, so 1 m3 = 1000 L"
+    },
+    {
+      "source": { "name": "drying of lentils", "unit": "standard cubic meter" },
+      "target": { "unit": "litre" },
+      "conversion_factor": 1000,
+      "comment": "ecoinvent dries litres, not cubic meters; AGB SimaPro encodes m3, normalised to 'standard cubic meter' upstream, so 1 m3 = 1000 L"
+    },
+    {
+      "source": { "name": "market for drying of feed grain", "unit": "standard cubic meter" },
+      "target": { "unit": "litre" },
+      "conversion_factor": 1000,
+      "comment": "ecoinvent dries litres, not cubic meters; AGB SimaPro encodes m3, normalised to 'standard cubic meter' upstream, so 1 m3 = 1000 L"
+    },
+    {
+      "source": { "name": "market for drying of bread grain, seed and legumes", "unit": "standard cubic meter" },
+      "target": { "unit": "litre" },
+      "conversion_factor": 1000,
+      "comment": "ecoinvent dries litres, not cubic meters; AGB SimaPro encodes m3, normalised to 'standard cubic meter' upstream, so 1 m3 = 1000 L"
+    },
+    {
+      "source": { "name": "market for power sawing, without catalytic converter", "unit": "s" },
+      "target": { "unit": "hour" },
+      "conversion_factor": 0.000277778,
+      "comment": "bw_simapro_csv converts to seconds; ecoinvent expects hours"
+    },
+    {
+      "source": { "name": "transport, helicopter", "unit": "s" },
+      "target": { "unit": "hour" },
+      "conversion_factor": 0.000277778,
+      "comment": "bw_simapro_csv converts to seconds; ecoinvent expects hours"
+    },
+    {
+      "source": { "name": "market for harvesting, forestry harvester", "unit": "s" },
+      "target": { "unit": "hour" },
+      "conversion_factor": 0.000277778,
+      "comment": "bw_simapro_csv converts to seconds; ecoinvent expects hours"
+    },
+    {
+      "source": { "name": "market for wood chipping, chipper, mobile, diesel, at forest road", "unit": "s" },
+      "target": { "unit": "hour" },
+      "conversion_factor": 0.000277778,
+      "comment": "bw_simapro_csv converts to seconds; ecoinvent expects hours"
+    },
+    {
+      "source": { "name": "heat and power co-generation, biogas, gas engine", "unit": "megajoule" },
+      "target": { "unit": "kilowatt hour" },
+      "conversion_factor": 0.277778,
+      "comment": "Unit conversion not caught by automatic electricity unit check"
+    },
+    {
+      "source": { "name": "treatment of bagasse, from sugarcane, in heat and power co-generation unit, 6400kW thermal", "unit": "megajoule" },
+      "target": { "unit": "kilowatt hour" },
+      "conversion_factor": 0.277778,
+      "comment": "Unit conversion not caught by automatic electricity unit check"
+    },
+    {
+      "source": { "name": "heat and power co-generation, wood chips, 6667 kW, state-of-the-art 2014", "unit": "megajoule" },
+      "target": { "unit": "kilowatt hour" },
+      "conversion_factor": 0.277778,
+      "comment": "Unit conversion not caught by automatic electricity unit check"
+    }
+  ]
+}

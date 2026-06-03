@@ -1,0 +1,364 @@
+{
+  "fields": [
+    "categories",
+    "type"
+  ],
+  "data": [
+    [
+      [
+        [
+          "resource",
+          "in ground"
+        ],
+        "biosphere"
+      ],
+      {
+        "categories": [
+          "natural resource",
+          "in ground"
+        ]
+      }
+    ],
+    [
+      [
+        [
+          "resource",
+          "in air"
+        ],
+        "biosphere"
+      ],
+      {
+        "categories": [
+          "natural resource",
+          "in air"
+        ]
+      }
+    ],
+    [
+      [
+        [
+          "resource",
+          "in water"
+        ],
+        "biosphere"
+      ],
+      {
+        "categories": [
+          "natural resource",
+          "in water"
+        ]
+      }
+    ],
+    [
+      [
+        [
+          "resource",
+          "land"
+        ],
+        "biosphere"
+      ],
+      {
+        "categories": [
+          "natural resource",
+          "land"
+        ]
+      }
+    ],
+    [
+      [
+        [
+          "resource",
+          "biotic"
+        ],
+        "biosphere"
+      ],
+      {
+        "categories": [
+          "natural resource",
+          "biotic"
+        ]
+      }
+    ],
+    [
+      [
+        [
+          "resource"
+        ],
+        "biosphere"
+      ],
+      {
+        "categories": [
+          "natural resource"
+        ]
+      }
+    ],
+    [
+      [
+        [
+          "air",
+          "high population density"
+        ],
+        "biosphere"
+      ],
+      {
+        "categories": [
+          "air",
+          "urban air close to ground"
+        ]
+      }
+    ],
+    [
+      [
+        [
+          "air",
+          "low population density"
+        ],
+        "biosphere"
+      ],
+      {
+        "categories": [
+          "air",
+          "non-urban air or from high stacks"
+        ]
+      }
+    ],
+    [
+      [
+        [
+          "water",
+          "fossil-"
+        ],
+        "biosphere"
+      ],
+      {
+        "categories": [
+          "water",
+          "ground-"
+        ]
+      }
+    ],
+    [
+      [
+        [
+          "water",
+          "lake"
+        ],
+        "biosphere"
+      ],
+      {
+        "categories": [
+          "water",
+          "surface water"
+        ]
+      }
+    ],
+    [
+      [
+        [
+          "water",
+          "river"
+        ],
+        "biosphere"
+      ],
+      {
+        "categories": [
+          "water",
+          "surface water"
+        ]
+      }
+    ],
+    [
+      [
+        [
+          "water",
+          "river, long-term"
+        ],
+        "biosphere"
+      ],
+      {
+        "categories": [
+          "water",
+          "surface water"
+        ]
+      }
+    ],
+    [
+      [
+        [
+          "resource",
+          "in ground"
+        ],
+        "emission"
+      ],
+      {
+        "categories": [
+          "natural resource",
+          "in ground"
+        ]
+      }
+    ],
+    [
+      [
+        [
+          "resource",
+          "in air"
+        ],
+        "emission"
+      ],
+      {
+        "categories": [
+          "natural resource",
+          "in air"
+        ]
+      }
+    ],
+    [
+      [
+        [
+          "resource",
+          "in water"
+        ],
+        "emission"
+      ],
+      {
+        "categories": [
+          "natural resource",
+          "in water"
+        ]
+      }
+    ],
+    [
+      [
+        [
+          "resource",
+          "land"
+        ],
+        "emission"
+      ],
+      {
+        "categories": [
+          "natural resource",
+          "land"
+        ]
+      }
+    ],
+    [
+      [
+        [
+          "resource",
+          "biotic"
+        ],
+        "emission"
+      ],
+      {
+        "categories": [
+          "natural resource",
+          "biotic"
+        ]
+      }
+    ],
+    [
+      [
+        [
+          "resource"
+        ],
+        "emission"
+      ],
+      {
+        "categories": [
+          "natural resource"
+        ]
+      }
+    ],
+    [
+      [
+        [
+          "air",
+          "high population density"
+        ],
+        "emission"
+      ],
+      {
+        "categories": [
+          "air",
+          "urban air close to ground"
+        ]
+      }
+    ],
+    [
+      [
+        [
+          "air",
+          "low population density"
+        ],
+        "emission"
+      ],
+      {
+        "categories": [
+          "air",
+          "non-urban air or from high stacks"
+        ]
+      }
+    ],
+    [
+      [
+        [
+          "water",
+          "fossil-"
+        ],
+        "emission"
+      ],
+      {
+        "categories": [
+          "water",
+          "ground-"
+        ]
+      }
+    ],
+    [
+      [
+        [
+          "water",
+          "lake"
+        ],
+        "emission"
+      ],
+      {
+        "categories": [
+          "water",
+          "surface water"
+        ]
+      }
+    ],
+    [
+      [
+        [
+          "water",
+          "river"
+        ],
+        "emission"
+      ],
+      {
+        "categories": [
+          "water",
+          "surface water"
+        ]
+      }
+    ],
+    [
+      [
+        [
+          "water",
+          "river, long-term"
+        ],
+        "emission"
+      ],
+      {
+        "categories": [
+          "water",
+          "surface water"
+        ]
+      }
+    ]
+  ]
+}

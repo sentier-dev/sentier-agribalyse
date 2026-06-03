@@ -1,0 +1,371 @@
+# sentier_agribalyse
+
+Sentier-native adapter that imports Agribalyse 3.2 into Brightway 2.5,
+links it against ecoinvent 3.9.1, and registers EF v3.1 LCIA methods
+for impact scoring.
+
+## Prerequisites
+
+- Python 3.11+
+- ecoinvent credentials (`ECOINVENT_USERNAME` / `ECOINVENT_PASSWORD` in `.env`)
+- A populated `source/` directory (see [Sources](#sources) below)
+
+> **No proprietary ecoinvent data ships in this repo.** The ecoinvent-derived
+> files under `source/` and `registry/method_cfs/ecoinvent-3.9.1__*/` are
+> gitignored under the ecoinvent EULA. A licensed user regenerates them locally
+> from their own credentials — see **[BOOTSTRAP.md](BOOTSTRAP.md)**.
+
+## Setup
+
+```bash
+python -m venv .venv
+source .venv/bin/activate
+pip install -e .
+```
+
+## Commands
+
+After install, the entrypoints are available as console scripts (and
+also as `python -m cli.<name>`):
+
+| Command | What it does |
+|---|---|
+| `dds-build-registry` | Build `registry/*.parquet` from every source — the foundation everything else depends on. |
+| `dds-link-all` | Full link pipeline: Brightway setup → ecoinvent → EF layer → CSV → transforms → biosphere matcher → technosphere matcher → write DB → matrix-square purge. |
+| `dds-run-end-to-end` | Link + register LCIA + score a sample of products. |
+| `dds-backtest` | Score every mapped product vs. ADEME's reference and write parquet diffs to `dashboard/backtest/`. |
+| `dds-decompose-score` | Explain a single `(product, method)` score: top biosphere flows, technosphere activities, and `(activity, flow)` edges. |
+| `dds-build-packages` | Author the publishable randonneur datapackages (`source/randonneur_packages/*.json`) and the residuals review xlsx. |
+| `dds-mappings-comparison` | Regenerate `to_review/mappings_comparison.xlsx` from the persisted DB without re-running the link pipeline. |
+
+Common flags on `dds-link-all`:
+
+```
+--skip-ecoinvent  Skip ecoinvent download/import (must already be loaded).
+--no-llm          Disable LLM overrides AND curated synonym fallback.
+--no-write        Skip the database write (dry-run, audit-log inspection).
+--no-purge        Skip matrix-square purge (still writes DB).
+```
+
+### Typical workflow
+
+```
+1. dds-build-registry      # one-time per source change
+2. dds-link-all            # full link → write DB → matrix purge
+3. dds-run-end-to-end      # link + LCIA + score sample (covers 1-2 if needed)
+4. dds-backtest            # full ADEME backtest (parquet outputs)
+```
+
+After the first full run, use `--skip-ecoinvent` (and on
+`dds-run-end-to-end`, `--skip-linking`) to skip expensive steps.
+
+### View the backtest dashboard locally
+
+`dds-backtest` writes the React dashboard's data source
+(`dashboard/backtest_pass1.csv`) alongside the parquet artifacts. To
+view `dashboard/backtest_dashboard.html`:
+
+```bash
+python -m http.server 8000 --directory dashboard
+# then open http://localhost:8000/backtest_dashboard.html
+```
+
+The CSV is regenerated automatically every `dds-backtest` run with the
+[`NearZeroFloor`](src/reporting/near_zero_floor.py) noise-suppression
+rule and the long-name → short-id translation
+([`BacktestPass1Emitter`](src/reporting/backtest_dashboard_csv.py))
+already applied — no manual export step required.
+
+### Decompose a score
+
+`dds-decompose-score` explains *why* a product scores what it scores
+for one `(product, method)` pair. It loads the same cached
+[`ScoringPackage`](src/scoring/scoring_package.py) that
+`dds-backtest` consumes (resolved via the `content_hash` recorded in
+`dashboard/run_report.json`) and prints three ranked tables:
+
+1. **Top flow contributions** — biosphere flows ordered by `|inventory_amount × cf|`.
+2. **Top activity contributions** — technosphere activities ordered by their total characterised supply.
+3. **Top edge contributions** — individual `(activity, flow)` exchanges, the finest grain.
+
+```bash
+dds-decompose-score \
+    --database agribalyse-3.2 \
+    --code 88b91d4e5a9d46b697fd350423bcd087 \
+    --method climate \
+    --top-n 15
+```
+
+Flags:
+
+```
+--method      Short alias (climate, cc_bio, cc_fos, cc_luc, ozone,
+              radiation, photo_ox, pm, ht_nc, ht_c, acid,
+              e_fw, e_m, e_t, ecotox, land, water, energy, mater)
+              or a comma-separated full 4-tuple for ad-hoc methods.
+--top-n       Rows per table (default: 15).
+--inventory   Also dump the top-N uncharacterised inventory flows
+              (by |mass|, regardless of CF) — surfaces the
+              "right amount, no CF" diagnostic.
+--out DIR     Writes decomp_<code>__<method>.json with all three
+              tables for downstream tooling; the human-readable
+              summary still prints to stdout.
+--solver      scipy (default) or pardiso. The post-refactor
+              ScoringPackage matrix has 37 zero-diagonal
+              placeholder activities — scipy SuperLU rejects them
+              as "exactly singular"; use --solver pardiso if the
+              decomposition fails with that error.
+```
+
+Prerequisite: `dds-link-all` (or `dds-run-end-to-end`) must have run
+once so `dashboard/run_report.json` exists and the corresponding
+`ScoringPackage` is in `cache/scoring_packages/`. The short method
+aliases match the column short-ids in `dashboard/backtest_pass1.csv`,
+so the typical loop is "pick a divergent row in the backtest
+dashboard → decompose it".
+
+## Repo layout
+
+```
+source/      authoritative inputs + the randonneur packages we publish
+cache/       parquet caches + importer pickle (gitignored)
+registry/    built MappingRegistry parquets — single source of mapping truth
+dashboard/   run reports, audit logs, dashboards
+to_review/   human-review artifacts (mappings_comparison.xlsx)
+unlinked/    residual unlinked exports (technosphere/biosphere)
+.bw_projects/ Brightway project state
+src/         the package — flat (no redundant src/sentier_agribalyse/ nesting)
+docs/        architecture, behavior-change log, refactor spec, test plan
+tests/       pytest suite
+```
+
+---
+
+# Architecture
+
+## Sources
+
+Everything the linker knows about lives in `source/`. There are no
+hardcoded mapping tables, no inline JSON in matchers, no synonym dicts.
+Each file below is consumed by exactly one ingester class in
+`src/registry/sources/` and aggregated into `registry/*.parquet` by
+`dds-build-registry`.
+
+### Inputs (LCI / LCIA payloads)
+
+| File | Origin | What it carries |
+|---|---|---|
+| `AGB32_final.CSV` | ADEME — Agribalyse 3.2 SimaPro export | The full Agribalyse 3.2 LCI (~507 MB processes-only export). The CSV the `SimaProImporter` parses. Local-only (gitignored). |
+| `AGRIBALYSE3.2_reference_synthese_raw.parquet` | ADEME | Reference scores per product × method. Used by `dds-backtest` as the truth set. |
+| `EF-LCIAMethod_CF(EF-v3.1)__lciamethods_CF.parquet` | JRC EF v3.1 release | Native EF v3.1 CFs (~320K rows, 89K resolved EF flows). Drives the `ef` biosphere database build and the LCIA method augmentation. |
+| `harmonised-flows-simple.json.gz` | Sentier harmonised flow registry | ~1.6M (name, bucket, uuid) entries — the cross-database flow harmonisation backbone. |
+
+### Mapping truth (Sentier / Agribalyse-specific)
+
+| File | Origin | What it carries |
+|---|---|---|
+| `placeholder_flow_classification.xlsx` | Sentier placeholder workbook | Four sheets that classify every AGB biosphere flow: 806 to match against ecoinvent v3.9.1 (tier 1), 643 to match against EF v3.1 (tier 6), 193 declared unmatchable (tier 12), plus an off-by-default transitive ecoinvent → EF map. |
+| `agribalyse-3.2-ecoinvent-3.10-biosphere.json` | Sentier randonneur package | AGB-3.2 → ecoinvent-3.10 biosphere manual matches. |
+| `agribalyse-3.2-correct-ecoinvent-edge-labels.json` | Sentier randonneur package | Edge-label corrections (2 123 rows) applied during `EdgeLabelCorrector`. |
+| `agribalyse-3.2-delete-aggregated-ecoinvent-{processes,products}.json` | Sentier randonneur packages | The 4 246 aggregated-ecoinvent rows the `AggregateDeleter` strips before linking. |
+| `agribalyse-3.2-extra-unit-conversions.json` | Sentier randonneur package (this repo) | m²↔hectare, m↔km conversions the upstream `generic-brightway-unit-conversions` doesn't ship; needed for GLO market-for tillage / fertilising tech edges. |
+| `agribalyse-3.2-custom-technosphere-fixes.json` | This repo (`source/randonneur_packages/`) | Tech-edge name patches for the ~17 AGB references that target ecoinvent datasets renamed/retired between 3.9.1 and 3.10. |
+
+### Mapping truth (curated / LLM-assisted)
+
+| File | Origin | What it carries |
+|---|---|---|
+| `curated_overrides.json` | Hand-authored, dated | Small, dated file replacing the legacy hardcoded `BIOSPHERE_SYNONYMS`. Each row picks its own tier (typically 1 `CURATED_TARGETED` or 11 `CURATED_SYNONYM_FALLBACK`); rows with `is_unmatchable: true` route to `unmatchable.parquet`. |
+| `agribalyse-3.2-biosphere-residuals-llm-reviewed.xlsx` | LLM suggestions, human-accepted | Only `decision='accept'` rows are loaded as tier 10 fill-only mappings. Gated by `--no-llm`. |
+
+### Bundled randonneur datapackages (consumed via `RandonneurDataLoader`)
+
+These are pulled from the published `randonneur_data` registry — names
+referenced by ingester classes in `src/registry/sources/randonneur_packages.py`:
+
+- `agribalyse-3.1.1-ecoinvent-3.10-biosphere-manual-matches` (96 rows) → tier 2.
+- `SimaPro-9-ecoinvent-3.9-biosphere-manual-matches` (580 rows) → tier 3.
+- `simapro-9-ecoinvent-3-water-slash-m3` (~39 675 rows) → tier 5; doubles as a CAS index source.
+- `simapro-9-ecoinvent-3-context` (101 rows) → context normalisation.
+- `Flowmapper-standard-units-harmonization` + `generic-brightway-units-normalization` → unit aliases.
+- `generic-brightway-unit-conversions` (98 rows) → unit conversions (replaces hardcoded `UNIT_CONVERSIONS`).
+- `agribalyse-3.1.1-biosphere-ecoinvent-3.8-biosphere` → known-unmatchable list.
+
+## Project architecture
+
+The package is **OOP everywhere** by design. Every unit of behaviour is
+a class with constructor-injected dependencies; configuration is frozen
+dataclasses. Layers under `src/`:
+
+```
+config/         Paths, Settings (frozen dataclasses)
+core/           Logging, StepTimer, ParquetCache, BrightwayProject, IdleHeartbeat
+domain/         Tier, Bucket, Mapping, AuditEntry, MatchOutcome (pure data)
+readers/        Json/Gz/Xlsx/Parquet readers, RandonneurDataLoader
+registry/       RegistryBuilder + MappingRegistry + indexes
+registry/sources/  one ingester class per data source
+matching/       BiosphereMatcher, TechnosphereMatcher, AuditLog, StrategyRunner
+transforms/     SimaProImporter, AggregateDeleter, EdgeLabelCorrector,
+                BiosphereFlowmapApplier, ProductionReclassifier,
+                BiosphereLabelNormaliser, BioStrategyChain, …
+ef/             EfCfTable, EfDatabase, EfMethodAugmenter
+scoring/        ProductActivityResolver, SolverConfigurator, LciaScorer
+reporting/      MatrixPurger, RunReport, CoverageReporter, UnlinkedExporter
+pipelines/      RegistryBuildPipeline, LinkAllPipeline, EndToEndPipeline, BacktestPipeline
+exports/        RandonneurPackagesExporter, MappingsComparisonExporter
+cli/            BaseCli + 6 concrete CLI classes
+```
+
+### The registry is the contract
+
+`registry/` aggregates every authoritative mapping resource into nine
+parquets:
+
+| Parquet | Source(s) | Rows |
+|---|---|---|
+| `mappings_biosphere.parquet` | placeholder workbook (sheets 1.a, 1.b), randonneur packages, harmonised flows, curated, LLM | 1 613 897 |
+| `mappings_technosphere.parquet` | (open extension point) | 0 |
+| `unmatchable.parquet` | placeholder "Neither" sheet + 3.1.1 unlinked list | 222 |
+| `unit_conversions.parquet` | `generic-brightway-unit-conversions` + extras | 98 |
+| `unit_aliases.parquet` | `Flowmapper-standard-units-harmonization` + `generic-brightway-units-normalization` | 80 |
+| `context_normalisation.parquet` | `simapro-9-ecoinvent-3-context` | 101 |
+| `deletions.parquet` | the two `agribalyse-3.2-delete-aggregated-ecoinvent-{processes,products}.json` | 4 246 |
+| `edge_label_corrections.parquet` | `agribalyse-3.2-correct-ecoinvent-edge-labels.json` | 2 123 |
+| `target_index_ef.parquet` | EF v3.1 CF parquet | 89 070 |
+| `registry.meta.json` | source SHA-256 hashes, row counts, tier dictionary | — |
+
+`MappingRegistry.load(settings)` reads them all in one pass. Indexes
+(`TieredNameBucketIndex`, `CasIndex`, `UnitConverter`, `UnmatchableIndex`)
+build lazily on first access.
+
+### Pipeline sequence
+
+`LinkAllPipeline.run()` orchestrates:
+
+1. `BrightwayProject.setup()` + `load_ecoinvent()`.
+2. `MappingRegistry.load(settings)`.
+3. `EfDatabase.install()` — only the EF flows the registry actually targets — followed by `EfMethodAugmenter.apply()`.
+4. `SimaProImporter.load()` (cached pickle).
+5. `AggregateDeleter`, `InternalAgbLinker`, `RestoreSimaproNamesTransform`, `EdgeLabelCorrector`, `BiosphereFlowmapApplier` (with NaN-cf patch), `StandardLabelNormaliser`, `ProductionReclassifier`.
+6. `BiosphereLabelNormaliser` + `BioStrategyChain` (bw2io strategy chain; failures recorded by `StrategyRunner` in `dashboard/suppressed_strategies.parquet`).
+7. `BiosphereMatcher.match(sp.data)` — walks registry tiers, records every override into `dashboard/override_audit.parquet`.
+8. `TechnosphereMatcher.match(sp)`.
+9. `UnlinkedExporter.export(sp.data)` → `unlinked/`.
+10. `sp.drop_unlinked()` + `sp.write_database()`.
+11. `MatrixPurger.purge_to_square()` — single-pass squareness fix.
+12. `CoverageReporter` snapshots pre-write + post-purge.
+13. `RunReport.write(...)` → `dashboard/run_report.json`.
+
+## Mapping steps and priority
+
+The matcher walks `priority_tier` ascending and selects the
+highest-priority row that satisfies type/unit/context constraints.
+Tiers 7+ are **fill-only**: they may only place links onto exchanges
+that have no prior link. Tiers are *data*, not code, so the documented
+ordering cannot drift from the executed ordering.
+
+| Tier | Name | Source | Override? | Notes |
+|---:|---|---|---|---|
+| 1 | `CURATED_TARGETED` | Placeholder "match with ecoinvent v3.9.1" sheet (806) + `curated_overrides.json` | yes | AGB → ecoinvent biosphere flows — highest authority. |
+| 2 | `RANDONNEUR_AGB_SPECIFIC` | `agribalyse-3.1.1-ecoinvent-3.10-biosphere-manual-matches` (96) | yes | Replaces the residual hardcoded `BIOSPHERE_SYNONYMS`. |
+| 3 | `RANDONNEUR_SIMAPRO_BIO` | `SimaPro-9-ecoinvent-3.9-biosphere-manual-matches` (580) | yes | Generic SimaPro→ecoinvent biosphere mappings. |
+| 4 | `HARMONISED_FLOWS` | `harmonised-flows-simple.json.gz` | yes | Sentier harmonised flow registry. |
+| 5 | `RANDONNEUR_WATER_M3` | `simapro-9-ecoinvent-3-water-slash-m3` (~39 675) | yes | Also CAS-derived disambiguation entries (same band, distinguished by `provenance`). |
+| 6 | `EF_PLACEHOLDER` | Placeholder "match with EF v3.1" sheet (643) | yes | Routes flow to the `ef` biosphere database (not `biosphere3`). |
+| 7 | `EF_GENERIC` | EF parquet (`name, bucket, unit`) lookup | fill-only | Fallback against any EF flow. |
+| 8 | `BIO3_MATCH_DATABASE` | bw2io `match_database` chain | fill-only | Standard biosphere3 strategies. |
+| 9 | `CASE_INSENSITIVE_FALLBACK` | `(name_lower, unit, bucket)` | fill-only | Deterministic tie-breaker — no `[0]` non-determinism. |
+| 10 | `LLM_OVERRIDES` | `agribalyse-3.2-biosphere-residuals-llm-reviewed.xlsx` (`accept` rows) | fill-only | Gated by `--no-llm`. |
+| 11 | `CURATED_SYNONYM_FALLBACK` | `curated_overrides.json` rows tagged `synonym` | fill-only | Same `--no-llm` gate as tier 10. |
+| 12 | `UNMATCHABLE` | "Neither" sheet (193) + 3.1.1 unlinked list | n/a | Never produces a link; suppresses warnings. |
+
+Source: `src/domain/tier.py`. The tier int is persisted in
+`mappings_biosphere.parquet`'s `priority_tier` column.
+
+### Parallel biosphere model: `ecoinvent-3.9.1-biosphere` + `ef`
+
+**Every AGB elementary flow is mapped to one of two target flow sets**,
+both of which carry the CFs that the registered EF v3.1 LCIA methods
+score against:
+
+1. **`ecoinvent-3.9.1-biosphere`** (the biosphere DB shipped with
+   ecoinvent 3.9.1, also exposed under the legacy `biosphere3` name) —
+   target for AGB flows with a clean ecoinvent equivalent. CFs against
+   these flows are registered by `bw2io` when ecoinvent is imported.
+2. **`ef`** — a subset of EF v3.1 elementary flows we build locally
+   from the JRC EF v3.1 CF parquet (`EfDatabase.install`). Target for
+   AGB flows that have no ecoinvent equivalent. CFs against these
+   flows come natively from the EF parquet via `EfMethodAugmenter`.
+
+The matcher's target-DB preference order is: explicit `target_db` from
+the registry row → `ecoinvent-3.9.1-biosphere` → `ef` → `biosphere3`
+(legacy fallback). Source: `src/matching/biosphere.py:_resolve_target`.
+
+| Registry tier | Link target | How it's characterized |
+|---|---|---|
+| Tier 1 (`CURATED_TARGETED`) — placeholder ecoinvent sheet (806) + curated overrides | `ecoinvent-3.9.1-biosphere` | CFs registered by bw2io on ecoinvent import |
+| Tier 6 (`EF_PLACEHOLDER`) — placeholder EF sheet (643) | `ef` — a subset EF v3.1 flow database we build locally | CFs read natively from the EF v3.1 CF parquet |
+| Tier 12 (`UNMATCHABLE`) — "Neither" (193) + 3.1.1 unlinked | (no link) | n/a |
+
+Brightway supports this natively: a single LCIA method can carry CFs
+keyed to flows across multiple biosphere databases. Every EF v3.1
+method therefore has two CF sets — one against
+`ecoinvent-3.9.1-biosphere` (from bw2io), one against `ef` (from the
+native CF parquet) — and `bw2calc` characterizes each exchange against
+whichever database its input points to.
+
+**Why not bridge all EF flows to ecoinvent biosphere?** The placeholder
+"EF v3.1 only" sheet exists precisely for flows with no ecoinvent
+equivalent. Bridging them collapses fine-grained toxicity / water
+variants onto parent flows and picks up a less-specific CF. Linking
+directly to the EF flow preserves the JRC-native CF.
+
+## Scoring
+
+`scoring.LciaScorer` runs factorized LCA across many products × many
+methods. Demand is always a *product* activity (resolved by
+`ProductActivityResolver`); for every (process, method) we
+`switch_method() + lcia_calculation()` — never `lcia()` after the first
+product, which would leak the prior characterization matrix. The same
+factorized `bw2calc.LCA` is reused across products by passing the
+integer node id as the demand key.
+
+### LCIA method registration
+
+Only the **19 headline EF v3.1 methods** are registered (16 main + 3
+climate-change sub-indicators). The parquet's organics/inorganics
+toxicity splits are not used.
+
+The EF v3.1 CF parquet ships per-location CFs for some methods (e.g.
+Acidification has country-specific values). For Brightway's
+non-regionalized method object we collapse to one global CF per
+(method, flow) using:
+
+1. Prefer the row with `LCIAMethod_location = NULL` (JRC's explicit global value).
+2. If no NULL row exists, take the arithmetic mean across regional rows.
+
+Implementation: `src/ef/cf_table.py`, `src/ef/method_augmenter.py`.
+
+### Solver
+
+`SolverConfigurator` forces `--solver scipy` on
+`dds-run-end-to-end` / `dds-backtest`; pypardiso fails with -1 on the
+AGB+ecoinvent schema mix.
+
+## Run-time artifacts
+
+| Path | Producer | Purpose |
+|---|---|---|
+| `cache/importer_cache.pkl` | `SimaProImporter` | Cached parsed importer (~5 min saved per re-run) |
+| `cache/*.parquet` | `ParquetCache` | Sibling parquets for slow xlsx files |
+| `registry/*.parquet` | `RegistryBuilder` | Built mapping registry — regeneratable |
+| `registry/registry.meta.json` | `RegistryBuilder` | Source SHA-256 hashes, row counts, build time |
+| `dashboard/run_report.json` | `LinkAllPipeline` | Per-stage stats, coverage snapshots, drop totals |
+| `dashboard/override_audit.parquet` | `AuditLog` | Every match decision (new link / override / unit reject / ambiguous skip) |
+| `dashboard/suppressed_strategies.parquet` | `SuppressedStrategyLog` | bw2io strategies that threw |
+| `dashboard/backtest/*.parquet` | `BacktestPipeline` | scores / diff_abs / diff_pct / summary |
+| `dashboard/backtest_pass1.csv` | `BacktestPass1Emitter` | React dashboard's data source — 19 method short IDs per mapped product |
+| `dashboard/backtest_dashboard.html` | hand-maintained | Static React UI rendering `backtest_pass1.csv`; serve with `python -m http.server --directory dashboard` |
+| `unlinked/technosphere_unlinked.json` | `UnlinkedExporter` | Residual unlinked technosphere names |
+| `unlinked/biosphere_unlinked.xlsx` | `UnlinkedExporter` | Residual unlinked biosphere flows |
+| `to_review/mappings_comparison.xlsx` | `MappingsComparisonExporter` | Placeholder ecoinvent / EF / Neither / novel comparison |

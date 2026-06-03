@@ -1,0 +1,28 @@
+#!/usr/bin/env bash
+# ecoinvent EULA guard — refuse to commit proprietary Licensed Data.
+#
+# Blocks the §3.1 paths from the EULA-clean-repo design even if they were
+# force-staged (`git add -f`) past .gitignore. See BOOTSTRAP.md and
+# docs/superpowers/specs/2026-06-03-ecoinvent-eula-clean-repo-design.md.
+#
+# Activate once per clone:  git config core.hooksPath .githooks
+set -euo pipefail
+
+# Extended-regex of forbidden staged paths.
+forbidden='^(source/ecoinvent-3\.9\.1-cutoff-exchanges\.parquet|source/ecoinvent-3\.9\.1-cutoff-activities\.json|source/ecoinvent-3\.9\.1-biosphere-flows\.json|source/ef-v31-methods\.json|registry/method_cfs/ecoinvent-3\.9\.1__)'
+
+staged="$(git diff --cached --name-only --diff-filter=AM)"
+
+blocked="$(printf '%s\n' "$staged" | grep -E "$forbidden" || true)"
+
+if [ -n "$blocked" ]; then
+  echo "✖ ecoinvent EULA guard: refusing to commit proprietary ecoinvent data:" >&2
+  printf '    %s\n' "$blocked" >&2
+  echo >&2
+  echo "These are licensed ecoinvent Data Points / nomenclature. They must stay" >&2
+  echo "local. Unstage them (git restore --staged <path>) — do not force past" >&2
+  echo "this guard. See BOOTSTRAP.md." >&2
+  exit 1
+fi
+
+exit 0

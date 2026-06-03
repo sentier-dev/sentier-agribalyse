@@ -1,0 +1,4025 @@
+{
+  "fields": [
+    "name",
+    "categories",
+    "unit",
+    "type"
+  ],
+  "data": [
+    [
+      [
+        "Aluminum",
+        [
+          "air",
+          "urban air close to ground"
+        ],
+        "kilogram",
+        "emission"
+      ],
+      {
+        "name": "Aluminium"
+      }
+    ],
+    [
+      [
+        "Aluminum",
+        [
+          "air",
+          "non-urban air or from high stacks"
+        ],
+        "kilogram",
+        "emission"
+      ],
+      {
+        "name": "Aluminium"
+      }
+    ],
+    [
+      [
+        "Aluminum",
+        [
+          "air",
+          "low population density, long-term"
+        ],
+        "kilogram",
+        "emission"
+      ],
+      {
+        "name": "Aluminium"
+      }
+    ],
+    [
+      [
+        "Aluminum",
+        [
+          "air",
+          "lower stratosphere + upper troposphere"
+        ],
+        "kilogram",
+        "emission"
+      ],
+      {
+        "name": "Aluminium"
+      }
+    ],
+    [
+      [
+        "Aluminum",
+        [
+          "air"
+        ],
+        "kilogram",
+        "emission"
+      ],
+      {
+        "name": "Aluminium"
+      }
+    ],
+    [
+      [
+        "Carbon dioxide, biogenic",
+        [
+          "air",
+          "urban air close to ground"
+        ],
+        "kilogram",
+        "emission"
+      ],
+      {
+        "name": "Carbon dioxide, non-fossil"
+      }
+    ],
+    [
+      [
+        "Carbon dioxide, biogenic",
+        [
+          "air",
+          "non-urban air or from high stacks"
+        ],
+        "kilogram",
+        "emission"
+      ],
+      {
+        "name": "Carbon dioxide, non-fossil"
+      }
+    ],
+    [
+      [
+        "Carbon dioxide, biogenic",
+        [
+          "air",
+          "low population density, long-term"
+        ],
+        "kilogram",
+        "emission"
+      ],
+      {
+        "name": "Carbon dioxide, non-fossil"
+      }
+    ],
+    [
+      [
+        "Carbon dioxide, biogenic",
+        [
+          "air",
+          "lower stratosphere + upper troposphere"
+        ],
+        "kilogram",
+        "emission"
+      ],
+      {
+        "name": "Carbon dioxide, non-fossil"
+      }
+    ],
+    [
+      [
+        "Carbon dioxide, biogenic",
+        [
+          "air"
+        ],
+        "kilogram",
+        "emission"
+      ],
+      {
+        "name": "Carbon dioxide, non-fossil"
+      }
+    ],
+    [
+      [
+        "Carbon dioxide, land transformation",
+        [
+          "air",
+          "urban air close to ground"
+        ],
+        "kilogram",
+        "emission"
+      ],
+      {
+        "name": "Carbon dioxide, from soil or biomass stock"
+      }
+    ],
+    [
+      [
+        "Carbon dioxide, land transformation",
+        [
+          "air",
+          "non-urban air or from high stacks"
+        ],
+        "kilogram",
+        "emission"
+      ],
+      {
+        "name": "Carbon dioxide, from soil or biomass stock"
+      }
+    ],
+    [
+      [
+        "Carbon dioxide, land transformation",
+        [
+          "air",
+          "low population density, long-term"
+        ],
+        "kilogram",
+        "emission"
+      ],
+      {
+        "name": "Carbon dioxide, from soil or biomass stock"
+      }
+    ],
+    [
+      [
+        "Carbon dioxide, land transformation",
+        [
+          "air",
+          "lower stratosphere + upper troposphere"
+        ],
+        "kilogram",
+        "emission"
+      ],
+      {
+        "name": "Carbon dioxide, from soil or biomass stock"
+      }
+    ],
+    [
+      [
+        "Carbon dioxide, land transformation",
+        [
+          "air"
+        ],
+        "kilogram",
+        "emission"
+      ],
+      {
+        "name": "Carbon dioxide, from soil or biomass stock"
+      }
+    ],
+    [
+      [
+        "Carbon monoxide, biogenic",
+        [
+          "air",
+          "urban air close to ground"
+        ],
+        "kilogram",
+        "emission"
+      ],
+      {
+        "name": "Carbon monoxide, non-fossil"
+      }
+    ],
+    [
+      [
+        "Carbon monoxide, biogenic",
+        [
+          "air",
+          "non-urban air or from high stacks"
+        ],
+        "kilogram",
+        "emission"
+      ],
+      {
+        "name": "Carbon monoxide, non-fossil"
+      }
+    ],
+    [
+      [
+        "Carbon monoxide, biogenic",
+        [
+          "air",
+          "low population density, long-term"
+        ],
+        "kilogram",
+        "emission"
+      ],
+      {
+        "name": "Carbon monoxide, non-fossil"
+      }
+    ],
+    [
+      [
+        "Carbon monoxide, biogenic",
+        [
+          "air",
+          "lower stratosphere + upper troposphere"
+        ],
+        "kilogram",
+        "emission"
+      ],
+      {
+        "name": "Carbon monoxide, non-fossil"
+      }
+    ],
+    [
+      [
+        "Carbon monoxide, biogenic",
+        [
+          "air"
+        ],
+        "kilogram",
+        "emission"
+      ],
+      {
+        "name": "Carbon monoxide, non-fossil"
+      }
+    ],
+    [
+      [
+        "Methane, biogenic",
+        [
+          "air",
+          "urban air close to ground"
+        ],
+        "kilogram",
+        "emission"
+      ],
+      {
+        "name": "Methane, non-fossil"
+      }
+    ],
+    [
+      [
+        "Methane, biogenic",
+        [
+          "air",
+          "non-urban air or from high stacks"
+        ],
+        "kilogram",
+        "emission"
+      ],
+      {
+        "name": "Methane, non-fossil"
+      }
+    ],
+    [
+      [
+        "Methane, biogenic",
+        [
+          "air",
+          "low population density, long-term"
+        ],
+        "kilogram",
+        "emission"
+      ],
+      {
+        "name": "Methane, non-fossil"
+      }
+    ],
+    [
+      [
+        "Methane, biogenic",
+        [
+          "air",
+          "lower stratosphere + upper troposphere"
+        ],
+        "kilogram",
+        "emission"
+      ],
+      {
+        "name": "Methane, non-fossil"
+      }
+    ],
+    [
+      [
+        "Methane, biogenic",
+        [
+          "air"
+        ],
+        "kilogram",
+        "emission"
+      ],
+      {
+        "name": "Methane, non-fossil"
+      }
+    ],
+    [
+      [
+        "Sodium tetrahydroborate",
+        [
+          "air",
+          "urban air close to ground"
+        ],
+        "kilogram",
+        "emission"
+      ],
+      {
+        "name": "Sodium tetrahydridoborate"
+      }
+    ],
+    [
+      [
+        "Sodium tetrahydroborate",
+        [
+          "air",
+          "non-urban air or from high stacks"
+        ],
+        "kilogram",
+        "emission"
+      ],
+      {
+        "name": "Sodium tetrahydridoborate"
+      }
+    ],
+    [
+      [
+        "Sodium tetrahydroborate",
+        [
+          "air",
+          "low population density, long-term"
+        ],
+        "kilogram",
+        "emission"
+      ],
+      {
+        "name": "Sodium tetrahydridoborate"
+      }
+    ],
+    [
+      [
+        "Sodium tetrahydroborate",
+        [
+          "air",
+          "lower stratosphere + upper troposphere"
+        ],
+        "kilogram",
+        "emission"
+      ],
+      {
+        "name": "Sodium tetrahydridoborate"
+      }
+    ],
+    [
+      [
+        "Sodium tetrahydroborate",
+        [
+          "air"
+        ],
+        "kilogram",
+        "emission"
+      ],
+      {
+        "name": "Sodium tetrahydridoborate"
+      }
+    ],
+    [
+      [
+        "Sulphur trioxide",
+        [
+          "air",
+          "urban air close to ground"
+        ],
+        "kilogram",
+        "emission"
+      ],
+      {
+        "name": "Sulfur trioxide"
+      }
+    ],
+    [
+      [
+        "Sulphur trioxide",
+        [
+          "air",
+          "non-urban air or from high stacks"
+        ],
+        "kilogram",
+        "emission"
+      ],
+      {
+        "name": "Sulfur trioxide"
+      }
+    ],
+    [
+      [
+        "Sulphur trioxide",
+        [
+          "air",
+          "low population density, long-term"
+        ],
+        "kilogram",
+        "emission"
+      ],
+      {
+        "name": "Sulfur trioxide"
+      }
+    ],
+    [
+      [
+        "Sulphur trioxide",
+        [
+          "air",
+          "lower stratosphere + upper troposphere"
+        ],
+        "kilogram",
+        "emission"
+      ],
+      {
+        "name": "Sulfur trioxide"
+      }
+    ],
+    [
+      [
+        "Sulphur trioxide",
+        [
+          "air"
+        ],
+        "kilogram",
+        "emission"
+      ],
+      {
+        "name": "Sulfur trioxide"
+      }
+    ],
+    [
+      [
+        "Bromine, 0.0023% in water",
+        [
+          "natural resource",
+          "in water"
+        ],
+        "kilogram",
+        "emission"
+      ],
+      {
+        "name": "Bromine, 0.23% in water"
+      }
+    ],
+    [
+      [
+        "Carbon, in organic matter, in soil",
+        [
+          "natural resource",
+          "in ground"
+        ],
+        "kilogram",
+        "emission"
+      ],
+      {
+        "name": "Carbon, organic, in soil or biomass stock"
+      }
+    ],
+    [
+      [
+        "Copper, Cu 0.38%, Au 9.7E-4%, Ag 9.7E-4%, Zn 0.63%, Pb 0.014%, in ore, in ground",
+        [
+          "natural resource",
+          "in ground"
+        ],
+        "kilogram",
+        "emission"
+      ],
+      {
+        "name": "Copper, Cu 0.38%, in mixed ore, in ground"
+      }
+    ],
+    [
+      [
+        "Gold, Au 9.7E-4%, Ag 9.7E-4%, Zn 0.63%, Cu 0.38%, Pb 0.014%, in ore, in ground",
+        [
+          "natural resource",
+          "in ground"
+        ],
+        "kilogram",
+        "emission"
+      ],
+      {
+        "name": "Gold, Au 9.7E-4%, in mixed ore, in ground"
+      }
+    ],
+    [
+      [
+        "Lead, Pb 0.014%, Au 9.7E-4%, Ag 9.7E-4%, Zn 0.63%, Cu 0.38%, in ore, in ground",
+        [
+          "natural resource",
+          "in ground"
+        ],
+        "kilogram",
+        "emission"
+      ],
+      {
+        "name": "Lead, Pb 0.014%, in mixed ore, in ground"
+      }
+    ],
+    [
+      [
+        "Occupation, arable",
+        [
+          "natural resource",
+          "land"
+        ],
+        "square meter-year",
+        "emission"
+      ],
+      {
+        "name": "Occupation, arable land, unspecified use"
+      }
+    ],
+    [
+      [
+        "Occupation, arable, non-irrigated",
+        [
+          "natural resource",
+          "land"
+        ],
+        "square meter-year",
+        "emission"
+      ],
+      {
+        "name": "Occupation, annual crop, non-irrigated"
+      }
+    ],
+    [
+      [
+        "Occupation, arable, non-irrigated, diverse-intensive",
+        [
+          "natural resource",
+          "land"
+        ],
+        "square meter-year",
+        "emission"
+      ],
+      {
+        "name": "Occupation, annual crop, non-irrigated, extensive"
+      }
+    ],
+    [
+      [
+        "Occupation, arable, non-irrigated, fallow",
+        [
+          "natural resource",
+          "land"
+        ],
+        "square meter-year",
+        "emission"
+      ],
+      {
+        "name": "Occupation, cropland fallow (non-use)"
+      }
+    ],
+    [
+      [
+        "Occupation, arable, non-irrigated, monotone-intensive",
+        [
+          "natural resource",
+          "land"
+        ],
+        "square meter-year",
+        "emission"
+      ],
+      {
+        "name": "Occupation, annual crop, non-irrigated, intensive"
+      }
+    ],
+    [
+      [
+        "Occupation, dump site, benthos",
+        [
+          "natural resource",
+          "land"
+        ],
+        "square meter-year",
+        "emission"
+      ],
+      {
+        "name": "Occupation, seabed, drilling and mining"
+      }
+    ],
+    [
+      [
+        "Occupation, forest",
+        [
+          "natural resource",
+          "land"
+        ],
+        "square meter-year",
+        "emission"
+      ],
+      {
+        "name": "Occupation, forest, unspecified"
+      }
+    ],
+    [
+      [
+        "Occupation, forest, intensive, clear-cutting",
+        [
+          "natural resource",
+          "land"
+        ],
+        "square meter-year",
+        "emission"
+      ],
+      {
+        "name": "Occupation, forest, intensive"
+      }
+    ],
+    [
+      [
+        "Occupation, forest, intensive, normal",
+        [
+          "natural resource",
+          "land"
+        ],
+        "square meter-year",
+        "emission"
+      ],
+      {
+        "name": "Occupation, forest, intensive"
+      }
+    ],
+    [
+      [
+        "Occupation, forest, intensive, short-cycle",
+        [
+          "natural resource",
+          "land"
+        ],
+        "square meter-year",
+        "emission"
+      ],
+      {
+        "name": "Occupation, forest, intensive"
+      }
+    ],
+    [
+      [
+        "Occupation, industrial area, benthos",
+        [
+          "natural resource",
+          "land"
+        ],
+        "square meter-year",
+        "emission"
+      ],
+      {
+        "name": "Occupation, industrial area"
+      }
+    ],
+    [
+      [
+        "Occupation, industrial area, built up",
+        [
+          "natural resource",
+          "land"
+        ],
+        "square meter-year",
+        "emission"
+      ],
+      {
+        "name": "Occupation, industrial area"
+      }
+    ],
+    [
+      [
+        "Occupation, industrial area, vegetation",
+        [
+          "natural resource",
+          "land"
+        ],
+        "square meter-year",
+        "emission"
+      ],
+      {
+        "name": "Occupation, industrial area"
+      }
+    ],
+    [
+      [
+        "Occupation, pasture and meadow",
+        [
+          "natural resource",
+          "land"
+        ],
+        "square meter-year",
+        "emission"
+      ],
+      {
+        "name": "Occupation, pasture, man made"
+      }
+    ],
+    [
+      [
+        "Occupation, pasture and meadow, extensive",
+        [
+          "natural resource",
+          "land"
+        ],
+        "square meter-year",
+        "emission"
+      ],
+      {
+        "name": "Occupation, pasture, man made, extensive"
+      }
+    ],
+    [
+      [
+        "Occupation, pasture and meadow, intensive",
+        [
+          "natural resource",
+          "land"
+        ],
+        "square meter-year",
+        "emission"
+      ],
+      {
+        "name": "Occupation, pasture, man made, intensive"
+      }
+    ],
+    [
+      [
+        "Occupation, permanent crop, fruit",
+        [
+          "natural resource",
+          "land"
+        ],
+        "square meter-year",
+        "emission"
+      ],
+      {
+        "name": "Occupation, permanent crop, irrigated"
+      }
+    ],
+    [
+      [
+        "Occupation, permanent crop, fruit, extensive",
+        [
+          "natural resource",
+          "land"
+        ],
+        "square meter-year",
+        "emission"
+      ],
+      {
+        "name": "Occupation, permanent crop, irrigated, extensive"
+      }
+    ],
+    [
+      [
+        "Occupation, permanent crop, fruit, intensive",
+        [
+          "natural resource",
+          "land"
+        ],
+        "square meter-year",
+        "emission"
+      ],
+      {
+        "name": "Occupation, permanent crop, irrigated, intensive"
+      }
+    ],
+    [
+      [
+        "Occupation, permanent crop, vine",
+        [
+          "natural resource",
+          "land"
+        ],
+        "square meter-year",
+        "emission"
+      ],
+      {
+        "name": "Occupation, permanent crop, non-irrigated"
+      }
+    ],
+    [
+      [
+        "Occupation, permanent crop, vine, extensive",
+        [
+          "natural resource",
+          "land"
+        ],
+        "square meter-year",
+        "emission"
+      ],
+      {
+        "name": "Occupation, permanent crop, non-irrigated, extensive"
+      }
+    ],
+    [
+      [
+        "Occupation, permanent crop, vine, intensive",
+        [
+          "natural resource",
+          "land"
+        ],
+        "square meter-year",
+        "emission"
+      ],
+      {
+        "name": "Occupation, permanent crop, non-irrigated, intensive"
+      }
+    ],
+    [
+      [
+        "Occupation, sea and ocean",
+        [
+          "natural resource",
+          "land"
+        ],
+        "square meter-year",
+        "emission"
+      ],
+      {
+        "name": "Occupation, seabed, unspecified"
+      }
+    ],
+    [
+      [
+        "Occupation, traffic area, rail embankment",
+        [
+          "natural resource",
+          "land"
+        ],
+        "square meter-year",
+        "emission"
+      ],
+      {
+        "name": "Occupation, traffic area, rail/road embankment"
+      }
+    ],
+    [
+      [
+        "Occupation, traffic area, road embankment",
+        [
+          "natural resource",
+          "land"
+        ],
+        "square meter-year",
+        "emission"
+      ],
+      {
+        "name": "Occupation, traffic area, rail/road embankment"
+      }
+    ],
+    [
+      [
+        "Occupation, tropical rain forest",
+        [
+          "natural resource",
+          "land"
+        ],
+        "square meter-year",
+        "emission"
+      ],
+      {
+        "name": "Occupation, forest, primary (non-use)"
+      }
+    ],
+    [
+      [
+        "Occupation, unknown",
+        [
+          "natural resource",
+          "land"
+        ],
+        "square meter-year",
+        "emission"
+      ],
+      {
+        "name": "Occupation, unspecified"
+      }
+    ],
+    [
+      [
+        "Occupation, water bodies, artificial",
+        [
+          "natural resource",
+          "land"
+        ],
+        "square meter-year",
+        "emission"
+      ],
+      {
+        "name": "Occupation, lake, artificial"
+      }
+    ],
+    [
+      [
+        "Occupation, water courses, artificial",
+        [
+          "natural resource",
+          "land"
+        ],
+        "square meter-year",
+        "emission"
+      ],
+      {
+        "name": "Occupation, river, artificial"
+      }
+    ],
+    [
+      [
+        "Silver, Ag 9.7E-4%, Au 9.7E-4%, Zn 0.63%, Cu 0.38%, Pb 0.014%, in ore, in ground",
+        [
+          "natural resource",
+          "in ground"
+        ],
+        "kilogram",
+        "emission"
+      ],
+      {
+        "name": "Silver, Ag 9.7E-4%, in mixed ore, in ground"
+      }
+    ],
+    [
+      [
+        "Transformation, from arable",
+        [
+          "natural resource",
+          "land"
+        ],
+        "square meter",
+        "emission"
+      ],
+      {
+        "name": "Transformation, from arable land, unspecified use"
+      }
+    ],
+    [
+      [
+        "Transformation, from arable, non-irrigated",
+        [
+          "natural resource",
+          "land"
+        ],
+        "square meter",
+        "emission"
+      ],
+      {
+        "name": "Transformation, from annual crop, non-irrigated"
+      }
+    ],
+    [
+      [
+        "Transformation, from arable, non-irrigated, diverse-intensive",
+        [
+          "natural resource",
+          "land"
+        ],
+        "square meter",
+        "emission"
+      ],
+      {
+        "name": "Transformation, from annual crop, non-irrigated, extensive"
+      }
+    ],
+    [
+      [
+        "Transformation, from arable, non-irrigated, fallow",
+        [
+          "natural resource",
+          "land"
+        ],
+        "square meter",
+        "emission"
+      ],
+      {
+        "name": "Transformation, from cropland fallow (non-use)"
+      }
+    ],
+    [
+      [
+        "Transformation, from arable, non-irrigated, monotone-intensive",
+        [
+          "natural resource",
+          "land"
+        ],
+        "square meter",
+        "emission"
+      ],
+      {
+        "name": "Transformation, from annual crop, non-irrigated, intensive"
+      }
+    ],
+    [
+      [
+        "Transformation, from dump site, benthos",
+        [
+          "natural resource",
+          "land"
+        ],
+        "square meter",
+        "emission"
+      ],
+      {
+        "name": "Transformation, from seabed, drilling and mining"
+      }
+    ],
+    [
+      [
+        "Transformation, from forest",
+        [
+          "natural resource",
+          "land"
+        ],
+        "square meter",
+        "emission"
+      ],
+      {
+        "name": "Transformation, from forest, unspecified"
+      }
+    ],
+    [
+      [
+        "Transformation, from forest, intensive, clear-cutting",
+        [
+          "natural resource",
+          "land"
+        ],
+        "square meter",
+        "emission"
+      ],
+      {
+        "name": "Transformation, from forest, intensive"
+      }
+    ],
+    [
+      [
+        "Transformation, from forest, intensive, normal",
+        [
+          "natural resource",
+          "land"
+        ],
+        "square meter",
+        "emission"
+      ],
+      {
+        "name": "Transformation, from forest, intensive"
+      }
+    ],
+    [
+      [
+        "Transformation, from forest, intensive, short-cycle",
+        [
+          "natural resource",
+          "land"
+        ],
+        "square meter",
+        "emission"
+      ],
+      {
+        "name": "Transformation, from forest, intensive"
+      }
+    ],
+    [
+      [
+        "Transformation, from industrial area, benthos",
+        [
+          "natural resource",
+          "land"
+        ],
+        "square meter",
+        "emission"
+      ],
+      {
+        "name": "Transformation, from industrial area"
+      }
+    ],
+    [
+      [
+        "Transformation, from industrial area, built up",
+        [
+          "natural resource",
+          "land"
+        ],
+        "square meter",
+        "emission"
+      ],
+      {
+        "name": "Transformation, from industrial area"
+      }
+    ],
+    [
+      [
+        "Transformation, from industrial area, vegetation",
+        [
+          "natural resource",
+          "land"
+        ],
+        "square meter",
+        "emission"
+      ],
+      {
+        "name": "Transformation, from industrial area"
+      }
+    ],
+    [
+      [
+        "Transformation, from pasture and meadow",
+        [
+          "natural resource",
+          "land"
+        ],
+        "square meter",
+        "emission"
+      ],
+      {
+        "name": "Transformation, from pasture, man made"
+      }
+    ],
+    [
+      [
+        "Transformation, from pasture and meadow, extensive",
+        [
+          "natural resource",
+          "land"
+        ],
+        "square meter",
+        "emission"
+      ],
+      {
+        "name": "Transformation, from pasture, man made, extensive"
+      }
+    ],
+    [
+      [
+        "Transformation, from pasture and meadow, intensive",
+        [
+          "natural resource",
+          "land"
+        ],
+        "square meter",
+        "emission"
+      ],
+      {
+        "name": "Transformation, from pasture, man made, intensive"
+      }
+    ],
+    [
+      [
+        "Transformation, from permanent crop, fruit",
+        [
+          "natural resource",
+          "land"
+        ],
+        "square meter",
+        "emission"
+      ],
+      {
+        "name": "Transformation, from permanent crop, irrigated"
+      }
+    ],
+    [
+      [
+        "Transformation, from permanent crop, fruit, extensive",
+        [
+          "natural resource",
+          "land"
+        ],
+        "square meter",
+        "emission"
+      ],
+      {
+        "name": "Transformation, from permanent crop, irrigated, extensive"
+      }
+    ],
+    [
+      [
+        "Transformation, from permanent crop, fruit, intensive",
+        [
+          "natural resource",
+          "land"
+        ],
+        "square meter",
+        "emission"
+      ],
+      {
+        "name": "Transformation, from permanent crop, irrigated, intensive"
+      }
+    ],
+    [
+      [
+        "Transformation, from permanent crop, vine",
+        [
+          "natural resource",
+          "land"
+        ],
+        "square meter",
+        "emission"
+      ],
+      {
+        "name": "Transformation, from permanent crop, non-irrigated"
+      }
+    ],
+    [
+      [
+        "Transformation, from permanent crop, vine, extensive",
+        [
+          "natural resource",
+          "land"
+        ],
+        "square meter",
+        "emission"
+      ],
+      {
+        "name": "Transformation, from permanent crop, non-irrigated, extensive"
+      }
+    ],
+    [
+      [
+        "Transformation, from permanent crop, vine, intensive",
+        [
+          "natural resource",
+          "land"
+        ],
+        "square meter",
+        "emission"
+      ],
+      {
+        "name": "Transformation, from permanent crop, non-irrigated, intensive"
+      }
+    ],
+    [
+      [
+        "Transformation, from sea and ocean",
+        [
+          "natural resource",
+          "land"
+        ],
+        "square meter",
+        "emission"
+      ],
+      {
+        "name": "Transformation, from seabed, unspecified"
+      }
+    ],
+    [
+      [
+        "Transformation, from traffic area, rail embankment",
+        [
+          "natural resource",
+          "land"
+        ],
+        "square meter",
+        "emission"
+      ],
+      {
+        "name": "Transformation, from traffic area, rail/road embankment"
+      }
+    ],
+    [
+      [
+        "Transformation, from traffic area, road embankment",
+        [
+          "natural resource",
+          "land"
+        ],
+        "square meter",
+        "emission"
+      ],
+      {
+        "name": "Transformation, from traffic area, rail/road embankment"
+      }
+    ],
+    [
+      [
+        "Transformation, from tropical rain forest",
+        [
+          "natural resource",
+          "land"
+        ],
+        "square meter",
+        "emission"
+      ],
+      {
+        "name": "Transformation, from forest, primary (non-use)"
+      }
+    ],
+    [
+      [
+        "Transformation, from unknown",
+        [
+          "natural resource",
+          "land"
+        ],
+        "square meter",
+        "emission"
+      ],
+      {
+        "name": "Transformation, from unspecified"
+      }
+    ],
+    [
+      [
+        "Transformation, from water bodies, artificial",
+        [
+          "natural resource",
+          "land"
+        ],
+        "square meter",
+        "emission"
+      ],
+      {
+        "name": "Transformation, from lake, artificial"
+      }
+    ],
+    [
+      [
+        "Transformation, from water courses, artificial",
+        [
+          "natural resource",
+          "land"
+        ],
+        "square meter",
+        "emission"
+      ],
+      {
+        "name": "Transformation, from river, artificial"
+      }
+    ],
+    [
+      [
+        "Transformation, to arable",
+        [
+          "natural resource",
+          "land"
+        ],
+        "square meter",
+        "emission"
+      ],
+      {
+        "name": "Transformation, to arable land, unspecified use"
+      }
+    ],
+    [
+      [
+        "Transformation, to arable, non-irrigated",
+        [
+          "natural resource",
+          "land"
+        ],
+        "square meter",
+        "emission"
+      ],
+      {
+        "name": "Transformation, to annual crop, non-irrigated"
+      }
+    ],
+    [
+      [
+        "Transformation, to arable, non-irrigated, diverse-intensive",
+        [
+          "natural resource",
+          "land"
+        ],
+        "square meter",
+        "emission"
+      ],
+      {
+        "name": "Transformation, to annual crop, non-irrigated, extensive"
+      }
+    ],
+    [
+      [
+        "Transformation, to arable, non-irrigated, fallow",
+        [
+          "natural resource",
+          "land"
+        ],
+        "square meter",
+        "emission"
+      ],
+      {
+        "name": "Transformation, to cropland fallow (non-use)"
+      }
+    ],
+    [
+      [
+        "Transformation, to arable, non-irrigated, monotone-intensive",
+        [
+          "natural resource",
+          "land"
+        ],
+        "square meter",
+        "emission"
+      ],
+      {
+        "name": "Transformation, to annual crop, non-irrigated, intensive"
+      }
+    ],
+    [
+      [
+        "Transformation, to dump site, benthos",
+        [
+          "natural resource",
+          "land"
+        ],
+        "square meter",
+        "emission"
+      ],
+      {
+        "name": "Transformation, to seabed, drilling and mining"
+      }
+    ],
+    [
+      [
+        "Transformation, to forest",
+        [
+          "natural resource",
+          "land"
+        ],
+        "square meter",
+        "emission"
+      ],
+      {
+        "name": "Transformation, to forest, unspecified"
+      }
+    ],
+    [
+      [
+        "Transformation, to forest, intensive, clear-cutting",
+        [
+          "natural resource",
+          "land"
+        ],
+        "square meter",
+        "emission"
+      ],
+      {
+        "name": "Transformation, to forest, intensive"
+      }
+    ],
+    [
+      [
+        "Transformation, to forest, intensive, normal",
+        [
+          "natural resource",
+          "land"
+        ],
+        "square meter",
+        "emission"
+      ],
+      {
+        "name": "Transformation, to forest, intensive"
+      }
+    ],
+    [
+      [
+        "Transformation, to forest, intensive, short-cycle",
+        [
+          "natural resource",
+          "land"
+        ],
+        "square meter",
+        "emission"
+      ],
+      {
+        "name": "Transformation, to forest, intensive"
+      }
+    ],
+    [
+      [
+        "Transformation, to industrial area, benthos",
+        [
+          "natural resource",
+          "land"
+        ],
+        "square meter",
+        "emission"
+      ],
+      {
+        "name": "Transformation, to industrial area"
+      }
+    ],
+    [
+      [
+        "Transformation, to industrial area, built up",
+        [
+          "natural resource",
+          "land"
+        ],
+        "square meter",
+        "emission"
+      ],
+      {
+        "name": "Transformation, to industrial area"
+      }
+    ],
+    [
+      [
+        "Transformation, to industrial area, vegetation",
+        [
+          "natural resource",
+          "land"
+        ],
+        "square meter",
+        "emission"
+      ],
+      {
+        "name": "Transformation, to industrial area"
+      }
+    ],
+    [
+      [
+        "Transformation, to pasture and meadow",
+        [
+          "natural resource",
+          "land"
+        ],
+        "square meter",
+        "emission"
+      ],
+      {
+        "name": "Transformation, to pasture, man made"
+      }
+    ],
+    [
+      [
+        "Transformation, to pasture and meadow, extensive",
+        [
+          "natural resource",
+          "land"
+        ],
+        "square meter",
+        "emission"
+      ],
+      {
+        "name": "Transformation, to pasture, man made, extensive"
+      }
+    ],
+    [
+      [
+        "Transformation, to pasture and meadow, intensive",
+        [
+          "natural resource",
+          "land"
+        ],
+        "square meter",
+        "emission"
+      ],
+      {
+        "name": "Transformation, to pasture, man made, intensive"
+      }
+    ],
+    [
+      [
+        "Transformation, to permanent crop, fruit",
+        [
+          "natural resource",
+          "land"
+        ],
+        "square meter",
+        "emission"
+      ],
+      {
+        "name": "Transformation, to permanent crop, irrigated"
+      }
+    ],
+    [
+      [
+        "Transformation, to permanent crop, fruit, extensive",
+        [
+          "natural resource",
+          "land"
+        ],
+        "square meter",
+        "emission"
+      ],
+      {
+        "name": "Transformation, to permanent crop, irrigated, extensive"
+      }
+    ],
+    [
+      [
+        "Transformation, to permanent crop, fruit, intensive",
+        [
+          "natural resource",
+          "land"
+        ],
+        "square meter",
+        "emission"
+      ],
+      {
+        "name": "Transformation, to permanent crop, irrigated, intensive"
+      }
+    ],
+    [
+      [
+        "Transformation, to permanent crop, vine",
+        [
+          "natural resource",
+          "land"
+        ],
+        "square meter",
+        "emission"
+      ],
+      {
+        "name": "Transformation, to permanent crop, non-irrigated"
+      }
+    ],
+    [
+      [
+        "Transformation, to permanent crop, vine, extensive",
+        [
+          "natural resource",
+          "land"
+        ],
+        "square meter",
+        "emission"
+      ],
+      {
+        "name": "Transformation, to permanent crop, non-irrigated, extensive"
+      }
+    ],
+    [
+      [
+        "Transformation, to permanent crop, vine, intensive",
+        [
+          "natural resource",
+          "land"
+        ],
+        "square meter",
+        "emission"
+      ],
+      {
+        "name": "Transformation, to permanent crop, non-irrigated, intensive"
+      }
+    ],
+    [
+      [
+        "Transformation, to sea and ocean",
+        [
+          "natural resource",
+          "land"
+        ],
+        "square meter",
+        "emission"
+      ],
+      {
+        "name": "Transformation, to seabed, unspecified"
+      }
+    ],
+    [
+      [
+        "Transformation, to traffic area, rail embankment",
+        [
+          "natural resource",
+          "land"
+        ],
+        "square meter",
+        "emission"
+      ],
+      {
+        "name": "Transformation, to traffic area, rail/road embankment"
+      }
+    ],
+    [
+      [
+        "Transformation, to traffic area, road embankment",
+        [
+          "natural resource",
+          "land"
+        ],
+        "square meter",
+        "emission"
+      ],
+      {
+        "name": "Transformation, to traffic area, rail/road embankment"
+      }
+    ],
+    [
+      [
+        "Transformation, to tropical rain forest",
+        [
+          "natural resource",
+          "land"
+        ],
+        "square meter",
+        "emission"
+      ],
+      {
+        "name": "Transformation, to forest, primary (non-use)"
+      }
+    ],
+    [
+      [
+        "Transformation, to unknown",
+        [
+          "natural resource",
+          "land"
+        ],
+        "square meter",
+        "emission"
+      ],
+      {
+        "name": "Transformation, to unspecified"
+      }
+    ],
+    [
+      [
+        "Transformation, to water bodies, artificial",
+        [
+          "natural resource",
+          "land"
+        ],
+        "square meter",
+        "emission"
+      ],
+      {
+        "name": "Transformation, to lake, artificial"
+      }
+    ],
+    [
+      [
+        "Transformation, to water courses, artificial",
+        [
+          "natural resource",
+          "land"
+        ],
+        "square meter",
+        "emission"
+      ],
+      {
+        "name": "Transformation, to river, artificial"
+      }
+    ],
+    [
+      [
+        "Zinc, Zn 0.63%, Au 9.7E-4%, Ag 9.7E-4%, Cu 0.38%, Pb 0.014%, in ore, in ground",
+        [
+          "natural resource",
+          "in ground"
+        ],
+        "kilogram",
+        "emission"
+      ],
+      {
+        "name": "Zinc, Zn 0.63%, in mixed ore, in ground"
+      }
+    ],
+    [
+      [
+        "Aluminum",
+        [
+          "soil",
+          "agricultural"
+        ],
+        "kilogram",
+        "emission"
+      ],
+      {
+        "name": "Aluminium"
+      }
+    ],
+    [
+      [
+        "Aluminum",
+        [
+          "soil",
+          "forestry"
+        ],
+        "kilogram",
+        "emission"
+      ],
+      {
+        "name": "Aluminium"
+      }
+    ],
+    [
+      [
+        "Aluminum",
+        [
+          "soil",
+          "industrial"
+        ],
+        "kilogram",
+        "emission"
+      ],
+      {
+        "name": "Aluminium"
+      }
+    ],
+    [
+      [
+        "Aluminum",
+        [
+          "soil"
+        ],
+        "kilogram",
+        "emission"
+      ],
+      {
+        "name": "Aluminium"
+      }
+    ],
+    [
+      [
+        "Oils, biogenic",
+        [
+          "soil",
+          "agricultural"
+        ],
+        "kilogram",
+        "emission"
+      ],
+      {
+        "name": "Oils, non-fossil"
+      }
+    ],
+    [
+      [
+        "Oils, biogenic",
+        [
+          "soil",
+          "forestry"
+        ],
+        "kilogram",
+        "emission"
+      ],
+      {
+        "name": "Oils, non-fossil"
+      }
+    ],
+    [
+      [
+        "Oils, biogenic",
+        [
+          "soil",
+          "industrial"
+        ],
+        "kilogram",
+        "emission"
+      ],
+      {
+        "name": "Oils, non-fossil"
+      }
+    ],
+    [
+      [
+        "Oils, biogenic",
+        [
+          "soil"
+        ],
+        "kilogram",
+        "emission"
+      ],
+      {
+        "name": "Oils, non-fossil"
+      }
+    ],
+    [
+      [
+        "Aluminum",
+        [
+          "water",
+          "ground-"
+        ],
+        "kilogram",
+        "emission"
+      ],
+      {
+        "name": "Aluminium"
+      }
+    ],
+    [
+      [
+        "Aluminum",
+        [
+          "water",
+          "ground-, long-term"
+        ],
+        "kilogram",
+        "emission"
+      ],
+      {
+        "name": "Aluminium"
+      }
+    ],
+    [
+      [
+        "Aluminum",
+        [
+          "water",
+          "ocean"
+        ],
+        "kilogram",
+        "emission"
+      ],
+      {
+        "name": "Aluminium"
+      }
+    ],
+    [
+      [
+        "Aluminum",
+        [
+          "water",
+          "surface water"
+        ],
+        "kilogram",
+        "emission"
+      ],
+      {
+        "name": "Aluminium"
+      }
+    ],
+    [
+      [
+        "Aluminum",
+        [
+          "water"
+        ],
+        "kilogram",
+        "emission"
+      ],
+      {
+        "name": "Aluminium"
+      }
+    ],
+    [
+      [
+        "Aluminum",
+        [
+          "air",
+          "urban air close to ground"
+        ],
+        "kilogram",
+        "biosphere"
+      ],
+      {
+        "name": "Aluminium"
+      }
+    ],
+    [
+      [
+        "Aluminum",
+        [
+          "air",
+          "non-urban air or from high stacks"
+        ],
+        "kilogram",
+        "biosphere"
+      ],
+      {
+        "name": "Aluminium"
+      }
+    ],
+    [
+      [
+        "Aluminum",
+        [
+          "air",
+          "low population density, long-term"
+        ],
+        "kilogram",
+        "biosphere"
+      ],
+      {
+        "name": "Aluminium"
+      }
+    ],
+    [
+      [
+        "Aluminum",
+        [
+          "air",
+          "lower stratosphere + upper troposphere"
+        ],
+        "kilogram",
+        "biosphere"
+      ],
+      {
+        "name": "Aluminium"
+      }
+    ],
+    [
+      [
+        "Aluminum",
+        [
+          "air"
+        ],
+        "kilogram",
+        "biosphere"
+      ],
+      {
+        "name": "Aluminium"
+      }
+    ],
+    [
+      [
+        "Carbon dioxide, biogenic",
+        [
+          "air",
+          "urban air close to ground"
+        ],
+        "kilogram",
+        "biosphere"
+      ],
+      {
+        "name": "Carbon dioxide, non-fossil"
+      }
+    ],
+    [
+      [
+        "Carbon dioxide, biogenic",
+        [
+          "air",
+          "non-urban air or from high stacks"
+        ],
+        "kilogram",
+        "biosphere"
+      ],
+      {
+        "name": "Carbon dioxide, non-fossil"
+      }
+    ],
+    [
+      [
+        "Carbon dioxide, biogenic",
+        [
+          "air",
+          "low population density, long-term"
+        ],
+        "kilogram",
+        "biosphere"
+      ],
+      {
+        "name": "Carbon dioxide, non-fossil"
+      }
+    ],
+    [
+      [
+        "Carbon dioxide, biogenic",
+        [
+          "air",
+          "lower stratosphere + upper troposphere"
+        ],
+        "kilogram",
+        "biosphere"
+      ],
+      {
+        "name": "Carbon dioxide, non-fossil"
+      }
+    ],
+    [
+      [
+        "Carbon dioxide, biogenic",
+        [
+          "air"
+        ],
+        "kilogram",
+        "biosphere"
+      ],
+      {
+        "name": "Carbon dioxide, non-fossil"
+      }
+    ],
+    [
+      [
+        "Carbon dioxide, land transformation",
+        [
+          "air",
+          "urban air close to ground"
+        ],
+        "kilogram",
+        "biosphere"
+      ],
+      {
+        "name": "Carbon dioxide, from soil or biomass stock"
+      }
+    ],
+    [
+      [
+        "Carbon dioxide, land transformation",
+        [
+          "air",
+          "non-urban air or from high stacks"
+        ],
+        "kilogram",
+        "biosphere"
+      ],
+      {
+        "name": "Carbon dioxide, from soil or biomass stock"
+      }
+    ],
+    [
+      [
+        "Carbon dioxide, land transformation",
+        [
+          "air",
+          "low population density, long-term"
+        ],
+        "kilogram",
+        "biosphere"
+      ],
+      {
+        "name": "Carbon dioxide, from soil or biomass stock"
+      }
+    ],
+    [
+      [
+        "Carbon dioxide, land transformation",
+        [
+          "air",
+          "lower stratosphere + upper troposphere"
+        ],
+        "kilogram",
+        "biosphere"
+      ],
+      {
+        "name": "Carbon dioxide, from soil or biomass stock"
+      }
+    ],
+    [
+      [
+        "Carbon dioxide, land transformation",
+        [
+          "air"
+        ],
+        "kilogram",
+        "biosphere"
+      ],
+      {
+        "name": "Carbon dioxide, from soil or biomass stock"
+      }
+    ],
+    [
+      [
+        "Carbon monoxide, biogenic",
+        [
+          "air",
+          "urban air close to ground"
+        ],
+        "kilogram",
+        "biosphere"
+      ],
+      {
+        "name": "Carbon monoxide, non-fossil"
+      }
+    ],
+    [
+      [
+        "Carbon monoxide, biogenic",
+        [
+          "air",
+          "non-urban air or from high stacks"
+        ],
+        "kilogram",
+        "biosphere"
+      ],
+      {
+        "name": "Carbon monoxide, non-fossil"
+      }
+    ],
+    [
+      [
+        "Carbon monoxide, biogenic",
+        [
+          "air",
+          "low population density, long-term"
+        ],
+        "kilogram",
+        "biosphere"
+      ],
+      {
+        "name": "Carbon monoxide, non-fossil"
+      }
+    ],
+    [
+      [
+        "Carbon monoxide, biogenic",
+        [
+          "air",
+          "lower stratosphere + upper troposphere"
+        ],
+        "kilogram",
+        "biosphere"
+      ],
+      {
+        "name": "Carbon monoxide, non-fossil"
+      }
+    ],
+    [
+      [
+        "Carbon monoxide, biogenic",
+        [
+          "air"
+        ],
+        "kilogram",
+        "biosphere"
+      ],
+      {
+        "name": "Carbon monoxide, non-fossil"
+      }
+    ],
+    [
+      [
+        "Methane, biogenic",
+        [
+          "air",
+          "urban air close to ground"
+        ],
+        "kilogram",
+        "biosphere"
+      ],
+      {
+        "name": "Methane, non-fossil"
+      }
+    ],
+    [
+      [
+        "Methane, biogenic",
+        [
+          "air",
+          "non-urban air or from high stacks"
+        ],
+        "kilogram",
+        "biosphere"
+      ],
+      {
+        "name": "Methane, non-fossil"
+      }
+    ],
+    [
+      [
+        "Methane, biogenic",
+        [
+          "air",
+          "low population density, long-term"
+        ],
+        "kilogram",
+        "biosphere"
+      ],
+      {
+        "name": "Methane, non-fossil"
+      }
+    ],
+    [
+      [
+        "Methane, biogenic",
+        [
+          "air",
+          "lower stratosphere + upper troposphere"
+        ],
+        "kilogram",
+        "biosphere"
+      ],
+      {
+        "name": "Methane, non-fossil"
+      }
+    ],
+    [
+      [
+        "Methane, biogenic",
+        [
+          "air"
+        ],
+        "kilogram",
+        "biosphere"
+      ],
+      {
+        "name": "Methane, non-fossil"
+      }
+    ],
+    [
+      [
+        "Sodium tetrahydroborate",
+        [
+          "air",
+          "urban air close to ground"
+        ],
+        "kilogram",
+        "biosphere"
+      ],
+      {
+        "name": "Sodium tetrahydridoborate"
+      }
+    ],
+    [
+      [
+        "Sodium tetrahydroborate",
+        [
+          "air",
+          "non-urban air or from high stacks"
+        ],
+        "kilogram",
+        "biosphere"
+      ],
+      {
+        "name": "Sodium tetrahydridoborate"
+      }
+    ],
+    [
+      [
+        "Sodium tetrahydroborate",
+        [
+          "air",
+          "low population density, long-term"
+        ],
+        "kilogram",
+        "biosphere"
+      ],
+      {
+        "name": "Sodium tetrahydridoborate"
+      }
+    ],
+    [
+      [
+        "Sodium tetrahydroborate",
+        [
+          "air",
+          "lower stratosphere + upper troposphere"
+        ],
+        "kilogram",
+        "biosphere"
+      ],
+      {
+        "name": "Sodium tetrahydridoborate"
+      }
+    ],
+    [
+      [
+        "Sodium tetrahydroborate",
+        [
+          "air"
+        ],
+        "kilogram",
+        "biosphere"
+      ],
+      {
+        "name": "Sodium tetrahydridoborate"
+      }
+    ],
+    [
+      [
+        "Sulphur trioxide",
+        [
+          "air",
+          "urban air close to ground"
+        ],
+        "kilogram",
+        "biosphere"
+      ],
+      {
+        "name": "Sulfur trioxide"
+      }
+    ],
+    [
+      [
+        "Sulphur trioxide",
+        [
+          "air",
+          "non-urban air or from high stacks"
+        ],
+        "kilogram",
+        "biosphere"
+      ],
+      {
+        "name": "Sulfur trioxide"
+      }
+    ],
+    [
+      [
+        "Sulphur trioxide",
+        [
+          "air",
+          "low population density, long-term"
+        ],
+        "kilogram",
+        "biosphere"
+      ],
+      {
+        "name": "Sulfur trioxide"
+      }
+    ],
+    [
+      [
+        "Sulphur trioxide",
+        [
+          "air",
+          "lower stratosphere + upper troposphere"
+        ],
+        "kilogram",
+        "biosphere"
+      ],
+      {
+        "name": "Sulfur trioxide"
+      }
+    ],
+    [
+      [
+        "Sulphur trioxide",
+        [
+          "air"
+        ],
+        "kilogram",
+        "biosphere"
+      ],
+      {
+        "name": "Sulfur trioxide"
+      }
+    ],
+    [
+      [
+        "Bromine, 0.0023% in water",
+        [
+          "natural resource",
+          "in water"
+        ],
+        "kilogram",
+        "biosphere"
+      ],
+      {
+        "name": "Bromine, 0.23% in water"
+      }
+    ],
+    [
+      [
+        "Carbon, in organic matter, in soil",
+        [
+          "natural resource",
+          "in ground"
+        ],
+        "kilogram",
+        "biosphere"
+      ],
+      {
+        "name": "Carbon, organic, in soil or biomass stock"
+      }
+    ],
+    [
+      [
+        "Copper, Cu 0.38%, Au 9.7E-4%, Ag 9.7E-4%, Zn 0.63%, Pb 0.014%, in ore, in ground",
+        [
+          "natural resource",
+          "in ground"
+        ],
+        "kilogram",
+        "biosphere"
+      ],
+      {
+        "name": "Copper, Cu 0.38%, in mixed ore, in ground"
+      }
+    ],
+    [
+      [
+        "Gold, Au 9.7E-4%, Ag 9.7E-4%, Zn 0.63%, Cu 0.38%, Pb 0.014%, in ore, in ground",
+        [
+          "natural resource",
+          "in ground"
+        ],
+        "kilogram",
+        "biosphere"
+      ],
+      {
+        "name": "Gold, Au 9.7E-4%, in mixed ore, in ground"
+      }
+    ],
+    [
+      [
+        "Lead, Pb 0.014%, Au 9.7E-4%, Ag 9.7E-4%, Zn 0.63%, Cu 0.38%, in ore, in ground",
+        [
+          "natural resource",
+          "in ground"
+        ],
+        "kilogram",
+        "biosphere"
+      ],
+      {
+        "name": "Lead, Pb 0.014%, in mixed ore, in ground"
+      }
+    ],
+    [
+      [
+        "Occupation, arable",
+        [
+          "natural resource",
+          "land"
+        ],
+        "square meter-year",
+        "biosphere"
+      ],
+      {
+        "name": "Occupation, arable land, unspecified use"
+      }
+    ],
+    [
+      [
+        "Occupation, arable, non-irrigated",
+        [
+          "natural resource",
+          "land"
+        ],
+        "square meter-year",
+        "biosphere"
+      ],
+      {
+        "name": "Occupation, annual crop, non-irrigated"
+      }
+    ],
+    [
+      [
+        "Occupation, arable, non-irrigated, diverse-intensive",
+        [
+          "natural resource",
+          "land"
+        ],
+        "square meter-year",
+        "biosphere"
+      ],
+      {
+        "name": "Occupation, annual crop, non-irrigated, extensive"
+      }
+    ],
+    [
+      [
+        "Occupation, arable, non-irrigated, fallow",
+        [
+          "natural resource",
+          "land"
+        ],
+        "square meter-year",
+        "biosphere"
+      ],
+      {
+        "name": "Occupation, cropland fallow (non-use)"
+      }
+    ],
+    [
+      [
+        "Occupation, arable, non-irrigated, monotone-intensive",
+        [
+          "natural resource",
+          "land"
+        ],
+        "square meter-year",
+        "biosphere"
+      ],
+      {
+        "name": "Occupation, annual crop, non-irrigated, intensive"
+      }
+    ],
+    [
+      [
+        "Occupation, dump site, benthos",
+        [
+          "natural resource",
+          "land"
+        ],
+        "square meter-year",
+        "biosphere"
+      ],
+      {
+        "name": "Occupation, seabed, drilling and mining"
+      }
+    ],
+    [
+      [
+        "Occupation, forest",
+        [
+          "natural resource",
+          "land"
+        ],
+        "square meter-year",
+        "biosphere"
+      ],
+      {
+        "name": "Occupation, forest, unspecified"
+      }
+    ],
+    [
+      [
+        "Occupation, forest, intensive, clear-cutting",
+        [
+          "natural resource",
+          "land"
+        ],
+        "square meter-year",
+        "biosphere"
+      ],
+      {
+        "name": "Occupation, forest, intensive"
+      }
+    ],
+    [
+      [
+        "Occupation, forest, intensive, normal",
+        [
+          "natural resource",
+          "land"
+        ],
+        "square meter-year",
+        "biosphere"
+      ],
+      {
+        "name": "Occupation, forest, intensive"
+      }
+    ],
+    [
+      [
+        "Occupation, forest, intensive, short-cycle",
+        [
+          "natural resource",
+          "land"
+        ],
+        "square meter-year",
+        "biosphere"
+      ],
+      {
+        "name": "Occupation, forest, intensive"
+      }
+    ],
+    [
+      [
+        "Occupation, industrial area, benthos",
+        [
+          "natural resource",
+          "land"
+        ],
+        "square meter-year",
+        "biosphere"
+      ],
+      {
+        "name": "Occupation, industrial area"
+      }
+    ],
+    [
+      [
+        "Occupation, industrial area, built up",
+        [
+          "natural resource",
+          "land"
+        ],
+        "square meter-year",
+        "biosphere"
+      ],
+      {
+        "name": "Occupation, industrial area"
+      }
+    ],
+    [
+      [
+        "Occupation, industrial area, vegetation",
+        [
+          "natural resource",
+          "land"
+        ],
+        "square meter-year",
+        "biosphere"
+      ],
+      {
+        "name": "Occupation, industrial area"
+      }
+    ],
+    [
+      [
+        "Occupation, pasture and meadow",
+        [
+          "natural resource",
+          "land"
+        ],
+        "square meter-year",
+        "biosphere"
+      ],
+      {
+        "name": "Occupation, pasture, man made"
+      }
+    ],
+    [
+      [
+        "Occupation, pasture and meadow, extensive",
+        [
+          "natural resource",
+          "land"
+        ],
+        "square meter-year",
+        "biosphere"
+      ],
+      {
+        "name": "Occupation, pasture, man made, extensive"
+      }
+    ],
+    [
+      [
+        "Occupation, pasture and meadow, intensive",
+        [
+          "natural resource",
+          "land"
+        ],
+        "square meter-year",
+        "biosphere"
+      ],
+      {
+        "name": "Occupation, pasture, man made, intensive"
+      }
+    ],
+    [
+      [
+        "Occupation, permanent crop, fruit",
+        [
+          "natural resource",
+          "land"
+        ],
+        "square meter-year",
+        "biosphere"
+      ],
+      {
+        "name": "Occupation, permanent crop, irrigated"
+      }
+    ],
+    [
+      [
+        "Occupation, permanent crop, fruit, extensive",
+        [
+          "natural resource",
+          "land"
+        ],
+        "square meter-year",
+        "biosphere"
+      ],
+      {
+        "name": "Occupation, permanent crop, irrigated, extensive"
+      }
+    ],
+    [
+      [
+        "Occupation, permanent crop, fruit, intensive",
+        [
+          "natural resource",
+          "land"
+        ],
+        "square meter-year",
+        "biosphere"
+      ],
+      {
+        "name": "Occupation, permanent crop, irrigated, intensive"
+      }
+    ],
+    [
+      [
+        "Occupation, permanent crop, vine",
+        [
+          "natural resource",
+          "land"
+        ],
+        "square meter-year",
+        "biosphere"
+      ],
+      {
+        "name": "Occupation, permanent crop, non-irrigated"
+      }
+    ],
+    [
+      [
+        "Occupation, permanent crop, vine, extensive",
+        [
+          "natural resource",
+          "land"
+        ],
+        "square meter-year",
+        "biosphere"
+      ],
+      {
+        "name": "Occupation, permanent crop, non-irrigated, extensive"
+      }
+    ],
+    [
+      [
+        "Occupation, permanent crop, vine, intensive",
+        [
+          "natural resource",
+          "land"
+        ],
+        "square meter-year",
+        "biosphere"
+      ],
+      {
+        "name": "Occupation, permanent crop, non-irrigated, intensive"
+      }
+    ],
+    [
+      [
+        "Occupation, sea and ocean",
+        [
+          "natural resource",
+          "land"
+        ],
+        "square meter-year",
+        "biosphere"
+      ],
+      {
+        "name": "Occupation, seabed, unspecified"
+      }
+    ],
+    [
+      [
+        "Occupation, traffic area, rail embankment",
+        [
+          "natural resource",
+          "land"
+        ],
+        "square meter-year",
+        "biosphere"
+      ],
+      {
+        "name": "Occupation, traffic area, rail/road embankment"
+      }
+    ],
+    [
+      [
+        "Occupation, traffic area, road embankment",
+        [
+          "natural resource",
+          "land"
+        ],
+        "square meter-year",
+        "biosphere"
+      ],
+      {
+        "name": "Occupation, traffic area, rail/road embankment"
+      }
+    ],
+    [
+      [
+        "Occupation, tropical rain forest",
+        [
+          "natural resource",
+          "land"
+        ],
+        "square meter-year",
+        "biosphere"
+      ],
+      {
+        "name": "Occupation, forest, primary (non-use)"
+      }
+    ],
+    [
+      [
+        "Occupation, unknown",
+        [
+          "natural resource",
+          "land"
+        ],
+        "square meter-year",
+        "biosphere"
+      ],
+      {
+        "name": "Occupation, unspecified"
+      }
+    ],
+    [
+      [
+        "Occupation, water bodies, artificial",
+        [
+          "natural resource",
+          "land"
+        ],
+        "square meter-year",
+        "biosphere"
+      ],
+      {
+        "name": "Occupation, lake, artificial"
+      }
+    ],
+    [
+      [
+        "Occupation, water courses, artificial",
+        [
+          "natural resource",
+          "land"
+        ],
+        "square meter-year",
+        "biosphere"
+      ],
+      {
+        "name": "Occupation, river, artificial"
+      }
+    ],
+    [
+      [
+        "Silver, Ag 9.7E-4%, Au 9.7E-4%, Zn 0.63%, Cu 0.38%, Pb 0.014%, in ore, in ground",
+        [
+          "natural resource",
+          "in ground"
+        ],
+        "kilogram",
+        "biosphere"
+      ],
+      {
+        "name": "Silver, Ag 9.7E-4%, in mixed ore, in ground"
+      }
+    ],
+    [
+      [
+        "Transformation, from arable",
+        [
+          "natural resource",
+          "land"
+        ],
+        "square meter",
+        "biosphere"
+      ],
+      {
+        "name": "Transformation, from arable land, unspecified use"
+      }
+    ],
+    [
+      [
+        "Transformation, from arable, non-irrigated",
+        [
+          "natural resource",
+          "land"
+        ],
+        "square meter",
+        "biosphere"
+      ],
+      {
+        "name": "Transformation, from annual crop, non-irrigated"
+      }
+    ],
+    [
+      [
+        "Transformation, from arable, non-irrigated, diverse-intensive",
+        [
+          "natural resource",
+          "land"
+        ],
+        "square meter",
+        "biosphere"
+      ],
+      {
+        "name": "Transformation, from annual crop, non-irrigated, extensive"
+      }
+    ],
+    [
+      [
+        "Transformation, from arable, non-irrigated, fallow",
+        [
+          "natural resource",
+          "land"
+        ],
+        "square meter",
+        "biosphere"
+      ],
+      {
+        "name": "Transformation, from cropland fallow (non-use)"
+      }
+    ],
+    [
+      [
+        "Transformation, from arable, non-irrigated, monotone-intensive",
+        [
+          "natural resource",
+          "land"
+        ],
+        "square meter",
+        "biosphere"
+      ],
+      {
+        "name": "Transformation, from annual crop, non-irrigated, intensive"
+      }
+    ],
+    [
+      [
+        "Transformation, from dump site, benthos",
+        [
+          "natural resource",
+          "land"
+        ],
+        "square meter",
+        "biosphere"
+      ],
+      {
+        "name": "Transformation, from seabed, drilling and mining"
+      }
+    ],
+    [
+      [
+        "Transformation, from forest",
+        [
+          "natural resource",
+          "land"
+        ],
+        "square meter",
+        "biosphere"
+      ],
+      {
+        "name": "Transformation, from forest, unspecified"
+      }
+    ],
+    [
+      [
+        "Transformation, from forest, intensive, clear-cutting",
+        [
+          "natural resource",
+          "land"
+        ],
+        "square meter",
+        "biosphere"
+      ],
+      {
+        "name": "Transformation, from forest, intensive"
+      }
+    ],
+    [
+      [
+        "Transformation, from forest, intensive, normal",
+        [
+          "natural resource",
+          "land"
+        ],
+        "square meter",
+        "biosphere"
+      ],
+      {
+        "name": "Transformation, from forest, intensive"
+      }
+    ],
+    [
+      [
+        "Transformation, from forest, intensive, short-cycle",
+        [
+          "natural resource",
+          "land"
+        ],
+        "square meter",
+        "biosphere"
+      ],
+      {
+        "name": "Transformation, from forest, intensive"
+      }
+    ],
+    [
+      [
+        "Transformation, from industrial area, benthos",
+        [
+          "natural resource",
+          "land"
+        ],
+        "square meter",
+        "biosphere"
+      ],
+      {
+        "name": "Transformation, from industrial area"
+      }
+    ],
+    [
+      [
+        "Transformation, from industrial area, built up",
+        [
+          "natural resource",
+          "land"
+        ],
+        "square meter",
+        "biosphere"
+      ],
+      {
+        "name": "Transformation, from industrial area"
+      }
+    ],
+    [
+      [
+        "Transformation, from industrial area, vegetation",
+        [
+          "natural resource",
+          "land"
+        ],
+        "square meter",
+        "biosphere"
+      ],
+      {
+        "name": "Transformation, from industrial area"
+      }
+    ],
+    [
+      [
+        "Transformation, from pasture and meadow",
+        [
+          "natural resource",
+          "land"
+        ],
+        "square meter",
+        "biosphere"
+      ],
+      {
+        "name": "Transformation, from pasture, man made"
+      }
+    ],
+    [
+      [
+        "Transformation, from pasture and meadow, extensive",
+        [
+          "natural resource",
+          "land"
+        ],
+        "square meter",
+        "biosphere"
+      ],
+      {
+        "name": "Transformation, from pasture, man made, extensive"
+      }
+    ],
+    [
+      [
+        "Transformation, from pasture and meadow, intensive",
+        [
+          "natural resource",
+          "land"
+        ],
+        "square meter",
+        "biosphere"
+      ],
+      {
+        "name": "Transformation, from pasture, man made, intensive"
+      }
+    ],
+    [
+      [
+        "Transformation, from permanent crop, fruit",
+        [
+          "natural resource",
+          "land"
+        ],
+        "square meter",
+        "biosphere"
+      ],
+      {
+        "name": "Transformation, from permanent crop, irrigated"
+      }
+    ],
+    [
+      [
+        "Transformation, from permanent crop, fruit, extensive",
+        [
+          "natural resource",
+          "land"
+        ],
+        "square meter",
+        "biosphere"
+      ],
+      {
+        "name": "Transformation, from permanent crop, irrigated, extensive"
+      }
+    ],
+    [
+      [
+        "Transformation, from permanent crop, fruit, intensive",
+        [
+          "natural resource",
+          "land"
+        ],
+        "square meter",
+        "biosphere"
+      ],
+      {
+        "name": "Transformation, from permanent crop, irrigated, intensive"
+      }
+    ],
+    [
+      [
+        "Transformation, from permanent crop, vine",
+        [
+          "natural resource",
+          "land"
+        ],
+        "square meter",
+        "biosphere"
+      ],
+      {
+        "name": "Transformation, from permanent crop, non-irrigated"
+      }
+    ],
+    [
+      [
+        "Transformation, from permanent crop, vine, extensive",
+        [
+          "natural resource",
+          "land"
+        ],
+        "square meter",
+        "biosphere"
+      ],
+      {
+        "name": "Transformation, from permanent crop, non-irrigated, extensive"
+      }
+    ],
+    [
+      [
+        "Transformation, from permanent crop, vine, intensive",
+        [
+          "natural resource",
+          "land"
+        ],
+        "square meter",
+        "biosphere"
+      ],
+      {
+        "name": "Transformation, from permanent crop, non-irrigated, intensive"
+      }
+    ],
+    [
+      [
+        "Transformation, from sea and ocean",
+        [
+          "natural resource",
+          "land"
+        ],
+        "square meter",
+        "biosphere"
+      ],
+      {
+        "name": "Transformation, from seabed, unspecified"
+      }
+    ],
+    [
+      [
+        "Transformation, from traffic area, rail embankment",
+        [
+          "natural resource",
+          "land"
+        ],
+        "square meter",
+        "biosphere"
+      ],
+      {
+        "name": "Transformation, from traffic area, rail/road embankment"
+      }
+    ],
+    [
+      [
+        "Transformation, from traffic area, road embankment",
+        [
+          "natural resource",
+          "land"
+        ],
+        "square meter",
+        "biosphere"
+      ],
+      {
+        "name": "Transformation, from traffic area, rail/road embankment"
+      }
+    ],
+    [
+      [
+        "Transformation, from tropical rain forest",
+        [
+          "natural resource",
+          "land"
+        ],
+        "square meter",
+        "biosphere"
+      ],
+      {
+        "name": "Transformation, from forest, primary (non-use)"
+      }
+    ],
+    [
+      [
+        "Transformation, from unknown",
+        [
+          "natural resource",
+          "land"
+        ],
+        "square meter",
+        "biosphere"
+      ],
+      {
+        "name": "Transformation, from unspecified"
+      }
+    ],
+    [
+      [
+        "Transformation, from water bodies, artificial",
+        [
+          "natural resource",
+          "land"
+        ],
+        "square meter",
+        "biosphere"
+      ],
+      {
+        "name": "Transformation, from lake, artificial"
+      }
+    ],
+    [
+      [
+        "Transformation, from water courses, artificial",
+        [
+          "natural resource",
+          "land"
+        ],
+        "square meter",
+        "biosphere"
+      ],
+      {
+        "name": "Transformation, from river, artificial"
+      }
+    ],
+    [
+      [
+        "Transformation, to arable",
+        [
+          "natural resource",
+          "land"
+        ],
+        "square meter",
+        "biosphere"
+      ],
+      {
+        "name": "Transformation, to arable land, unspecified use"
+      }
+    ],
+    [
+      [
+        "Transformation, to arable, non-irrigated",
+        [
+          "natural resource",
+          "land"
+        ],
+        "square meter",
+        "biosphere"
+      ],
+      {
+        "name": "Transformation, to annual crop, non-irrigated"
+      }
+    ],
+    [
+      [
+        "Transformation, to arable, non-irrigated, diverse-intensive",
+        [
+          "natural resource",
+          "land"
+        ],
+        "square meter",
+        "biosphere"
+      ],
+      {
+        "name": "Transformation, to annual crop, non-irrigated, extensive"
+      }
+    ],
+    [
+      [
+        "Transformation, to arable, non-irrigated, fallow",
+        [
+          "natural resource",
+          "land"
+        ],
+        "square meter",
+        "biosphere"
+      ],
+      {
+        "name": "Transformation, to cropland fallow (non-use)"
+      }
+    ],
+    [
+      [
+        "Transformation, to arable, non-irrigated, monotone-intensive",
+        [
+          "natural resource",
+          "land"
+        ],
+        "square meter",
+        "biosphere"
+      ],
+      {
+        "name": "Transformation, to annual crop, non-irrigated, intensive"
+      }
+    ],
+    [
+      [
+        "Transformation, to dump site, benthos",
+        [
+          "natural resource",
+          "land"
+        ],
+        "square meter",
+        "biosphere"
+      ],
+      {
+        "name": "Transformation, to seabed, drilling and mining"
+      }
+    ],
+    [
+      [
+        "Transformation, to forest",
+        [
+          "natural resource",
+          "land"
+        ],
+        "square meter",
+        "biosphere"
+      ],
+      {
+        "name": "Transformation, to forest, unspecified"
+      }
+    ],
+    [
+      [
+        "Transformation, to forest, intensive, clear-cutting",
+        [
+          "natural resource",
+          "land"
+        ],
+        "square meter",
+        "biosphere"
+      ],
+      {
+        "name": "Transformation, to forest, intensive"
+      }
+    ],
+    [
+      [
+        "Transformation, to forest, intensive, normal",
+        [
+          "natural resource",
+          "land"
+        ],
+        "square meter",
+        "biosphere"
+      ],
+      {
+        "name": "Transformation, to forest, intensive"
+      }
+    ],
+    [
+      [
+        "Transformation, to forest, intensive, short-cycle",
+        [
+          "natural resource",
+          "land"
+        ],
+        "square meter",
+        "biosphere"
+      ],
+      {
+        "name": "Transformation, to forest, intensive"
+      }
+    ],
+    [
+      [
+        "Transformation, to industrial area, benthos",
+        [
+          "natural resource",
+          "land"
+        ],
+        "square meter",
+        "biosphere"
+      ],
+      {
+        "name": "Transformation, to industrial area"
+      }
+    ],
+    [
+      [
+        "Transformation, to industrial area, built up",
+        [
+          "natural resource",
+          "land"
+        ],
+        "square meter",
+        "biosphere"
+      ],
+      {
+        "name": "Transformation, to industrial area"
+      }
+    ],
+    [
+      [
+        "Transformation, to industrial area, vegetation",
+        [
+          "natural resource",
+          "land"
+        ],
+        "square meter",
+        "biosphere"
+      ],
+      {
+        "name": "Transformation, to industrial area"
+      }
+    ],
+    [
+      [
+        "Transformation, to pasture and meadow",
+        [
+          "natural resource",
+          "land"
+        ],
+        "square meter",
+        "biosphere"
+      ],
+      {
+        "name": "Transformation, to pasture, man made"
+      }
+    ],
+    [
+      [
+        "Transformation, to pasture and meadow, extensive",
+        [
+          "natural resource",
+          "land"
+        ],
+        "square meter",
+        "biosphere"
+      ],
+      {
+        "name": "Transformation, to pasture, man made, extensive"
+      }
+    ],
+    [
+      [
+        "Transformation, to pasture and meadow, intensive",
+        [
+          "natural resource",
+          "land"
+        ],
+        "square meter",
+        "biosphere"
+      ],
+      {
+        "name": "Transformation, to pasture, man made, intensive"
+      }
+    ],
+    [
+      [
+        "Transformation, to permanent crop, fruit",
+        [
+          "natural resource",
+          "land"
+        ],
+        "square meter",
+        "biosphere"
+      ],
+      {
+        "name": "Transformation, to permanent crop, irrigated"
+      }
+    ],
+    [
+      [
+        "Transformation, to permanent crop, fruit, extensive",
+        [
+          "natural resource",
+          "land"
+        ],
+        "square meter",
+        "biosphere"
+      ],
+      {
+        "name": "Transformation, to permanent crop, irrigated, extensive"
+      }
+    ],
+    [
+      [
+        "Transformation, to permanent crop, fruit, intensive",
+        [
+          "natural resource",
+          "land"
+        ],
+        "square meter",
+        "biosphere"
+      ],
+      {
+        "name": "Transformation, to permanent crop, irrigated, intensive"
+      }
+    ],
+    [
+      [
+        "Transformation, to permanent crop, vine",
+        [
+          "natural resource",
+          "land"
+        ],
+        "square meter",
+        "biosphere"
+      ],
+      {
+        "name": "Transformation, to permanent crop, non-irrigated"
+      }
+    ],
+    [
+      [
+        "Transformation, to permanent crop, vine, extensive",
+        [
+          "natural resource",
+          "land"
+        ],
+        "square meter",
+        "biosphere"
+      ],
+      {
+        "name": "Transformation, to permanent crop, non-irrigated, extensive"
+      }
+    ],
+    [
+      [
+        "Transformation, to permanent crop, vine, intensive",
+        [
+          "natural resource",
+          "land"
+        ],
+        "square meter",
+        "biosphere"
+      ],
+      {
+        "name": "Transformation, to permanent crop, non-irrigated, intensive"
+      }
+    ],
+    [
+      [
+        "Transformation, to sea and ocean",
+        [
+          "natural resource",
+          "land"
+        ],
+        "square meter",
+        "biosphere"
+      ],
+      {
+        "name": "Transformation, to seabed, unspecified"
+      }
+    ],
+    [
+      [
+        "Transformation, to traffic area, rail embankment",
+        [
+          "natural resource",
+          "land"
+        ],
+        "square meter",
+        "biosphere"
+      ],
+      {
+        "name": "Transformation, to traffic area, rail/road embankment"
+      }
+    ],
+    [
+      [
+        "Transformation, to traffic area, road embankment",
+        [
+          "natural resource",
+          "land"
+        ],
+        "square meter",
+        "biosphere"
+      ],
+      {
+        "name": "Transformation, to traffic area, rail/road embankment"
+      }
+    ],
+    [
+      [
+        "Transformation, to tropical rain forest",
+        [
+          "natural resource",
+          "land"
+        ],
+        "square meter",
+        "biosphere"
+      ],
+      {
+        "name": "Transformation, to forest, primary (non-use)"
+      }
+    ],
+    [
+      [
+        "Transformation, to unknown",
+        [
+          "natural resource",
+          "land"
+        ],
+        "square meter",
+        "biosphere"
+      ],
+      {
+        "name": "Transformation, to unspecified"
+      }
+    ],
+    [
+      [
+        "Transformation, to water bodies, artificial",
+        [
+          "natural resource",
+          "land"
+        ],
+        "square meter",
+        "biosphere"
+      ],
+      {
+        "name": "Transformation, to lake, artificial"
+      }
+    ],
+    [
+      [
+        "Transformation, to water courses, artificial",
+        [
+          "natural resource",
+          "land"
+        ],
+        "square meter",
+        "biosphere"
+      ],
+      {
+        "name": "Transformation, to river, artificial"
+      }
+    ],
+    [
+      [
+        "Zinc, Zn 0.63%, Au 9.7E-4%, Ag 9.7E-4%, Cu 0.38%, Pb 0.014%, in ore, in ground",
+        [
+          "natural resource",
+          "in ground"
+        ],
+        "kilogram",
+        "biosphere"
+      ],
+      {
+        "name": "Zinc, Zn 0.63%, in mixed ore, in ground"
+      }
+    ],
+    [
+      [
+        "Aluminum",
+        [
+          "soil",
+          "agricultural"
+        ],
+        "kilogram",
+        "biosphere"
+      ],
+      {
+        "name": "Aluminium"
+      }
+    ],
+    [
+      [
+        "Aluminum",
+        [
+          "soil",
+          "forestry"
+        ],
+        "kilogram",
+        "biosphere"
+      ],
+      {
+        "name": "Aluminium"
+      }
+    ],
+    [
+      [
+        "Aluminum",
+        [
+          "soil",
+          "industrial"
+        ],
+        "kilogram",
+        "biosphere"
+      ],
+      {
+        "name": "Aluminium"
+      }
+    ],
+    [
+      [
+        "Aluminum",
+        [
+          "soil"
+        ],
+        "kilogram",
+        "biosphere"
+      ],
+      {
+        "name": "Aluminium"
+      }
+    ],
+    [
+      [
+        "Oils, biogenic",
+        [
+          "soil",
+          "agricultural"
+        ],
+        "kilogram",
+        "biosphere"
+      ],
+      {
+        "name": "Oils, non-fossil"
+      }
+    ],
+    [
+      [
+        "Oils, biogenic",
+        [
+          "soil",
+          "forestry"
+        ],
+        "kilogram",
+        "biosphere"
+      ],
+      {
+        "name": "Oils, non-fossil"
+      }
+    ],
+    [
+      [
+        "Oils, biogenic",
+        [
+          "soil",
+          "industrial"
+        ],
+        "kilogram",
+        "biosphere"
+      ],
+      {
+        "name": "Oils, non-fossil"
+      }
+    ],
+    [
+      [
+        "Oils, biogenic",
+        [
+          "soil"
+        ],
+        "kilogram",
+        "biosphere"
+      ],
+      {
+        "name": "Oils, non-fossil"
+      }
+    ],
+    [
+      [
+        "Aluminum",
+        [
+          "water",
+          "ground-"
+        ],
+        "kilogram",
+        "biosphere"
+      ],
+      {
+        "name": "Aluminium"
+      }
+    ],
+    [
+      [
+        "Aluminum",
+        [
+          "water",
+          "ground-, long-term"
+        ],
+        "kilogram",
+        "biosphere"
+      ],
+      {
+        "name": "Aluminium"
+      }
+    ],
+    [
+      [
+        "Aluminum",
+        [
+          "water",
+          "ocean"
+        ],
+        "kilogram",
+        "biosphere"
+      ],
+      {
+        "name": "Aluminium"
+      }
+    ],
+    [
+      [
+        "Aluminum",
+        [
+          "water",
+          "surface water"
+        ],
+        "kilogram",
+        "biosphere"
+      ],
+      {
+        "name": "Aluminium"
+      }
+    ],
+    [
+      [
+        "Aluminum",
+        [
+          "water"
+        ],
+        "kilogram",
+        "biosphere"
+      ],
+      {
+        "name": "Aluminium"
+      }
+    ],
+    [
+      [
+        "Water",
+        [
+          "air"
+        ],
+        "kilogram",
+        "biosphere"
+      ],
+      {
+        "unit": "cubic meter",
+        "multiplier": 0.001
+      }
+    ],
+    [
+      [
+        "Water",
+        [
+          "air",
+          "non-urban air or from high stacks"
+        ],
+        "kilogram",
+        "biosphere"
+      ],
+      {
+        "unit": "cubic meter",
+        "multiplier": 0.001
+      }
+    ],
+    [
+      [
+        "Water",
+        [
+          "air",
+          "lower stratosphere + upper troposphere"
+        ],
+        "kilogram",
+        "biosphere"
+      ],
+      {
+        "unit": "cubic meter",
+        "multiplier": 0.001
+      }
+    ],
+    [
+      [
+        "Water",
+        [
+          "air",
+          "urban air close to ground"
+        ],
+        "kilogram",
+        "biosphere"
+      ],
+      {
+        "unit": "cubic meter",
+        "multiplier": 0.001
+      }
+    ]
+  ]
+}

@@ -1,0 +1,80 @@
+# Claude Code harness state (worktrees etc.)
+.claude/
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+build/
+dist/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+coverage.xml
+htmlcov/
+
+# Environments
+.venv/
+venv/
+.env
+.python-version
+
+# REFACTOR_FINAL F6 removed `.bw_projects/`. The runtime is bw2data-free;
+# source/biosphere3-flows.json + source/ecoinvent-3.9.1-*-flows.json hold
+# the snapshotted state instead.
+.bw_projects/
+
+# ── ecoinvent EULA: proprietary Licensed Data — NEVER COMMIT ──
+# Licensed local working copies only. Regenerate from your own ecoinvent
+# credentials per BOOTSTRAP.md. See
+# docs/superpowers/specs/2026-06-03-ecoinvent-eula-clean-repo-design.md.
+source/ecoinvent-3.9.1-cutoff-exchanges.parquet
+source/ecoinvent-3.9.1-cutoff-activities.json
+source/ecoinvent-3.9.1-biosphere-flows.json
+source/ef-v31-methods.json
+# Entire per-method CF tree is ecoinvent-3.9.1-keyed + rebuilt by
+# `dds-build-registry` (subdirs hold CF rows keyed by ecoinvent biosphere
+# UUID; _index.json is their manifest). None of it ships.
+registry/method_cfs/
+
+# Source-of-truth data — large files tracked locally only.
+source/AGB32_final.CSV
+source/harmonised-flows-simple.json.gz
+
+# Built registry — regeneratable from source/ via `dds-build-registry`.
+# Bit-identical re-builds, so we keep parquets out of git.
+registry/*.parquet
+
+# Run-time artifacts under dashboard/, to_review/, unlinked/.
+# Directory tracked via .gitkeep; contents ignored unless explicitly checked in.
+dashboard/*
+!dashboard/.gitkeep
+!dashboard/backtest_dashboard.html
+!dashboard/backtest_pass1.csv
+!dashboard/cf_stats.csv
+!dashboard/outlier_reasons.json
+to_review/*
+!to_review/.gitkeep
+unlinked/*
+!unlinked/.gitkeep
+
+# Parquet caches of upstream xlsx (rebuilt from source)
+cache/
+
+# OS
+.DS_Store
+
+# IDE
+.vscode/
+.idea/
+
+# Misc
+*.log
+
+# Claude Code project files
+CLAUDE.md
+MEMORY.md
+docs/
+.gstack/

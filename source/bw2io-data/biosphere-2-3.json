@@ -1,0 +1,507 @@
+[
+  [
+    "air",
+    "Carbon dioxide, biogenic",
+    "Carbon dioxide, non-fossil"
+  ],
+  [
+    "air",
+    "Carbon dioxide, land transformation",
+    "Carbon dioxide, from soil or biomass stock"
+  ],
+  [
+    "air",
+    "Carbon monoxide, biogenic",
+    "Carbon monoxide, non-fossil"
+  ],
+  [
+    "air",
+    "Methane, biogenic",
+    "Methane, non-fossil"
+  ],
+  [
+    "air",
+    "Sodium tetrahydroborate",
+    "Sodium tetrahydridoborate"
+  ],
+  [
+    "air",
+    "Sulphur trioxide",
+    "Sulfur trioxide"
+  ],
+  [
+    "natural resource",
+    "Bromine, 0.0023% in water",
+    "Bromine, 0.23% in water"
+  ],
+  [
+    "natural resource",
+    "Carbon, in organic matter, in soil",
+    "Carbon, organic, in soil or biomass stock"
+  ],
+  [
+    "natural resource",
+    "Copper, Cu 0.38%, Au 9.7E-4%, Ag 9.7E-4%, Zn 0.63%, Pb 0.014%, in ore, in ground",
+    "Copper, Cu 0.38%, in mixed ore, in ground"
+  ],
+  [
+    "natural resource",
+    "Gold, Au 9.7E-4%, Ag 9.7E-4%, Zn 0.63%, Cu 0.38%, Pb 0.014%, in ore, in ground",
+    "Gold, Au 9.7E-4%, in mixed ore, in ground"
+  ],
+  [
+    "natural resource",
+    "Lead, Pb 0.014%, Au 9.7E-4%, Ag 9.7E-4%, Zn 0.63%, Cu 0.38%, in ore, in ground",
+    "Lead, Pb 0.014%, in mixed ore, in ground"
+  ],
+  [
+    "natural resource",
+    "Occupation, arable",
+    "Occupation, arable land, unspecified use"
+  ],
+  [
+    "natural resource",
+    "Occupation, arable, non-irrigated",
+    "Occupation, annual crop, non-irrigated"
+  ],
+  [
+    "natural resource",
+    "Occupation, arable, non-irrigated, diverse-intensive",
+    "Occupation, annual crop, non-irrigated, extensive"
+  ],
+  [
+    "natural resource",
+    "Occupation, arable, non-irrigated, fallow",
+    "Occupation, cropland fallow (non-use)"
+  ],
+  [
+    "natural resource",
+    "Occupation, arable, non-irrigated, monotone-intensive",
+    "Occupation, annual crop, non-irrigated, intensive"
+  ],
+  [
+    "natural resource",
+    "Occupation, dump site, benthos",
+    "Occupation, seabed, drilling and mining"
+  ],
+  [
+    "natural resource",
+    "Occupation, forest",
+    "Occupation, forest, unspecified"
+  ],
+  [
+    "natural resource",
+    "Occupation, forest, intensive, clear-cutting",
+    "Occupation, forest, intensive"
+  ],
+  [
+    "natural resource",
+    "Occupation, forest, intensive, normal",
+    "Occupation, forest, intensive"
+  ],
+  [
+    "natural resource",
+    "Occupation, forest, intensive, short-cycle",
+    "Occupation, forest, intensive"
+  ],
+  [
+    "natural resource",
+    "Occupation, industrial area, benthos",
+    "Occupation, industrial area"
+  ],
+  [
+    "natural resource",
+    "Occupation, industrial area, built up",
+    "Occupation, industrial area"
+  ],
+  [
+    "natural resource",
+    "Occupation, industrial area, vegetation",
+    "Occupation, industrial area"
+  ],
+  [
+    "natural resource",
+    "Occupation, pasture and meadow",
+    "Occupation, pasture, man made"
+  ],
+  [
+    "natural resource",
+    "Occupation, pasture and meadow, extensive",
+    "Occupation, pasture, man made, extensive"
+  ],
+  [
+    "natural resource",
+    "Occupation, pasture and meadow, intensive",
+    "Occupation, pasture, man made, intensive"
+  ],
+  [
+    "natural resource",
+    "Occupation, permanent crop, fruit",
+    "Occupation, permanent crop, irrigated"
+  ],
+  [
+    "natural resource",
+    "Occupation, permanent crop, fruit, extensive",
+    "Occupation, permanent crop, irrigated, extensive"
+  ],
+  [
+    "natural resource",
+    "Occupation, permanent crop, fruit, intensive",
+    "Occupation, permanent crop, irrigated, intensive"
+  ],
+  [
+    "natural resource",
+    "Occupation, permanent crop, vine",
+    "Occupation, permanent crop, non-irrigated"
+  ],
+  [
+    "natural resource",
+    "Occupation, permanent crop, vine, extensive",
+    "Occupation, permanent crop, non-irrigated, extensive"
+  ],
+  [
+    "natural resource",
+    "Occupation, permanent crop, vine, intensive",
+    "Occupation, permanent crop, non-irrigated, intensive"
+  ],
+  [
+    "natural resource",
+    "Occupation, sea and ocean",
+    "Occupation, seabed, unspecified"
+  ],
+  [
+    "natural resource",
+    "Occupation, traffic area, rail embankment",
+    "Occupation, traffic area, rail/road embankment"
+  ],
+  [
+    "natural resource",
+    "Occupation, traffic area, road embankment",
+    "Occupation, traffic area, rail/road embankment"
+  ],
+  [
+    "natural resource",
+    "Occupation, tropical rain forest",
+    "Occupation, forest, primary (non-use)"
+  ],
+  [
+    "natural resource",
+    "Occupation, unknown",
+    "Occupation, unspecified"
+  ],
+  [
+    "natural resource",
+    "Occupation, water bodies, artificial",
+    "Occupation, lake, artificial"
+  ],
+  [
+    "natural resource",
+    "Occupation, water courses, artificial",
+    "Occupation, river, artificial"
+  ],
+  [
+    "natural resource",
+    "Silver, Ag 9.7E-4%, Au 9.7E-4%, Zn 0.63%, Cu 0.38%, Pb 0.014%, in ore, in ground",
+    "Silver, Ag 9.7E-4%, in mixed ore, in ground"
+  ],
+  [
+    "natural resource",
+    "Transformation, from arable",
+    "Transformation, from arable land, unspecified use"
+  ],
+  [
+    "natural resource",
+    "Transformation, from arable, non-irrigated",
+    "Transformation, from annual crop, non-irrigated"
+  ],
+  [
+    "natural resource",
+    "Transformation, from arable, non-irrigated, diverse-intensive",
+    "Transformation, from annual crop, non-irrigated, extensive"
+  ],
+  [
+    "natural resource",
+    "Transformation, from arable, non-irrigated, fallow",
+    "Transformation, from cropland fallow (non-use)"
+  ],
+  [
+    "natural resource",
+    "Transformation, from arable, non-irrigated, monotone-intensive",
+    "Transformation, from annual crop, non-irrigated, intensive"
+  ],
+  [
+    "natural resource",
+    "Transformation, from dump site, benthos",
+    "Transformation, from seabed, drilling and mining"
+  ],
+  [
+    "natural resource",
+    "Transformation, from forest",
+    "Transformation, from forest, unspecified"
+  ],
+  [
+    "natural resource",
+    "Transformation, from forest, intensive, clear-cutting",
+    "Transformation, from forest, intensive"
+  ],
+  [
+    "natural resource",
+    "Transformation, from forest, intensive, normal",
+    "Transformation, from forest, intensive"
+  ],
+  [
+    "natural resource",
+    "Transformation, from forest, intensive, short-cycle",
+    "Transformation, from forest, intensive"
+  ],
+  [
+    "natural resource",
+    "Transformation, from industrial area, benthos",
+    "Transformation, from industrial area"
+  ],
+  [
+    "natural resource",
+    "Transformation, from industrial area, built up",
+    "Transformation, from industrial area"
+  ],
+  [
+    "natural resource",
+    "Transformation, from industrial area, vegetation",
+    "Transformation, from industrial area"
+  ],
+  [
+    "natural resource",
+    "Transformation, from pasture and meadow",
+    "Transformation, from pasture, man made"
+  ],
+  [
+    "natural resource",
+    "Transformation, from pasture and meadow, extensive",
+    "Transformation, from pasture, man made, extensive"
+  ],
+  [
+    "natural resource",
+    "Transformation, from pasture and meadow, intensive",
+    "Transformation, from pasture, man made, intensive"
+  ],
+  [
+    "natural resource",
+    "Transformation, from permanent crop, fruit",
+    "Transformation, from permanent crop, irrigated"
+  ],
+  [
+    "natural resource",
+    "Transformation, from permanent crop, fruit, extensive",
+    "Transformation, from permanent crop, irrigated, extensive"
+  ],
+  [
+    "natural resource",
+    "Transformation, from permanent crop, fruit, intensive",
+    "Transformation, from permanent crop, irrigated, intensive"
+  ],
+  [
+    "natural resource",
+    "Transformation, from permanent crop, vine",
+    "Transformation, from permanent crop, non-irrigated"
+  ],
+  [
+    "natural resource",
+    "Transformation, from permanent crop, vine, extensive",
+    "Transformation, from permanent crop, non-irrigated, extensive"
+  ],
+  [
+    "natural resource",
+    "Transformation, from permanent crop, vine, intensive",
+    "Transformation, from permanent crop, non-irrigated, intensive"
+  ],
+  [
+    "natural resource",
+    "Transformation, from sea and ocean",
+    "Transformation, from seabed, unspecified"
+  ],
+  [
+    "natural resource",
+    "Transformation, from traffic area, rail embankment",
+    "Transformation, from traffic area, rail/road embankment"
+  ],
+  [
+    "natural resource",
+    "Transformation, from traffic area, road embankment",
+    "Transformation, from traffic area, rail/road embankment"
+  ],
+  [
+    "natural resource",
+    "Transformation, from tropical rain forest",
+    "Transformation, from forest, primary (non-use)"
+  ],
+  [
+    "natural resource",
+    "Transformation, from unknown",
+    "Transformation, from unspecified"
+  ],
+  [
+    "natural resource",
+    "Transformation, from water bodies, artificial",
+    "Transformation, from lake, artificial"
+  ],
+  [
+    "natural resource",
+    "Transformation, from water courses, artificial",
+    "Transformation, from river, artificial"
+  ],
+  [
+    "natural resource",
+    "Transformation, to arable",
+    "Transformation, to arable land, unspecified use"
+  ],
+  [
+    "natural resource",
+    "Transformation, to arable, non-irrigated",
+    "Transformation, to annual crop, non-irrigated"
+  ],
+  [
+    "natural resource",
+    "Transformation, to arable, non-irrigated, diverse-intensive",
+    "Transformation, to annual crop, non-irrigated, extensive"
+  ],
+  [
+    "natural resource",
+    "Transformation, to arable, non-irrigated, fallow",
+    "Transformation, to cropland fallow (non-use)"
+  ],
+  [
+    "natural resource",
+    "Transformation, to arable, non-irrigated, monotone-intensive",
+    "Transformation, to annual crop, non-irrigated, intensive"
+  ],
+  [
+    "natural resource",
+    "Transformation, to dump site, benthos",
+    "Transformation, to seabed, drilling and mining"
+  ],
+  [
+    "natural resource",
+    "Transformation, to forest",
+    "Transformation, to forest, unspecified"
+  ],
+  [
+    "natural resource",
+    "Transformation, to forest, intensive, clear-cutting",
+    "Transformation, to forest, intensive"
+  ],
+  [
+    "natural resource",
+    "Transformation, to forest, intensive, normal",
+    "Transformation, to forest, intensive"
+  ],
+  [
+    "natural resource",
+    "Transformation, to forest, intensive, short-cycle",
+    "Transformation, to forest, intensive"
+  ],
+  [
+    "natural resource",
+    "Transformation, to industrial area, benthos",
+    "Transformation, to industrial area"
+  ],
+  [
+    "natural resource",
+    "Transformation, to industrial area, built up",
+    "Transformation, to industrial area"
+  ],
+  [
+    "natural resource",
+    "Transformation, to industrial area, vegetation",
+    "Transformation, to industrial area"
+  ],
+  [
+    "natural resource",
+    "Transformation, to pasture and meadow",
+    "Transformation, to pasture, man made"
+  ],
+  [
+    "natural resource",
+    "Transformation, to pasture and meadow, extensive",
+    "Transformation, to pasture, man made, extensive"
+  ],
+  [
+    "natural resource",
+    "Transformation, to pasture and meadow, intensive",
+    "Transformation, to pasture, man made, intensive"
+  ],
+  [
+    "natural resource",
+    "Transformation, to permanent crop, fruit",
+    "Transformation, to permanent crop, irrigated"
+  ],
+  [
+    "natural resource",
+    "Transformation, to permanent crop, fruit, extensive",
+    "Transformation, to permanent crop, irrigated, extensive"
+  ],
+  [
+    "natural resource",
+    "Transformation, to permanent crop, fruit, intensive",
+    "Transformation, to permanent crop, irrigated, intensive"
+  ],
+  [
+    "natural resource",
+    "Transformation, to permanent crop, vine",
+    "Transformation, to permanent crop, non-irrigated"
+  ],
+  [
+    "natural resource",
+    "Transformation, to permanent crop, vine, extensive",
+    "Transformation, to permanent crop, non-irrigated, extensive"
+  ],
+  [
+    "natural resource",
+    "Transformation, to permanent crop, vine, intensive",
+    "Transformation, to permanent crop, non-irrigated, intensive"
+  ],
+  [
+    "natural resource",
+    "Transformation, to sea and ocean",
+    "Transformation, to seabed, unspecified"
+  ],
+  [
+    "natural resource",
+    "Transformation, to traffic area, rail embankment",
+    "Transformation, to traffic area, rail/road embankment"
+  ],
+  [
+    "natural resource",
+    "Transformation, to traffic area, road embankment",
+    "Transformation, to traffic area, rail/road embankment"
+  ],
+  [
+    "natural resource",
+    "Transformation, to tropical rain forest",
+    "Transformation, to forest, primary (non-use)"
+  ],
+  [
+    "natural resource",
+    "Transformation, to unknown",
+    "Transformation, to unspecified"
+  ],
+  [
+    "natural resource",
+    "Transformation, to water bodies, artificial",
+    "Transformation, to lake, artificial"
+  ],
+  [
+    "natural resource",
+    "Transformation, to water courses, artificial",
+    "Transformation, to river, artificial"
+  ],
+  [
+    "natural resource",
+    "Zinc, Zn 0.63%, Au 9.7E-4%, Ag 9.7E-4%, Cu 0.38%, Pb 0.014%, in ore, in ground",
+    "Zinc, Zn 0.63%, in mixed ore, in ground"
+  ],
+  [
+    "soil",
+    "Oils, biogenic",
+    "Oils, non-fossil"
+  ]
+]

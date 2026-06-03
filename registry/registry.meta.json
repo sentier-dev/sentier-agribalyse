@@ -1,0 +1,55 @@
+{
+  "built_at": "2026-05-13T18:45:55Z",
+  "agribalyse_version": "3.2",
+  "ecoinvent_version": "3.9.1",
+  "ef_version": "3.1",
+  "row_counts": {
+    "mappings_biosphere": 1579558,
+    "mappings_technosphere": 0,
+    "unmatchable": 252,
+    "unit_conversions": 106,
+    "unit_aliases": 80,
+    "context_normalisation": 101,
+    "deletions": 4246,
+    "edge_label_corrections": 2123,
+    "target_index_ef": 89070
+  },
+  "source_hashes": {
+    "placeholder_xlsx": "sha256:2b0a7d4ae9513679",
+    "harmonised_flows_gz": "sha256:31d3b4d574511948",
+    "ef_cf_parquet": "sha256:72037e88ab431059",
+    "biosphere_flowmap_json": "sha256:bb541f8034e87f99",
+    "agb_ei_biosphere_json": "sha256:bb541f8034e87f99",
+    "edge_label_corrections_json": "sha256:4ef58fdfe947b789",
+    "delete_aggregated_processes_json": "sha256:62fd4dc6b3f06907",
+    "delete_aggregated_products_json": "sha256:e18531f54156e15d",
+    "llm_reviewed_xlsx": "sha256:81f494b89274575c",
+    "curated_overrides_json": "sha256:219ae924cbd7109b"
+  },
+  "tiers": {
+    "CURATED_TARGETED": 1,
+    "RANDONNEUR_AGB_SPECIFIC": 2,
+    "RANDONNEUR_SIMAPRO_BIO": 3,
+    "AGRIBALYSE_EI_BIOSPHERE": 4,
+    "HARMONISED_FLOWS": 5,
+    "RANDONNEUR_WATER_M3": 6,
+    "EF_PLACEHOLDER": 7,
+    "EF_GENERIC": 8,
+    "BIO3_MATCH_DATABASE": 9,
+    "CASE_INSENSITIVE_FALLBACK": 10,
+    "LLM_OVERRIDES": 11,
+    "CURATED_SYNONYM_FALLBACK": 12,
+    "UNMATCHABLE": 13
+  },
+  "tiers_fill_only": [
+    "EF_GENERIC",
+    "BIO3_MATCH_DATABASE",
+    "CASE_INSENSITIVE_FALLBACK",
+    "LLM_OVERRIDES",
+    "CURATED_SYNONYM_FALLBACK"
+  ],
+  "tiers_llm_gated": [
+    "LLM_OVERRIDES",
+    "CURATED_SYNONYM_FALLBACK"
+  ]
+}

@@ -1,0 +1,19 @@
+{
+  "name": "agribalyse-3.2-extra-unit-conversions",
+  "description": "Unit conversions used by AGB technosphere edges that the upstream randonneur 'generic-brightway-unit-conversions' datapackage doesn't ship. Ported verbatim from scripts/link_all.py@8020481 UNIT_CONVERSIONS dict — needed because AGB SimaPro CSV expresses land/transport edges in m²/m while ecoinvent targets are in hectare/km. Also covers gas-resource volume equivalence (m³ ≡ Sm³ at standard conditions) needed by AGB natural-gas resource bridges. Per builder.py the extras file is read FIRST in the dedup so corrected entries override broken upstream ones — used to fix the s/min/day/year ↔ hour multipliers, which the upstream datapackage ships inverted (e.g. s→hour=3600 instead of 1/3600). The inverted values compound 3600^2 through any supply chain that touches power sawing or other time-billed services and are the dominant cause of the post-refactor backtest's 21× CC over-estimate.",
+  "version": "1.2.0",
+  "entries": [
+    {"source_unit": "square meter", "target_unit": "hectare", "multiplier": 0.0001},
+    {"source_unit": "m2", "target_unit": "hectare", "multiplier": 0.0001},
+    {"source_unit": "meter", "target_unit": "kilometer", "multiplier": 0.001},
+    {"source_unit": "m", "target_unit": "kilometer", "multiplier": 0.001},
+    {"source_unit": "cubic meter", "target_unit": "standard cubic meter", "multiplier": 1.0},
+    {"source_unit": "m3", "target_unit": "standard cubic meter", "multiplier": 1.0},
+    {"source_unit": "s", "target_unit": "hour", "multiplier": 0.0002777777777777778},
+    {"source_unit": "second", "target_unit": "hour", "multiplier": 0.0002777777777777778},
+    {"source_unit": "min", "target_unit": "hour", "multiplier": 0.016666666666666666},
+    {"source_unit": "minute", "target_unit": "hour", "multiplier": 0.016666666666666666},
+    {"source_unit": "day", "target_unit": "hour", "multiplier": 24.0},
+    {"source_unit": "year", "target_unit": "hour", "multiplier": 8766.0}
+  ]
+}

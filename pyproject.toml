@@ -1,0 +1,134 @@
+[project]
+name = "sentier_agribalyse"
+version = "0.2.0"
+description = "Sentier-native adapter bringing Agribalyse 3.2 into Brightway 2.5 via a unified MappingRegistry and the EF v3.1 consensus-flow architecture."
+requires-python = ">=3.11"
+license = { text = "MIT" }
+authors = [
+    { name = "Laurenz Bougan" },
+]
+keywords = ["lca", "agribalyse", "ecoinvent", "brightway", "ef-3.1", "sentier"]
+
+dependencies = [
+    # Data
+    "pandas>=2.2",
+    "pyarrow>=15.0",
+    "numpy>=1.26,<3",
+    "openpyxl>=3.1",
+
+    # Numerical (needed directly now that bw2calc is optional)
+    "scipy>=1.10",
+
+    # SimaPro CSV parsing (modern, bw2data-free) + randonneur for stored
+    # datapackages (pure JSON transforms, no SQLite).
+    "bw_simapro_csv>=0.4.2",
+    "randonneur>=0.6.3",
+    "randonneur_data>=0.6.2",
+
+    # Logging
+    "structlog>=25.0",
+
+    # Env
+    "python-dotenv>=1.0",
+]
+
+[project.scripts]
+dds-build-registry      = "cli.build_registry:main"
+dds-build-ef-flows-registry = "cli.build_ef_flows_registry:main"
+dds-build-method-cfs-registry = "cli.build_method_cfs_registry:main"
+dds-build-biosphere-catalog = "cli.build_biosphere_catalog:main"
+dds-build-ecoinvent-catalog = "cli.build_ecoinvent_catalog:main"
+dds-snapshot-ecoinvent-exchanges = "cli.snapshot_ecoinvent_exchanges:main"
+dds-link-all            = "cli.link_all:main"
+dds-run-end-to-end      = "cli.run_end_to_end:main"
+dds-backtest            = "cli.backtest:main"
+dds-decompose-score     = "cli.decompose_score:main"
+dds-build-flow-decomp   = "cli.build_flow_decomp:main"
+dds-compare-cfs         = "cli.compare_cfs:main"
+dds-build-packages      = "cli.build_packages:main"
+dds-mappings-comparison = "cli.mappings_comparison:main"
+dds-llm-suggest-mappings = "cli.llm_suggest:main"
+dds-reset               = "cli.reset:main"
+dds-build-skeleton      = "cli.build_skeleton:main"
+
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[project.optional-dependencies]
+# Bootstrap deps — only needed to (re-)snapshot bw2data state into the
+# JSON files under source/. Once snapshotted, the runtime never touches
+# bw2data again. These are NOT installed by the runtime image.
+bootstrap = [
+    "bw2io>=0.9.11",
+    "bw2data>=4.5.3",
+    "ecoinvent_interface>=3.0",
+]
+test = [
+    "pytest>=8.0",
+    "pytest-cov>=5.0",
+    "pytest-mock>=3.12",
+]
+# Only needed when running `dds-llm-suggest-mappings --use-api`. The default
+# CLI path shells out to the local `claude` binary and needs no Python SDK.
+llm-api = [
+    "anthropic>=0.40",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+src = ["src"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM", "RUF"]
+ignore = [
+    "E501",   # line length — handled by formatter
+    "E402",   # module-level imports allowed
+    "RUF002", # ambiguous unicode in docstrings — we use ×, –, ≈ deliberately
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src", "tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+addopts = [
+    "--strict-markers",
+    "-ra",
+    "--tb=short",
+]
+markers = [
+    "unit: fast unit tests with mocked boundaries (default)",
+    "integration: assembled-system tests on tiny synthetic fixtures",
+    "slow: tests that need >1s — opt-in only",
+]
+filterwarnings = [
+    "ignore::DeprecationWarning:pandas",
+    "ignore::PendingDeprecationWarning",
+]
+
+[tool.coverage.run]
+source = ["src"]
+branch = true
+omit = [
+    "src/**/__init__.py",
+    "src/cli/run_end_to_end.py",
+]
+
+[tool.coverage.report]
+show_missing = true
+skip_covered = false
+exclude_lines = [
+    "pragma: no cover",
+    "raise NotImplementedError",
+    "if __name__ == \"__main__\":",
+    "if TYPE_CHECKING:",
+]

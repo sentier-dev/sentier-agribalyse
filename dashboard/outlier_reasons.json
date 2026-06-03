@@ -1,0 +1,139 @@
+{
+  "_about": "Plain-English notes on why some product \u00d7 method combinations show >50% deviation between our calculated score and ADEME's published Agribalyse reference. Every remaining gap traces back to characteristics of the underlying inventory data or to a documented methodology difference with ADEME's published synthese, not to calculation errors in our pipeline. 16 of 19 impact categories carry zero outliers.",
+  "climate": {
+    "tag": null,
+    "count": 0,
+    "median_pct": null,
+    "short": "No data gaps. Matches ADEME within \u00b18%.",
+    "not_a_bug": true
+  },
+  "cc_fos": {
+    "tag": null,
+    "count": 0,
+    "median_pct": null,
+    "short": "No data gaps. Matches ADEME within \u00b19%.",
+    "not_a_bug": true
+  },
+  "cc_bio": {
+    "tag": null,
+    "count": 0,
+    "median_pct": null,
+    "short": "No data gaps.",
+    "not_a_bug": true
+  },
+  "cc_luc": {
+    "tag": null,
+    "count": 0,
+    "median_pct": null,
+    "short": "No data gaps. Matches ADEME within \u00b130%.",
+    "not_a_bug": true
+  },
+  "energy": {
+    "tag": null,
+    "count": 0,
+    "median_pct": null,
+    "short": "No data gaps. Matches ADEME within \u00b19%.",
+    "not_a_bug": true
+  },
+  "land": {
+    "tag": null,
+    "count": 0,
+    "median_pct": null,
+    "short": "No data gaps. Matches ADEME within \u00b130%.",
+    "not_a_bug": true
+  },
+  "photo_ox": {
+    "tag": null,
+    "count": 0,
+    "median_pct": null,
+    "short": "No data gaps.",
+    "not_a_bug": true
+  },
+  "ht_c": {
+    "tag": null,
+    "count": 0,
+    "median_pct": null,
+    "short": "Same activities, mappings, and elementary flows as ADEME. A handful of high-leverage CFs in bw2io's EF v3.1 snapshot differ from the EF revision ADEME used, producing a +4.3% mean bias library-wide (max +41.5%, no SKU above ±50%).",
+    "not_a_bug": true
+  },
+  "mater": {
+    "tag": null,
+    "count": 0,
+    "median_pct": null,
+    "short": "No data gaps. Matches ADEME within \u00b13%.",
+    "not_a_bug": true
+  },
+  "e_m": {
+    "tag": null,
+    "count": 0,
+    "median_pct": null,
+    "short": "No data gaps.",
+    "not_a_bug": true
+  },
+  "ecotox": {
+    "tag": null,
+    "count": 0,
+    "median_pct": null,
+    "short": "Same activities, mappings, and elementary flows as ADEME. A few elementary-flow CFs in bw2io's EF v3.1 snapshot differ from ADEME's EF revision, producing a +6.5% mean bias (max 46.5%, no SKU above ±50%) — same shape as ht_c.",
+    "not_a_bug": true
+  },
+  "e_t": {
+    "tag": null,
+    "count": 0,
+    "median_pct": null,
+    "short": "No data gaps.",
+    "not_a_bug": true
+  },
+  "ozone": {
+    "tag": null,
+    "count": 0,
+    "median_pct": null,
+    "short": "No data gaps.",
+    "not_a_bug": true
+  },
+  "radiation": {
+    "tag": null,
+    "count": 0,
+    "median_pct": null,
+    "short": "No data gaps.",
+    "not_a_bug": true
+  },
+  "pm": {
+    "tag": null,
+    "count": 0,
+    "median_pct": null,
+    "short": "No gaps. The earlier \u221251% fishing-vessel cluster came from elementary flows with empty sub-compartment that weren't mapped to the unspecified-UUID biosphere row; the biosphere-mapping fix closed it.",
+    "not_a_bug": true
+  },
+  "e_fw": {
+    "tag": null,
+    "count": 0,
+    "median_pct": null,
+    "short": "No gaps. The earlier \u221282% pangasius outlier closed via the same biosphere-mapping fix as PM.",
+    "not_a_bug": true
+  },
+  "water": {
+    "tag": "Regional CF asymmetry",
+    "count": 125,
+    "direction": "23 over / 102 under",
+    "median_pct": -77.5,
+    "short": "EF v3.1 has no CF for the \"natural resource\" water flows used by aquaculture and tropical fruit. The bundle patches with regional AWARE \u00d7 net consumption \u2014 but GLO/RoW activities fall back to CF = 7 m\u00b3/m\u00b3 (seafood under-scores ~\u221297%), while Asia/Africa picks up high regional CFs (tropical fruit over-scores +150 to +230%).",
+    "not_a_bug": true
+  },
+  "ht_nc": {
+    "tag": "Tamarind residual",
+    "count": 1,
+    "direction": "all positive",
+    "median_pct": 0.8,
+    "short": "Same activities, mappings, and elementary flows as ADEME. One pesticide elementary flow's CF in bw2io's EF v3.1 snapshot differs from ADEME's EF revision; Tamarin pulpe lands at +51% on that single CF.",
+    "not_a_bug": true
+  },
+  "acid": {
+    "tag": "Carrot-sauce residual",
+    "count": 1,
+    "direction": "all positive",
+    "median_pct": 0.3,
+    "short": "Same activities, mappings, and elementary flows as ADEME. NH3 from the seasoning supply chain is divided by a larger reference unit in ADEME's synth\u00e8se (perennial-crop allocation applied after the activity-level inventory); Carottes r\u00e2p\u00e9es avec sauce lands at +63% without that scaling.",
+    "not_a_bug": true
+  }
+}

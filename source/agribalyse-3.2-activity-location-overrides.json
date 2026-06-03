@@ -1,0 +1,95 @@
+{
+  "version": 1,
+  "overrides": [
+    {
+      "database": "agribalyse-3.2",
+      "code": "AGRIBALU000000003101321",
+      "location": "FR",
+      "rationale": "bell pepper production, in heated greenhouse — name carries GLO from the upstream ecoinvent proxy but ADEME's AGRIBALYSE 3.2 reference treats it as FR for the FR-consumer recipes (sweet pepper Ciqual 20041 family). Without this override the regional CF table falls back to global +42.95 m³_world/m³ and over-scores water-use by ~4.8× vs reference. With override → FR (CF 6.98), the decompose-score for sweet pepper drops from 1.42 to ~0.30, matching ADEME 0.29 within ~3%."
+    },
+    {
+      "database": "agribalyse-3.2",
+      "code": "AGRIBALU000000003112391",
+      "location": "FR",
+      "rationale": "radish production, in heated greenhouse — same pepper-pattern (GLO ecoinvent proxy used for FR-consumed radish in ADEME's synthese, Ciqual 20045 / 20089). Drives 91% of the water score on the Radis rouge / Radis noir consumer products with regional_delta=0 because the GLO location isn't in the AWARE per-country table. Backtest pass1 deviation 314% pre-fix; expected ~0% post-fix using the same arithmetic as the pepper override (global CF 42.95 → FR CF 6.98). Confirmed in 2026-05-21 verification: score 0.468 → 0.112, within 1% of ADEME 0.113."
+    },
+    {
+      "database": "agribalyse-3.2",
+      "code": "AGRIBALU000000003113990",
+      "location": "FR",
+      "rationale": "market for sodium chloride, powder GLO — dominant driver of the French salt SKU cluster (Sel blanc alimentaire iodé/non iodé, Sel au céleri, Fleur de sel, Sel marin gris). Backtest pass1 deviation 218% on each. ADEME's syntheses treat French food-grade salt as FR-produced (Camargue saltworks, Lorraine rock salt, Brittany sea salt). Overriding to FR avoids the global +42.95 default and pulls these SKUs back toward ADEME's reference."
+    },
+    {
+      "database": "agribalyse-3.2",
+      "code": "AGRIBALU000000003113210",
+      "location": "FR",
+      "rationale": "market for salt GLO — drives the boiling-water salt component of shellfish prepared in FR (crab, lobster, langoustine). Share 44-47% with regional_delta=0 because GLO isn't in the AWARE per-country table. ADEME's recipes assume the cooking salt is FR-sourced; override to FR keeps that assumption aligned with the regional CF table."
+    },
+    {
+      "database": "ecoinvent-3.9.1-cutoff",
+      "code": "479f18ba51cd4d8a3601b550f0ed2f3e",
+      "location": "FR",
+      "rationale": "treatment of biowaste, municipal incineration GLO — ecoinvent waste-treatment proxy for the residual food-waste stream of FR-consumed products (top driver for artichoke at 79% share, pass1 deviation +112%). Municipal incineration of FR food waste happens in FR; override to FR pulls the AWARE CF from global +42.95 to FR 6.98."
+    },
+    {
+      "database": "agribalyse-3.2",
+      "code": "EI3CQUNI000025017101849",
+      "location": "FR",
+      "rationale": "aluminium production, primary, ingot IAI Area, EU27 & EFTA — dominant driver of canned/foil-packaged products (canned mackerel 79% share, anchovy, energy drinks, chocolate bars). Pass1 cumulative excess 2823% across 15 products. The IAI Area, EU27 & EFTA aggregate isn't in the AWARE per-country table so the global +42.95 fires. France hosts the Dunkerque and Saint-Jean-de-Maurienne smelters (~430kt/y of EU27 primary aluminium). FR isn't exact for the EU27 mix but is much closer than global and lines up with ADEME's assumption that FR-consumed cans are EU-produced. Watch the backtest: if alu-heavy products over-correct (deviation goes <-30%), revisit with a higher-CF EU country code."
+    },
+    {
+      "database": "agribalyse-3.2",
+      "code": "EI3CQUNI000025017100766",
+      "location": "FR",
+      "rationale": "Newborn calf, Conventional, more than 1.2 LU per ha, Pays de la Loire, at farm gate. Name explicitly names the FR region 'Pays de la Loire' but the location field isn't resolving to FR through the catalog. 70 of 72 affected products have positive water deviation, total attributable excess 1259% (Hachis Parmentier, Pot-au-feu, etc.). Beef/veal-heavy FR-consumer dishes. Override resolves to FR per the activity name."
+    },
+    {
+      "database": "agribalyse-3.2",
+      "code": "EI3CQUNI000025017100776",
+      "location": "FR",
+      "rationale": "Cow milk, conventional, lowland milk system, silage maize >30% — the FR-style dairy production proxy. 50 of 50 affected products have positive water deviation (sauces à la crème, Camembert, cheese-based dishes). Attributable excess 409%. France is Europe's largest dairy producer; ADEME's syntheses treat this proxy as FR-sourced for FR cheese/dairy products. Override → FR."
+    },
+    {
+      "database": "agribalyse-3.2",
+      "code": "EI3CQUNI000025017100786",
+      "location": "FR",
+      "rationale": "Cull cow, conventional, lowland milk system, silage maize >30% — paired with EI3CQUNI100776, this is the end-of-life dairy-cow beef supplied to FR beef dishes (Pot-au-feu, Chili con carne, Bœuf boulettes, etc.). 65 of 65 affected products positive, attrib_excess 477%. Override → FR for consistency with the dairy supply chain that already resolves to FR."
+    },
+    {
+      "database": "agribalyse-3.2",
+      "code": "EI3CQUNI000025017100962",
+      "location": "FR",
+      "rationale": "Suckler cull cow, conventional, suckler cow system, less than 1.2 LU per ha — the second French beef-cow proxy (Limousin / Charolais / Aubrac suckler systems). 65 of 65 affected products positive (same FR beef dish cluster as EI3CQUNI100786), attrib_excess 460%. Override → FR."
+    },
+    {
+      "database": "agribalyse-3.2",
+      "code": "EI3CQUNI000025017103352",
+      "location": "FR",
+      "rationale": "containerboard production, linerboard, kraftliner RER — cardboard packaging used by FR salt SKUs. 5 of 5 affected products positive (sel blanc, sel iodé, fleur de sel, sel marin gris). Pairs with the sodium chloride override; kraftliner is the rigid component (testliner sibling EI3CQUNI101861 is mixed-direction and intentionally NOT included). Override → FR."
+    },
+    {
+      "database": "agribalyse-3.2",
+      "code": "AGRIBALU000000003115944",
+      "location": "FR",
+      "rationale": "transport, freight, lorry with refrigeration machine, 7.5-16 ton, EURO5, R134a refrigerant — cold-chain truck used to deliver FR-consumed products. 16 of 18 affected products positive (Coquille Saint-Jacques, etc.). FR cold-chain logistics happens in FR; override → FR."
+    },
+    {
+      "database": "agribalyse-3.2",
+      "code": "AGRIBALU000000003114924",
+      "location": "FR",
+      "rationale": "steel production, low-alloyed, hot rolled RER — driver of the shellfish-boiling cluster (cooking pots / canning steel for Homard 23.9% share Δ=+106%, Langoustine, Crabe Δ=+133%). 3 of 3 positive. France hosts ArcelorMittal Dunkerque (~5 Mt/y steel) and Florange — FR is plausible for FR-consumed cookware/cans. Override → FR."
+    },
+    {
+      "database": "agribalyse-3.2",
+      "code": "AGRIBALU000000003105936",
+      "location": "FR",
+      "rationale": "fish freezing, small fish RoW — used by FR frozen fish products (lieu noir surgelé, merlu surgelé, poisson pané). 4 of 4 positive (+33 to +43% deviation). Industrial freezing of FR-marketed fish typically happens in FR or nearby EU ports; override → FR."
+    },
+    {
+      "database": "agribalyse-3.2",
+      "code": "AGRIBALU000000003105377",
+      "location": "FR",
+      "rationale": "market group for electricity, medium voltage GLO — secondary driver of shellfish cluster (cooking electricity). 3 of 3 positive (Homard, Langoustine, Crabe). Pairs with the steel + salt overrides on the same products. France's electricity is overwhelmingly nuclear+hydro (very low AWARE CF). Override → FR."
+    }
+  ]
+}

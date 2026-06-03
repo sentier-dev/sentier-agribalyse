@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "description": "Curated EF v3.1 (adapted) water-use CFs for ecoinvent-3.9.1-biosphere flow codes. Currently EMPTY — the natural-resource water input + matching release CFs were tested 2026-05-22 and caused catastrophic over-counting (mean |Δ| 15.98% → 395.66%, 2317 products regressed). Root cause: ecoinvent biosphere has distinct turbine/cooling INPUT codes but a single generic Water → water RELEASE code, so naive +CF/-CF balanced characterisation amplifies ~1-5% per-activity inventory noise into thousands of m³_eq supply-chain errors. The AwareConsumptionCorrectionBuilder's 95% asymmetric gate is the only safe path to capture true one-sided consumption (irrigation / aquaculture / dehydration) without snowballing the noise. Infrastructure preserved here for future targeted use (e.g. per-activity curated CFs on a small whitelist of clearly-asymmetric activities).",
+  "method_key": [
+    "ecoinvent-3.9.1",
+    "EF v3.1",
+    "water use",
+    "user deprivation potential (deprivation-weighted water consumption)"
+  ],
+  "mappings": []
+}

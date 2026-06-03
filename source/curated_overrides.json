@@ -1,0 +1,1916 @@
+{
+  "name": "agribalyse-3.2-curated-biosphere-synonyms",
+  "description": "Hand-curated AGB → biosphere3 / ecoinvent-biosphere synonym fallback. Ported verbatim from scripts/link_all.py@8020481 BIOSPHERE_SYNONYMS table. Entries are bucket-agnostic — the matcher resolves the target compartment from the actual exchange. Wired at tier CURATED_SYNONYM_FALLBACK so any tier-1..10 mapping can override.",
+  "version": "1.0.0",
+  "entries": [
+    {
+      "source_name": "1,1,1,2-Tetrafluoroethane",
+      "target_name": "Ethane, 1,1,1,2-tetrafluoro-, HFC-134a",
+      "target_db": "",
+      "tier": "CURATED_SYNONYM_FALLBACK",
+      "unit_conversion": 1.0,
+      "notes": "chemical name synonym"
+    },
+    {
+      "source_name": "1,1,1-Trichloroethane",
+      "target_name": "Ethane, 1,1,1-trichloro-, HCFC-140",
+      "target_db": "",
+      "tier": "CURATED_SYNONYM_FALLBACK",
+      "unit_conversion": 1.0,
+      "notes": "chemical name synonym"
+    },
+    {
+      "source_name": "1,1,1-Trifluoroethane",
+      "target_name": "Ethane, 1,1,1-trifluoro-, HFC-143a",
+      "target_db": "",
+      "tier": "CURATED_SYNONYM_FALLBACK",
+      "unit_conversion": 1.0,
+      "notes": "chemical name synonym"
+    },
+    {
+      "source_name": "1,1,2-Trichloro-1,2,2-trifluoroethane",
+      "target_name": "Ethane, 1,1,2-trichloro-1,2,2-trifluoro-, CFC-113",
+      "target_db": "",
+      "tier": "CURATED_SYNONYM_FALLBACK",
+      "unit_conversion": 1.0,
+      "notes": "chemical name synonym"
+    },
+    {
+      "source_name": "1,1-Difluoroethane",
+      "target_name": "Ethane, 1,1-difluoro-, HFC-152a",
+      "target_db": "",
+      "tier": "CURATED_SYNONYM_FALLBACK",
+      "unit_conversion": 1.0,
+      "notes": "chemical name synonym"
+    },
+    {
+      "source_name": "1,2-Dichloro-1,1,2,2-tetrafluoroethane",
+      "target_name": "Ethane, 1,2-dichloro-1,1,2,2-tetrafluoro-, CFC-114",
+      "target_db": "",
+      "tier": "CURATED_SYNONYM_FALLBACK",
+      "unit_conversion": 1.0,
+      "notes": "chemical name synonym"
+    },
+    {
+      "source_name": "2-Chloro-1,1,1,2-tetrafluoroethane",
+      "target_name": "Ethane, 2-chloro-1,1,1,2-tetrafluoro-, HCFC-124",
+      "target_db": "",
+      "tier": "CURATED_SYNONYM_FALLBACK",
+      "unit_conversion": 1.0,
+      "notes": "chemical name synonym"
+    },
+    {
+      "source_name": "2,4-Dichlorophenol",
+      "target_name": "Phenol, 2,4-dichloro",
+      "target_db": "",
+      "tier": "CURATED_SYNONYM_FALLBACK",
+      "unit_conversion": 1.0,
+      "notes": "chemical name synonym"
+    },
+    {
+      "source_name": "Carbon tetrachloride",
+      "target_name": "Methane, tetrachloro-, R-10",
+      "target_db": "",
+      "tier": "CURATED_SYNONYM_FALLBACK",
+      "unit_conversion": 1.0,
+      "notes": "chemical name synonym"
+    },
+    {
+      "source_name": "Chlorodifluoromethane",
+      "target_name": "Methane, chlorodifluoro-, HCFC-22",
+      "target_db": "",
+      "tier": "CURATED_SYNONYM_FALLBACK",
+      "unit_conversion": 1.0,
+      "notes": "chemical name synonym"
+    },
+    {
+      "source_name": "Chlorotrifluoromethane",
+      "target_name": "Methane, chlorotrifluoro-, CFC-13",
+      "target_db": "",
+      "tier": "CURATED_SYNONYM_FALLBACK",
+      "unit_conversion": 1.0,
+      "notes": "chemical name synonym"
+    },
+    {
+      "source_name": "Dichlorodifluoromethane",
+      "target_name": "Methane, dichlorodifluoro-, CFC-12",
+      "target_db": "",
+      "tier": "CURATED_SYNONYM_FALLBACK",
+      "unit_conversion": 1.0,
+      "notes": "chemical name synonym"
+    },
+    {
+      "source_name": "Dichlorofluoromethane",
+      "target_name": "Methane, dichlorofluoro-, HCFC-21",
+      "target_db": "",
+      "tier": "CURATED_SYNONYM_FALLBACK",
+      "unit_conversion": 1.0,
+      "notes": "chemical name synonym"
+    },
+    {
+      "source_name": "Dichloromethane",
+      "target_name": "Methane, dichloro-, HCC-30",
+      "target_db": "",
+      "tier": "CURATED_SYNONYM_FALLBACK",
+      "unit_conversion": 1.0,
+      "notes": "chemical name synonym"
+    },
+    {
+      "source_name": "Difluoromethane",
+      "target_name": "Methane, difluoro-, HFC-32",
+      "target_db": "",
+      "tier": "CURATED_SYNONYM_FALLBACK",
+      "unit_conversion": 1.0,
+      "notes": "chemical name synonym"
+    },
+    {
+      "source_name": "Hexafluoroethane",
+      "target_name": "Ethane, hexafluoro-, HFC-116",
+      "target_db": "",
+      "tier": "CURATED_SYNONYM_FALLBACK",
+      "unit_conversion": 1.0,
+      "notes": "chemical name synonym"
+    },
+    {
+      "source_name": "Methylchloride",
+      "target_name": "Methane, monochloro-, R-40",
+      "target_db": "",
+      "tier": "CURATED_SYNONYM_FALLBACK",
+      "unit_conversion": 1.0,
+      "notes": "chemical name synonym"
+    },
+    {
+      "source_name": "Pentafluoroethane",
+      "target_name": "Ethane, pentafluoro-, HFC-125",
+      "target_db": "",
+      "tier": "CURATED_SYNONYM_FALLBACK",
+      "unit_conversion": 1.0,
+      "notes": "chemical name synonym"
+    },
+    {
+      "source_name": "Tetrafluoromethane",
+      "target_name": "Methane, tetrafluoro-, R-14",
+      "target_db": "",
+      "tier": "CURATED_SYNONYM_FALLBACK",
+      "unit_conversion": 1.0,
+      "notes": "chemical name synonym"
+    },
+    {
+      "source_name": "Trichlorofluoromethane",
+      "target_name": "Methane, trichlorofluoro-, CFC-11",
+      "target_db": "",
+      "tier": "CURATED_SYNONYM_FALLBACK",
+      "unit_conversion": 1.0,
+      "notes": "chemical name synonym"
+    },
+    {
+      "source_name": "Trifluoromethane",
+      "target_name": "Methane, trifluoro-, HFC-23",
+      "target_db": "",
+      "tier": "CURATED_SYNONYM_FALLBACK",
+      "unit_conversion": 1.0,
+      "notes": "chemical name synonym"
+    },
+    {
+      "source_name": "Ethylene dichloride",
+      "target_name": "Ethane, 1,2-dichloro-",
+      "target_db": "",
+      "tier": "CURATED_SYNONYM_FALLBACK",
+      "unit_conversion": 1.0,
+      "notes": "chemical name synonym"
+    },
+    {
+      "source_name": "Hexachlorobenzene",
+      "target_name": "Benzene, hexachloro-",
+      "target_db": "",
+      "tier": "CURATED_SYNONYM_FALLBACK",
+      "unit_conversion": 1.0,
+      "notes": "chemical name synonym"
+    },
+    {
+      "source_name": "Hexachloroethane",
+      "target_name": "Ethane, hexachloro-",
+      "target_db": "",
+      "tier": "CURATED_SYNONYM_FALLBACK",
+      "unit_conversion": 1.0,
+      "notes": "chemical name synonym"
+    },
+    {
+      "source_name": "Pentachlorobenzene",
+      "target_name": "Benzene, pentachloro-",
+      "target_db": "",
+      "tier": "CURATED_SYNONYM_FALLBACK",
+      "unit_conversion": 1.0,
+      "notes": "chemical name synonym"
+    },
+    {
+      "source_name": "Pentachlorophenol",
+      "target_name": "Phenol, pentachloro-",
+      "target_db": "",
+      "tier": "CURATED_SYNONYM_FALLBACK",
+      "unit_conversion": 1.0,
+      "notes": "chemical name synonym"
+    },
+    {
+      "source_name": "Propylene",
+      "target_name": "Propene",
+      "target_db": "",
+      "tier": "CURATED_SYNONYM_FALLBACK",
+      "unit_conversion": 1.0,
+      "notes": "chemical name synonym"
+    },
+    {
+      "source_name": "Xylenes, unspecified",
+      "target_name": "Xylene",
+      "target_db": "",
+      "tier": "CURATED_SYNONYM_FALLBACK",
+      "unit_conversion": 1.0,
+      "notes": "chemical name synonym"
+    },
+    {
+      "source_name": "Dioctyl phthalate",
+      "target_name": "Phthalate, dioctyl-",
+      "target_db": "",
+      "tier": "CURATED_SYNONYM_FALLBACK",
+      "unit_conversion": 1.0,
+      "notes": "chemical name synonym"
+    },
+    {
+      "source_name": "Trimethylchlorosilane",
+      "target_name": "Chlorosilane, trimethyl-",
+      "target_db": "",
+      "tier": "CURATED_SYNONYM_FALLBACK",
+      "unit_conversion": 1.0,
+      "notes": "chemical name synonym"
+    },
+    {
+      "source_name": "Dipropyl amine",
+      "target_name": "Dipropylamine",
+      "target_db": "",
+      "tier": "CURATED_SYNONYM_FALLBACK",
+      "unit_conversion": 1.0,
+      "notes": "chemical name synonym"
+    },
+    {
+      "source_name": "Propyl amine",
+      "target_name": "Propylamine",
+      "target_db": "",
+      "tier": "CURATED_SYNONYM_FALLBACK",
+      "unit_conversion": 1.0,
+      "notes": "chemical name synonym"
+    },
+    {
+      "source_name": "t-Butyl amine",
+      "target_name": "t-Butylamine",
+      "target_db": "",
+      "tier": "CURATED_SYNONYM_FALLBACK",
+      "unit_conversion": 1.0,
+      "notes": "chemical name synonym"
+    },
+    {
+      "source_name": "Chromium (IV)",
+      "target_name": "Chromium IV",
+      "target_db": "",
+      "tier": "CURATED_SYNONYM_FALLBACK",
+      "unit_conversion": 1.0,
+      "notes": "chemical name synonym"
+    },
+    {
+      "source_name": "Strontium II",
+      "target_name": "Strontium",
+      "target_db": "",
+      "tier": "CURATED_SYNONYM_FALLBACK",
+      "unit_conversion": 1.0,
+      "notes": "chemical name synonym"
+    },
+    {
+      "source_name": "Caesium I",
+      "target_name": "Caesium",
+      "target_db": "",
+      "tier": "CURATED_SYNONYM_FALLBACK",
+      "unit_conversion": 1.0,
+      "notes": "chemical name synonym"
+    },
+    {
+      "source_name": "AOX, Adsorbable Organic Halides",
+      "target_name": "AOX, Adsorbable Organic Halogen",
+      "target_db": "",
+      "tier": "CURATED_SYNONYM_FALLBACK",
+      "unit_conversion": 1.0,
+      "notes": "chemical name synonym"
+    },
+    {
+      "source_name": "Pentane, 3-methyl-",
+      "target_name": "2-Methylpentane",
+      "target_db": "",
+      "tier": "CURATED_SYNONYM_FALLBACK",
+      "unit_conversion": 1.0,
+      "notes": "chemical name synonym"
+    },
+    {
+      "source_name": "Isohexane",
+      "target_name": "2-Methylpentane",
+      "target_db": "",
+      "tier": "CURATED_SYNONYM_FALLBACK",
+      "unit_conversion": 1.0,
+      "notes": "chemical name synonym"
+    },
+    {
+      "source_name": "Fosetyl-Al",
+      "target_name": "Fosetyl-aluminium",
+      "target_db": "",
+      "tier": "CURATED_SYNONYM_FALLBACK",
+      "unit_conversion": 1.0,
+      "notes": "chemical name synonym"
+    },
+    {
+      "source_name": "Quizalofop ethyl ester",
+      "target_name": "Quizalofop-ethyl",
+      "target_db": "",
+      "tier": "CURATED_SYNONYM_FALLBACK",
+      "unit_conversion": 1.0,
+      "notes": "chemical name synonym"
+    },
+    {
+      "source_name": "Prohexadione calcium",
+      "target_name": "Prohexadione-calcium",
+      "target_db": "",
+      "tier": "CURATED_SYNONYM_FALLBACK",
+      "unit_conversion": 1.0,
+      "notes": "chemical name synonym"
+    },
+    {
+      "source_name": "Gamma-cyhalothrin",
+      "target_name": "Cyhalothrin, gamma-",
+      "target_db": "",
+      "tier": "CURATED_SYNONYM_FALLBACK",
+      "unit_conversion": 1.0,
+      "notes": "chemical name synonym"
+    },
+    {
+      "source_name": "Kieserite, 25% in crude ore, in ground",
+      "target_name": "Kieserite, 25% in crude ore",
+      "target_db": "",
+      "tier": "CURATED_SYNONYM_FALLBACK",
+      "unit_conversion": 1.0,
+      "notes": "chemical name synonym"
+    },
+    {
+      "source_name": "Tritium",
+      "target_name": "Hydrogen-3, Tritium",
+      "target_db": "",
+      "tier": "CURATED_SYNONYM_FALLBACK",
+      "unit_conversion": 1.0,
+      "notes": "chemical name synonym"
+    },
+    {
+      "source_name": "Curium alpha",
+      "target_name": "Curium alpha",
+      "target_db": "",
+      "tier": "CURATED_SYNONYM_FALLBACK",
+      "unit_conversion": 1.0,
+      "notes": "Bq → kBq numeric scaling (handled by registry UnitConverter)"
+    },
+    {
+      "source_name": "Plutonium-alpha",
+      "target_name": "Plutonium-alpha",
+      "target_db": "",
+      "tier": "CURATED_SYNONYM_FALLBACK",
+      "unit_conversion": 1.0,
+      "notes": "Bq → kBq numeric scaling (handled by registry UnitConverter)"
+    },
+    {
+      "source_name": "Nitrogen dioxide, DE",
+      "target_name": "Nitrogen oxides",
+      "target_db": "",
+      "tier": "CURATED_SYNONYM_FALLBACK",
+      "unit_conversion": 1.0,
+      "notes": "country-specific → generic NOx proxy"
+    },
+    {
+      "source_name": "Nitrogen dioxide, ES",
+      "target_name": "Nitrogen oxides",
+      "target_db": "",
+      "tier": "CURATED_SYNONYM_FALLBACK",
+      "unit_conversion": 1.0,
+      "notes": "country-specific → generic NOx proxy"
+    },
+    {
+      "source_name": "Nitrogen dioxide, FR",
+      "target_name": "Nitrogen oxides",
+      "target_db": "",
+      "tier": "CURATED_SYNONYM_FALLBACK",
+      "unit_conversion": 1.0,
+      "notes": "country-specific → generic NOx proxy"
+    },
+    {
+      "source_name": "Nitrogen dioxide, GB",
+      "target_name": "Nitrogen oxides",
+      "target_db": "",
+      "tier": "CURATED_SYNONYM_FALLBACK",
+      "unit_conversion": 1.0,
+      "notes": "country-specific → generic NOx proxy"
+    },
+    {
+      "source_name": "Nitrogen dioxide, IT",
+      "target_name": "Nitrogen oxides",
+      "target_db": "",
+      "tier": "CURATED_SYNONYM_FALLBACK",
+      "unit_conversion": 1.0,
+      "notes": "country-specific → generic NOx proxy"
+    },
+    {
+      "source_name": "Nitrogen dioxide, NL",
+      "target_name": "Nitrogen oxides",
+      "target_db": "",
+      "tier": "CURATED_SYNONYM_FALLBACK",
+      "unit_conversion": 1.0,
+      "notes": "country-specific → generic NOx proxy"
+    },
+    {
+      "source_name": "Nitrogen dioxide, PL",
+      "target_name": "Nitrogen oxides",
+      "target_db": "",
+      "tier": "CURATED_SYNONYM_FALLBACK",
+      "unit_conversion": 1.0,
+      "notes": "country-specific → generic NOx proxy"
+    },
+    {
+      "source_name": "Nitrogen monoxide, CN",
+      "target_name": "Nitrogen oxides",
+      "target_db": "",
+      "tier": "CURATED_SYNONYM_FALLBACK",
+      "unit_conversion": 1.0,
+      "notes": "country-specific → generic NOx proxy"
+    },
+    {
+      "source_name": "Nitrogen monoxide, TH",
+      "target_name": "Nitrogen oxides",
+      "target_db": "",
+      "tier": "CURATED_SYNONYM_FALLBACK",
+      "unit_conversion": 1.0,
+      "notes": "country-specific → generic NOx proxy"
+    },
+    {
+      "source_name": "Acetylene",
+      "target_name": "Ethyne",
+      "target_db": "",
+      "tier": "CURATED_SYNONYM_FALLBACK",
+      "unit_conversion": 1.0,
+      "notes": "chemical name synonym"
+    },
+    {
+      "source_name": "2,2,4-Trimethylpentane",
+      "target_name": "2,2,4-Trimethyl pentane",
+      "target_db": "",
+      "tier": "CURATED_SYNONYM_FALLBACK",
+      "unit_conversion": 1.0,
+      "notes": "chemical name synonym"
+    },
+    {
+      "source_name": "Acrylate, ion",
+      "target_name": "Acrylate",
+      "target_db": "",
+      "tier": "CURATED_SYNONYM_FALLBACK",
+      "unit_conversion": 1.0,
+      "notes": "chemical name synonym"
+    },
+    {
+      "source_name": "Dimethenamide",
+      "target_name": "Dimethenamid",
+      "target_db": "",
+      "tier": "CURATED_SYNONYM_FALLBACK",
+      "unit_conversion": 1.0,
+      "notes": "chemical name synonym"
+    },
+    {
+      "source_name": "Dithianone",
+      "target_name": "Dithianon",
+      "target_db": "",
+      "tier": "CURATED_SYNONYM_FALLBACK",
+      "unit_conversion": 1.0,
+      "notes": "chemical name synonym"
+    },
+    {
+      "source_name": "Ethyl benzene",
+      "target_name": "Benzene, ethyl-",
+      "target_db": "",
+      "tier": "CURATED_SYNONYM_FALLBACK",
+      "unit_conversion": 1.0,
+      "notes": "chemical name synonym"
+    },
+    {
+      "source_name": "Isopropanol",
+      "target_name": "2-Propanol",
+      "target_db": "",
+      "tier": "CURATED_SYNONYM_FALLBACK",
+      "unit_conversion": 1.0,
+      "notes": "chemical name synonym"
+    },
+    {
+      "source_name": "Isobutanol",
+      "target_name": "2-Methyl-1-propanol",
+      "target_db": "",
+      "tier": "CURATED_SYNONYM_FALLBACK",
+      "unit_conversion": 1.0,
+      "notes": "chemical name synonym"
+    },
+    {
+      "source_name": "Monochlorobenzene",
+      "target_name": "Benzene, chloro-",
+      "target_db": "",
+      "tier": "CURATED_SYNONYM_FALLBACK",
+      "unit_conversion": 1.0,
+      "notes": "chemical name synonym"
+    },
+    {
+      "source_name": "Vinyl chloride",
+      "target_name": "Chloroethylene",
+      "target_db": "",
+      "tier": "CURATED_SYNONYM_FALLBACK",
+      "unit_conversion": 1.0,
+      "notes": "chemical name synonym"
+    },
+    {
+      "source_name": "Gas, petroleum, 35 MJ per m3",
+      "target_name": "Gas, natural",
+      "target_db": "",
+      "tier": "CURATED_SYNONYM_FALLBACK",
+      "unit_conversion": 1.0,
+      "notes": "proxy: substance mapped to nearest biosphere3 equivalent"
+    },
+    {
+      "source_name": "Hydrocarbons, halogenated",
+      "target_name": "Hydrocarbons, chlorinated",
+      "target_db": "",
+      "tier": "CURATED_SYNONYM_FALLBACK",
+      "unit_conversion": 1.0,
+      "notes": "proxy: substance mapped to nearest biosphere3 equivalent"
+    },
+    {
+      "source_name": "Methane, peat oxidation",
+      "target_name": "Methane, fossil",
+      "target_db": "",
+      "tier": "CURATED_SYNONYM_FALLBACK",
+      "unit_conversion": 1.0,
+      "notes": "proxy: substance mapped to nearest biosphere3 equivalent"
+    },
+    {
+      "source_name": "Nitrogen, total",
+      "source_context": [],
+      "target_db": "ef",
+      "target_code": "3624d70d-4e4b-4927-9b84-b40e26c58e6d",
+      "target_name": "Nitrogen, Total (excluding N2)",
+      "target_unit": "kg",
+      "unit_conversion": 1.0,
+      "tier": "CURATED_TARGETED",
+      "notes": "AGB SimaPro 'Nitrogen, total' emitted by aquaculture (sea bass cage, trout/salmon farm) and cheese activities — 820 edges, all categories=[]. Route to EF UUID for 'Nitrogen, Total (excluding N2)' in water/unspecified, CF=1.000 for marine eutrophication (parallels Phosphorus, total from harmonised-flows-simple). Was 'target_name=Nitrogen, target_db=empty' which silently dropped the contribution; e_m for farmed fish (Carpe -80.9%, Bar commun -93.5%, Pangasius cru -93.5%) underflowed against ADEME reference."
+    },
+    {
+      "source_name": "Phosphorus pentoxide",
+      "target_name": "Phosphorus",
+      "target_db": "",
+      "tier": "CURATED_SYNONYM_FALLBACK",
+      "unit_conversion": 1.0,
+      "notes": "proxy: substance mapped to nearest biosphere3 equivalent"
+    },
+    {
+      "source_name": "Sulfur monoxide",
+      "target_name": "Sulfur dioxide",
+      "target_db": "",
+      "tier": "CURATED_SYNONYM_FALLBACK",
+      "unit_conversion": 1.0,
+      "notes": "proxy: substance mapped to nearest biosphere3 equivalent"
+    },
+    {
+      "source_name": "Uranium ore, 1.11 GJ per kg",
+      "target_name": "Uranium",
+      "target_db": "",
+      "tier": "CURATED_SYNONYM_FALLBACK",
+      "unit_conversion": 1.0,
+      "notes": "proxy: substance mapped to nearest biosphere3 equivalent"
+    },
+    {
+      "source_name": "Uranium oxide, 332 GJ per kg, in ore",
+      "target_name": "Uranium",
+      "target_db": "",
+      "tier": "CURATED_SYNONYM_FALLBACK",
+      "unit_conversion": 1.0,
+      "notes": "proxy: substance mapped to nearest biosphere3 equivalent"
+    },
+    {
+      "source_name": "Uranium, 2291 GJ per kg",
+      "target_name": "Uranium",
+      "target_db": "",
+      "tier": "CURATED_SYNONYM_FALLBACK",
+      "unit_conversion": 1.0,
+      "notes": "proxy: substance mapped to nearest biosphere3 equivalent"
+    },
+    {
+      "source_name": "Uranium, 451 GJ per kg",
+      "target_name": "Uranium",
+      "target_db": "",
+      "tier": "CURATED_SYNONYM_FALLBACK",
+      "unit_conversion": 1.0,
+      "notes": "proxy: substance mapped to nearest biosphere3 equivalent"
+    },
+    {
+      "source_name": "Uranium, 560 GJ per kg",
+      "target_name": "Uranium",
+      "target_db": "",
+      "tier": "CURATED_SYNONYM_FALLBACK",
+      "unit_conversion": 1.0,
+      "notes": "proxy: substance mapped to nearest biosphere3 equivalent"
+    },
+    {
+      "source_name": "Water, barrage",
+      "target_name": "Water, turbine use, unspecified natural origin",
+      "target_db": "",
+      "tier": "CURATED_SYNONYM_FALLBACK",
+      "unit_conversion": 1.0,
+      "notes": "proxy: substance mapped to nearest biosphere3 equivalent"
+    },
+    {
+      "source_name": "Zinc ore",
+      "target_name": "Zinc",
+      "target_db": "",
+      "tier": "CURATED_SYNONYM_FALLBACK",
+      "unit_conversion": 1.0,
+      "notes": "proxy: substance mapped to nearest biosphere3 equivalent"
+    },
+    {
+      "source_name": "Zinc oxide",
+      "target_name": "Zinc",
+      "target_db": "",
+      "tier": "CURATED_SYNONYM_FALLBACK",
+      "unit_conversion": 1.0,
+      "notes": "proxy: substance mapped to nearest biosphere3 equivalent"
+    },
+    {
+      "source_name": "Toluene, 2-ethyl-",
+      "target_name": "Toluene",
+      "target_db": "",
+      "tier": "CURATED_SYNONYM_FALLBACK",
+      "unit_conversion": 1.0,
+      "notes": "proxy: substance mapped to nearest biosphere3 equivalent"
+    },
+    {
+      "source_name": "Toluene, 3-ethyl-",
+      "target_name": "Toluene",
+      "target_db": "",
+      "tier": "CURATED_SYNONYM_FALLBACK",
+      "unit_conversion": 1.0,
+      "notes": "proxy: substance mapped to nearest biosphere3 equivalent"
+    },
+    {
+      "source_name": "Toluene, 4-ethyl-",
+      "target_name": "Toluene",
+      "target_db": "",
+      "tier": "CURATED_SYNONYM_FALLBACK",
+      "unit_conversion": 1.0,
+      "notes": "proxy: substance mapped to nearest biosphere3 equivalent"
+    },
+    {
+      "source_name": "Toluene, 2,4-dinitro-",
+      "target_name": "Toluene",
+      "target_db": "",
+      "tier": "CURATED_SYNONYM_FALLBACK",
+      "unit_conversion": 1.0,
+      "notes": "proxy: substance mapped to nearest biosphere3 equivalent"
+    },
+    {
+      "source_name": "1,3-Butadiyne",
+      "target_name": "Butadiene",
+      "target_db": "",
+      "tier": "CURATED_SYNONYM_FALLBACK",
+      "unit_conversion": 1.0,
+      "notes": "proxy: substance mapped to nearest biosphere3 equivalent"
+    },
+    {
+      "source_name": "Alkanes, C10",
+      "target_name": "Hydrocarbons, aliphatic, alkanes, unspecified",
+      "target_db": "",
+      "tier": "CURATED_SYNONYM_FALLBACK",
+      "unit_conversion": 1.0,
+      "notes": "proxy: substance mapped to nearest biosphere3 equivalent"
+    },
+    {
+      "source_name": "1-Naphthalene acetamide",
+      "target_name": "Naphthalene",
+      "target_db": "",
+      "tier": "CURATED_SYNONYM_FALLBACK",
+      "unit_conversion": 1.0,
+      "notes": "proxy: substance mapped to nearest biosphere3 equivalent"
+    },
+    {
+      "source_name": "5-methyl Chrysene",
+      "target_name": "Chrysene",
+      "target_db": "",
+      "tier": "CURATED_SYNONYM_FALLBACK",
+      "unit_conversion": 1.0,
+      "notes": "proxy: substance mapped to nearest biosphere3 equivalent"
+    },
+    {
+      "source_name": "Phenanthrenes, alkylated, unspecified",
+      "target_name": "Phenanthrene",
+      "target_db": "",
+      "tier": "CURATED_SYNONYM_FALLBACK",
+      "unit_conversion": 1.0,
+      "notes": "proxy: substance mapped to nearest biosphere3 equivalent"
+    },
+    {
+      "source_name": "Phenol, 2,4-dimethyl-",
+      "target_name": "Phenol",
+      "target_db": "",
+      "tier": "CURATED_SYNONYM_FALLBACK",
+      "unit_conversion": 1.0,
+      "notes": "proxy: substance mapped to nearest biosphere3 equivalent"
+    },
+    {
+      "source_name": "Benzenes, alkylated, unspecified",
+      "target_name": "Benzene",
+      "target_db": "",
+      "tier": "CURATED_SYNONYM_FALLBACK",
+      "unit_conversion": 1.0,
+      "notes": "proxy: substance mapped to nearest biosphere3 equivalent"
+    },
+    {
+      "source_name": "BTEX (Benzene, Toluene, Ethylbenzene, and Xylene), unspecified ratio",
+      "target_name": "Benzene",
+      "target_db": "",
+      "tier": "CURATED_SYNONYM_FALLBACK",
+      "unit_conversion": 1.0,
+      "notes": "proxy: substance mapped to nearest biosphere3 equivalent"
+    },
+    {
+      "source_name": "Benfuracarb",
+      "target_name": "Carbofuran",
+      "target_db": "",
+      "tier": "CURATED_SYNONYM_FALLBACK",
+      "unit_conversion": 1.0,
+      "notes": "proxy: substance mapped to nearest biosphere3 equivalent"
+    },
+    {
+      "source_name": "Carbamic acid, [(dibutylamino)thio]methyl-, 2,3-dihydro-2,2-dimethyl-7-benzofuranyl ester",
+      "target_name": "Carbofuran",
+      "target_db": "",
+      "tier": "CURATED_SYNONYM_FALLBACK",
+      "unit_conversion": 1.0,
+      "notes": "proxy: substance mapped to nearest biosphere3 equivalent"
+    },
+    {
+      "source_name": "Formetanate",
+      "target_name": "Carbofuran",
+      "target_db": "",
+      "tier": "CURATED_SYNONYM_FALLBACK",
+      "unit_conversion": 1.0,
+      "notes": "proxy: substance mapped to nearest biosphere3 equivalent"
+    },
+    {
+      "source_name": "Isoprocarb",
+      "target_name": "Carbofuran",
+      "target_db": "",
+      "tier": "CURATED_SYNONYM_FALLBACK",
+      "unit_conversion": 1.0,
+      "notes": "proxy: substance mapped to nearest biosphere3 equivalent"
+    },
+    {
+      "source_name": "Paclobutrazol",
+      "target_name": "Propiconazole",
+      "target_db": "",
+      "tier": "CURATED_SYNONYM_FALLBACK",
+      "unit_conversion": 1.0,
+      "notes": "proxy: substance mapped to nearest biosphere3 equivalent"
+    },
+    {
+      "source_name": "Phenyltin",
+      "target_name": "Tributyltin compounds",
+      "target_db": "",
+      "tier": "CURATED_SYNONYM_FALLBACK",
+      "unit_conversion": 1.0,
+      "notes": "proxy: substance mapped to nearest biosphere3 equivalent"
+    },
+    {
+      "source_name": "o-Chlorotoluene",
+      "target_name": "Toluene, 2-chloro",
+      "target_db": "",
+      "tier": "CURATED_SYNONYM_FALLBACK",
+      "unit_conversion": 1.0,
+      "notes": "chemical name synonym"
+    },
+    {
+      "source_name": "Radium-226/kg",
+      "target_name": "Radium-226",
+      "target_db": "",
+      "tier": "CURATED_SYNONYM_FALLBACK",
+      "unit_conversion": 1.0,
+      "notes": "chemical name synonym"
+    },
+    {
+      "source_name": "Radium-228/kg",
+      "target_name": "Radium-228",
+      "target_db": "",
+      "tier": "CURATED_SYNONYM_FALLBACK",
+      "unit_conversion": 1.0,
+      "notes": "chemical name synonym"
+    },
+    {
+      "source_name": "Radioactive species, unspecified",
+      "target_name": "Radon-222",
+      "target_db": "",
+      "tier": "CURATED_SYNONYM_FALLBACK",
+      "unit_conversion": 1.0,
+      "notes": "proxy: substance mapped to nearest biosphere3 equivalent"
+    },
+    {
+      "source_name": "Radionuclides (Including Radon)",
+      "target_name": "Radon-222",
+      "target_db": "",
+      "tier": "CURATED_SYNONYM_FALLBACK",
+      "unit_conversion": 1.0,
+      "notes": "proxy: substance mapped to nearest biosphere3 equivalent"
+    },
+    {
+      "source_name": "Palladium-234m",
+      "target_name": "Protactinium-234",
+      "target_db": "",
+      "tier": "CURATED_SYNONYM_FALLBACK",
+      "unit_conversion": 1.0,
+      "notes": "proxy: substance mapped to nearest biosphere3 equivalent"
+    },
+    {
+      "source_name": "Acids, unspecified",
+      "target_name": "Sulfuric acid",
+      "target_db": "",
+      "tier": "CURATED_SYNONYM_FALLBACK",
+      "unit_conversion": 1.0,
+      "notes": "proxy: substance mapped to nearest biosphere3 equivalent"
+    },
+    {
+      "source_name": "Chromium compounds",
+      "target_name": "Chromium VI",
+      "target_db": "",
+      "tier": "CURATED_SYNONYM_FALLBACK",
+      "unit_conversion": 1.0,
+      "notes": "proxy: substance mapped to nearest biosphere3 equivalent"
+    },
+    {
+      "source_name": "Heavy metals, unspecified",
+      "target_name": "Zinc",
+      "target_db": "",
+      "tier": "CURATED_SYNONYM_FALLBACK",
+      "unit_conversion": 1.0,
+      "notes": "proxy: substance mapped to nearest biosphere3 equivalent"
+    },
+    {
+      "source_name": "Metallic ions, unspecified",
+      "target_name": "Zinc",
+      "target_db": "",
+      "tier": "CURATED_SYNONYM_FALLBACK",
+      "unit_conversion": 1.0,
+      "notes": "proxy: substance mapped to nearest biosphere3 equivalent"
+    },
+    {
+      "source_name": "Metals (unspecified)",
+      "target_name": "Zinc",
+      "target_db": "",
+      "tier": "CURATED_SYNONYM_FALLBACK",
+      "unit_conversion": 1.0,
+      "notes": "proxy: substance mapped to nearest biosphere3 equivalent"
+    },
+    {
+      "source_name": "Metals, unspecified",
+      "target_name": "Zinc",
+      "target_db": "",
+      "tier": "CURATED_SYNONYM_FALLBACK",
+      "unit_conversion": 1.0,
+      "notes": "proxy: substance mapped to nearest biosphere3 equivalent"
+    },
+    {
+      "source_name": "Nitrate compounds",
+      "target_name": "Nitrate",
+      "target_db": "",
+      "tier": "CURATED_SYNONYM_FALLBACK",
+      "unit_conversion": 1.0,
+      "notes": "proxy: substance mapped to nearest biosphere3 equivalent"
+    },
+    {
+      "source_name": "Nitrogenous Matter (unspecified, as N)",
+      "target_name": "Nitrogen",
+      "target_db": "",
+      "tier": "CURATED_SYNONYM_FALLBACK",
+      "unit_conversion": 1.0,
+      "notes": "proxy: substance mapped to nearest biosphere3 equivalent"
+    },
+    {
+      "source_name": "Inorganic salts and acids (unspecified)",
+      "target_name": "Sulfate",
+      "target_db": "",
+      "tier": "CURATED_SYNONYM_FALLBACK",
+      "unit_conversion": 1.0,
+      "notes": "proxy: substance mapped to nearest biosphere3 equivalent"
+    },
+    {
+      "source_name": "Halogenated Matter (unspecified)",
+      "target_name": "Hydrocarbons, chlorinated",
+      "target_db": "",
+      "tier": "CURATED_SYNONYM_FALLBACK",
+      "unit_conversion": 1.0,
+      "notes": "proxy: substance mapped to nearest biosphere3 equivalent"
+    },
+    {
+      "source_name": "Ketones, unspecified",
+      "target_name": "Acetone",
+      "target_db": "",
+      "tier": "CURATED_SYNONYM_FALLBACK",
+      "unit_conversion": 1.0,
+      "notes": "proxy: substance mapped to nearest biosphere3 equivalent"
+    },
+    {
+      "source_name": "Mercaptans, unspecified",
+      "target_name": "Ethane thiol",
+      "target_db": "",
+      "tier": "CURATED_SYNONYM_FALLBACK",
+      "unit_conversion": 1.0,
+      "notes": "proxy: substance mapped to nearest biosphere3 equivalent"
+    },
+    {
+      "source_name": "Oils, biogenic",
+      "target_name": "Oils, unspecified",
+      "target_db": "",
+      "tier": "CURATED_SYNONYM_FALLBACK",
+      "unit_conversion": 1.0,
+      "notes": "proxy: substance mapped to nearest biosphere3 equivalent"
+    },
+    {
+      "source_name": "Detergent, oil",
+      "target_name": "Oils, unspecified",
+      "target_db": "",
+      "tier": "CURATED_SYNONYM_FALLBACK",
+      "unit_conversion": 1.0,
+      "notes": "proxy: substance mapped to nearest biosphere3 equivalent"
+    },
+    {
+      "source_name": "Fat",
+      "target_name": "DOC, Dissolved Organic Carbon",
+      "target_db": "",
+      "tier": "CURATED_SYNONYM_FALLBACK",
+      "unit_conversion": 1.0,
+      "notes": "proxy: substance mapped to nearest biosphere3 equivalent"
+    },
+    {
+      "source_name": "Propane, 1,2-dichloro-",
+      "target_name": "Ethane, 1,2-dichloro-",
+      "target_db": "",
+      "tier": "CURATED_SYNONYM_FALLBACK",
+      "unit_conversion": 1.0,
+      "notes": "proxy: substance mapped to nearest biosphere3 equivalent"
+    },
+    {
+      "source_name": "Propylene glycol methyl ether acetate",
+      "target_name": "Ethylene glycol monoethyl ether",
+      "target_db": "",
+      "tier": "CURATED_SYNONYM_FALLBACK",
+      "unit_conversion": 1.0,
+      "notes": "proxy: substance mapped to nearest biosphere3 equivalent"
+    },
+    {
+      "source_name": "Ethylene carbonate",
+      "target_name": "Diethylene glycol",
+      "target_db": "",
+      "tier": "CURATED_SYNONYM_FALLBACK",
+      "unit_conversion": 1.0,
+      "notes": "proxy: substance mapped to nearest biosphere3 equivalent"
+    },
+    {
+      "source_name": "Morpholine",
+      "target_name": "Diethanolamine",
+      "target_db": "",
+      "tier": "CURATED_SYNONYM_FALLBACK",
+      "unit_conversion": 1.0,
+      "notes": "proxy: substance mapped to nearest biosphere3 equivalent"
+    },
+    {
+      "source_name": "Trimethyl borate",
+      "target_name": "Methyl borate",
+      "target_db": "",
+      "tier": "CURATED_SYNONYM_FALLBACK",
+      "unit_conversion": 1.0,
+      "notes": "proxy: substance mapped to nearest biosphere3 equivalent"
+    },
+    {
+      "source_name": "Vinyl acetate",
+      "target_name": "Ethyl acetate",
+      "target_db": "",
+      "tier": "CURATED_SYNONYM_FALLBACK",
+      "unit_conversion": 1.0,
+      "notes": "proxy: substance mapped to nearest biosphere3 equivalent"
+    },
+    {
+      "source_name": "Decane",
+      "target_name": "Hydrocarbons, aliphatic, alkanes, unspecified",
+      "target_db": "",
+      "tier": "CURATED_SYNONYM_FALLBACK",
+      "unit_conversion": 1.0,
+      "notes": "proxy: substance mapped to nearest biosphere3 equivalent"
+    },
+    {
+      "source_name": "Fertiliser, applied (P component)",
+      "target_name": "Phosphate",
+      "target_db": "",
+      "tier": "CURATED_SYNONYM_FALLBACK",
+      "unit_conversion": 1.0,
+      "notes": "proxy: substance mapped to nearest biosphere3 equivalent"
+    },
+    {
+      "source_name": "Manure, applied (P component)",
+      "target_name": "Phosphate",
+      "target_db": "",
+      "tier": "CURATED_SYNONYM_FALLBACK",
+      "unit_conversion": 1.0,
+      "notes": "proxy: substance mapped to nearest biosphere3 equivalent"
+    },
+    {
+      "source_name": "Anionic phosphate esters (detergents)",
+      "target_name": "Phosphate",
+      "target_db": "",
+      "tier": "CURATED_SYNONYM_FALLBACK",
+      "unit_conversion": 1.0,
+      "notes": "proxy: substance mapped to nearest biosphere3 equivalent"
+    },
+    {
+      "source_name": "Cooling water",
+      "target_name": "Water, cooling, unspecified natural origin",
+      "target_db": "",
+      "tier": "CURATED_SYNONYM_FALLBACK",
+      "unit_conversion": 1.0,
+      "notes": "proxy: substance mapped to nearest biosphere3 equivalent"
+    },
+    {
+      "source_name": "Turbined water",
+      "target_name": "Water, turbine use, unspecified natural origin",
+      "target_db": "",
+      "tier": "CURATED_SYNONYM_FALLBACK",
+      "unit_conversion": 1.0,
+      "notes": "proxy: substance mapped to nearest biosphere3 equivalent"
+    },
+    {
+      "source_name": "Corn dust (biomass)",
+      "target_name": "Particulate Matter, > 10 um",
+      "target_db": "",
+      "tier": "CURATED_SYNONYM_FALLBACK",
+      "unit_conversion": 1.0,
+      "notes": "proxy: substance mapped to nearest biosphere3 equivalent"
+    },
+    {
+      "source_name": "Silicate particles",
+      "target_name": "Suspended solids, unspecified",
+      "target_db": "",
+      "tier": "CURATED_SYNONYM_FALLBACK",
+      "unit_conversion": 1.0,
+      "notes": "proxy: substance mapped to nearest biosphere3 equivalent"
+    },
+    {
+      "source_name": "Correction flow for delayed emission of biogenic carbon dioxide",
+      "target_name": "Carbon dioxide, non-fossil",
+      "target_db": "",
+      "tier": "CURATED_SYNONYM_FALLBACK",
+      "unit_conversion": 1.0,
+      "notes": "proxy: substance mapped to nearest biosphere3 equivalent"
+    },
+    {
+      "source_name": "Gas, off-gas, oil production",
+      "target_name": "Gas, natural",
+      "target_db": "",
+      "tier": "CURATED_SYNONYM_FALLBACK",
+      "unit_conversion": 1.0,
+      "notes": "proxy: substance mapped to nearest biosphere3 equivalent"
+    },
+    {
+      "source_name": "Gangue, bauxite",
+      "target_name": "Gangue",
+      "target_db": "",
+      "tier": "CURATED_SYNONYM_FALLBACK",
+      "unit_conversion": 1.0,
+      "notes": "proxy: substance mapped to nearest biosphere3 equivalent"
+    },
+    {
+      "source_name": "Energy, from biomass",
+      "target_name": "Energy, kinetic (in wind), converted",
+      "target_db": "",
+      "tier": "CURATED_SYNONYM_FALLBACK",
+      "unit_conversion": 1.0,
+      "notes": "proxy: substance mapped to nearest biosphere3 equivalent"
+    },
+    {
+      "source_name": "Energy, from wood",
+      "target_name": "Energy, kinetic (in wind), converted",
+      "target_db": "",
+      "tier": "CURATED_SYNONYM_FALLBACK",
+      "unit_conversion": 1.0,
+      "notes": "proxy: substance mapped to nearest biosphere3 equivalent"
+    },
+    {
+      "source_name": "Energy, unspecified",
+      "target_name": "Energy, kinetic (in wind), converted",
+      "target_db": "",
+      "tier": "CURATED_SYNONYM_FALLBACK",
+      "unit_conversion": 1.0,
+      "notes": "proxy: substance mapped to nearest biosphere3 equivalent"
+    },
+    {
+      "source_name": "Sulfuric acid, dimethyl ester",
+      "target_name": "Sulfuric acid",
+      "target_db": "",
+      "tier": "CURATED_SYNONYM_FALLBACK",
+      "unit_conversion": 1.0,
+      "notes": "proxy: substance mapped to nearest biosphere3 equivalent"
+    },
+    {
+      "source_name": "1,2-Dichloropropane & 1,3-dichloropropene",
+      "target_name": "Propane",
+      "target_db": "",
+      "tier": "CURATED_SYNONYM_FALLBACK",
+      "unit_conversion": 1.0,
+      "notes": "proxy: substance mapped to nearest biosphere3 equivalent"
+    },
+    {
+      "source_name": "Zeolite",
+      "target_name": "Clay, unspecified",
+      "target_db": "",
+      "tier": "CURATED_SYNONYM_FALLBACK",
+      "unit_conversion": 1.0,
+      "notes": "proxy: substance mapped to nearest biosphere3 equivalent"
+    },
+    {
+      "source_name": "AOX, Adsorbable Organic Halogen",
+      "target_db": "biosphere3",
+      "target_name": "AOX, Adsorbable Organic Halogen",
+      "tier": "CURATED_TARGETED",
+      "unit_conversion": 1.0,
+      "notes": "AGB water-bucket AOX → bio3 'AOX, Adsorbable Organic Halogen' (water). bucket-agnostic source means bio3 lookup uses the AGB exchange's actual bucket, so this only resolves for water-compartment exchanges. Air variant is handled by the next entry (EF v3.1 target). Also overrides the broken randonneur tier-2 mapping that pointed to non-existent name 'AOX, Adsorbable Organic Halogen as Cl' or 'Halides'."
+    },
+    {
+      "source_name": "AOX, Adsorbable Organic Halogen",
+      "source_unit": "kilogram",
+      "source_context": [
+        "Emissions to air"
+      ],
+      "target_db": "ef",
+      "target_code": "d86b9e86-6555-11dd-ad8b-0800200c9a66",
+      "target_name": "adsorbable organic halogen compounds",
+      "target_unit": "kilogram",
+      "tier": "CURATED_TARGETED",
+      "unit_conversion": 1.0,
+      "notes": "AGB air-emission AOX has no biosphere3 equivalent (bio3 holds the substance in water only). Pin to EF v3.1 'adsorbable organic halogen compounds' (Emissions to air, unspecified) — same substance under different naming, with CFs in Human toxicity (non-cancer) and Ecotoxicity (freshwater)."
+    },
+    {
+      "source_name": "Air",
+      "is_unmatchable": true,
+      "notes": "AGB resource flow 'Air' — no equivalent in biosphere3 / EF v3.1. Tier-6 placeholder mapping points to non-existent target name 'air'.",
+      "source_context": [
+        "natural resource",
+        "in air"
+      ]
+    },
+    {
+      "source_name": "Inert rock",
+      "is_unmatchable": true,
+      "notes": "AGB resource flow — no equivalent in biosphere3 / EF v3.1. Tier-6 placeholder mapping points to non-existent target name 'inert rock'.",
+      "source_context": [
+        "natural resource",
+        "in ground"
+      ]
+    },
+    {
+      "source_name": "Primary energy from waves",
+      "is_unmatchable": true,
+      "notes": "AGB resource flow — no equivalent in biosphere3 / EF v3.1.",
+      "source_context": [
+        "natural resource",
+        "in water"
+      ]
+    },
+    {
+      "source_name": "Used air",
+      "is_unmatchable": true,
+      "notes": "AGB air-emission flow — no equivalent in biosphere3 / EF v3.1.",
+      "source_context": [
+        "air"
+      ]
+    },
+    {
+      "source_name": "Water, barrage",
+      "source_unit": "kilogram",
+      "source_context": [
+        "natural resource",
+        "in water"
+      ],
+      "target_db": "",
+      "target_name": "Water, turbine use, unspecified natural origin",
+      "target_unit": "cubic meter",
+      "unit_conversion": 0.001,
+      "tier": "CURATED_TARGETED",
+      "notes": "AGB barrage water (kg) -> ecoinvent turbine-use water (m3) via water density (1 kg ≈ 0.001 m³)"
+    },
+    {
+      "source_name": "Water, cooling, salt, ocean",
+      "source_unit": "kilogram",
+      "source_context": [
+        "natural resource",
+        "in water"
+      ],
+      "target_db": "",
+      "target_name": "Water, salt, ocean",
+      "target_unit": "cubic meter",
+      "unit_conversion": 0.001,
+      "tier": "CURATED_TARGETED",
+      "notes": "AGB cooling salt ocean water (kg) -> ecoinvent salt-ocean water (m3) via water density"
+    },
+    {
+      "source_name": "Water, cooling, well",
+      "source_unit": "kilogram",
+      "source_context": [
+        "natural resource",
+        "in ground"
+      ],
+      "target_db": "",
+      "target_name": "Water, well, in ground",
+      "target_unit": "cubic meter",
+      "unit_conversion": 0.001,
+      "tier": "CURATED_TARGETED",
+      "notes": "AGB cooling well water (kg) -> ecoinvent well water (m3) via water density"
+    },
+    {
+      "source_name": "Water, groundwater consumption",
+      "source_unit": "kilogram",
+      "source_context": [
+        "natural resource"
+      ],
+      "target_db": "",
+      "target_name": "Water, well, in ground",
+      "target_unit": "cubic meter",
+      "unit_conversion": 0.001,
+      "tier": "CURATED_TARGETED",
+      "notes": "AGB groundwater consumption (kg) -> ecoinvent well water (m3) via water density"
+    },
+    {
+      "source_name": "Water, process, drinking",
+      "source_unit": "kilogram",
+      "source_context": [
+        "natural resource",
+        "in water"
+      ],
+      "target_db": "",
+      "target_name": "Water, unspecified natural origin",
+      "target_unit": "cubic meter",
+      "unit_conversion": 0.001,
+      "tier": "CURATED_TARGETED",
+      "notes": "AGB drinking-water process flow (kg) -> ecoinvent unspecified-origin water (m3) via water density"
+    },
+    {
+      "source_name": "Water (evapotranspiration)",
+      "source_unit": "kilogram",
+      "source_context": [
+        "air"
+      ],
+      "target_db": "",
+      "target_name": "Water",
+      "target_unit": "cubic meter",
+      "unit_conversion": 0.001,
+      "tier": "CURATED_TARGETED",
+      "notes": "AGB evapotranspiration water (kg, air) -> biosphere3 Water emission (m3) via water density"
+    },
+    {
+      "source_name": "Gas, natural, 30.3 MJ per kg",
+      "source_unit": "kilogram",
+      "source_context": [
+        "natural resource",
+        "in ground"
+      ],
+      "target_db": "",
+      "target_name": "Gas, natural",
+      "target_unit": "standard cubic meter",
+      "unit_conversion": 1.155,
+      "tier": "CURATED_TARGETED",
+      "notes": "AGB 'Gas, natural, 30.3 MJ/kg' (kg) -> ecoinvent 'Gas, natural' (Sm³): density 35/30.3 ≈ 1.155 Sm³/kg"
+    },
+    {
+      "source_name": "Gas, natural, 46.8 MJ per kg",
+      "source_unit": "kilogram",
+      "source_context": [
+        "natural resource",
+        "in ground"
+      ],
+      "target_db": "",
+      "target_name": "Gas, natural",
+      "target_unit": "standard cubic meter",
+      "unit_conversion": 0.748,
+      "tier": "CURATED_TARGETED",
+      "notes": "AGB 'Gas, natural, 46.8 MJ/kg' (kg) -> ecoinvent 'Gas, natural' (Sm³): density 35/46.8 ≈ 0.748 Sm³/kg"
+    },
+    {
+      "source_name": "Gas, natural/kg",
+      "source_unit": "kilogram",
+      "source_context": [
+        "natural resource"
+      ],
+      "target_db": "",
+      "target_name": "Gas, natural",
+      "target_unit": "standard cubic meter",
+      "unit_conversion": 1.155,
+      "tier": "CURATED_TARGETED",
+      "notes": "AGB 'Gas, natural/kg' (kg, no CV given) -> ecoinvent 'Gas, natural' (Sm³): assume default 30.3 MJ/kg → 1.155 Sm³/kg"
+    },
+    {
+      "source_name": "Gas, natural, 35 MJ per m3",
+      "source_unit": "cubic meter",
+      "source_context": [
+        "natural resource",
+        "in ground"
+      ],
+      "target_db": "",
+      "target_name": "Gas, natural",
+      "target_unit": "standard cubic meter",
+      "unit_conversion": 1.0,
+      "tier": "CURATED_TARGETED",
+      "notes": "AGB 'Gas, natural, 35 MJ/m³' (m³) -> ecoinvent 'Gas, natural' (Sm³): m³ ≡ Sm³ at standard conditions"
+    },
+    {
+      "source_name": "Gas, natural, 36.6 MJ per m3",
+      "source_unit": "cubic meter",
+      "source_context": [
+        "natural resource",
+        "in ground"
+      ],
+      "target_db": "",
+      "target_name": "Gas, natural",
+      "target_unit": "standard cubic meter",
+      "unit_conversion": 1.0,
+      "tier": "CURATED_TARGETED",
+      "notes": "AGB 'Gas, natural, 36.6 MJ/m³' (m³) -> ecoinvent 'Gas, natural' (Sm³): volume-equivalent"
+    },
+    {
+      "source_name": "Gas, mine, off-gas, process, coal mining",
+      "source_unit": "cubic meter",
+      "source_context": [
+        "natural resource",
+        "in ground"
+      ],
+      "target_db": "",
+      "target_name": "Gas, mine, off-gas, process, coal mining",
+      "target_unit": "standard cubic meter",
+      "unit_conversion": 1.0,
+      "tier": "CURATED_TARGETED",
+      "notes": "AGB coal-mine off-gas (m³) -> ecoinvent same flow (Sm³): m³ ≡ Sm³ at standard conditions"
+    },
+    {
+      "source_name": "Gas, mine, off-gas, process, coal mining/kg",
+      "source_unit": "kilogram",
+      "source_context": [
+        "natural resource",
+        "in ground"
+      ],
+      "target_db": "",
+      "target_name": "Gas, mine, off-gas, process, coal mining",
+      "target_unit": "standard cubic meter",
+      "unit_conversion": 1.155,
+      "tier": "CURATED_TARGETED",
+      "notes": "AGB coal-mine off-gas (kg) -> ecoinvent same flow (Sm³): default natural-gas density 1.155 Sm³/kg"
+    },
+    {
+      "source_name": "Gas, off-gas, oil production",
+      "source_unit": "cubic meter",
+      "source_context": [
+        "natural resource",
+        "in ground"
+      ],
+      "target_db": "",
+      "target_name": "Gas, natural",
+      "target_unit": "standard cubic meter",
+      "unit_conversion": 1.0,
+      "tier": "CURATED_TARGETED",
+      "notes": "AGB oil-production off-gas (m³, no ecoinvent equivalent) -> ecoinvent 'Gas, natural' (Sm³) as nearest analogue: volume-equivalent"
+    },
+    {
+      "source_name": "Gas, petroleum, 35 MJ per m3",
+      "source_unit": "cubic meter",
+      "source_context": [
+        "natural resource",
+        "in ground"
+      ],
+      "target_db": "",
+      "target_name": "Gas, natural",
+      "target_unit": "standard cubic meter",
+      "unit_conversion": 1.0,
+      "tier": "CURATED_TARGETED",
+      "notes": "AGB 'Gas, petroleum, 35 MJ/m³' (m³) -> ecoinvent 'Gas, natural' (Sm³): petroleum gas has no clean ecoinvent analogue; AGB labels it at 35 MJ/m³ ≈ natural gas reference. Volume-equivalent approximation."
+    },
+    {
+      "source_name": "Lead-210/kg",
+      "source_unit": "kilogram",
+      "source_context": [
+        "water"
+      ],
+      "target_db": "",
+      "target_name": "Lead-210",
+      "target_unit": "kilo Becquerel",
+      "unit_conversion": 2820000000000.0,
+      "tier": "CURATED_TARGETED",
+      "notes": "AGB Pb-210 (kg, water) -> ecoinvent Pb-210 (kBq) via specific activity 2.82e12 kBq/kg (T½=22.3y, M=0.210 kg/mol)"
+    },
+    {
+      "source_name": "Radium-226/kg",
+      "source_unit": "kilogram",
+      "source_context": [
+        "water"
+      ],
+      "target_db": "",
+      "target_name": "Radium-226",
+      "target_unit": "kilo Becquerel",
+      "unit_conversion": 36500000000.0,
+      "tier": "CURATED_TARGETED",
+      "notes": "AGB Ra-226 (kg, water) -> ecoinvent Ra-226 (kBq) via specific activity 3.65e10 kBq/kg (T½=1600y, M=0.226 kg/mol)"
+    },
+    {
+      "source_name": "Radium-228/kg",
+      "source_unit": "kilogram",
+      "source_context": [
+        "water"
+      ],
+      "target_db": "",
+      "target_name": "Radium-228",
+      "target_unit": "kilo Becquerel",
+      "unit_conversion": 10100000000000.0,
+      "tier": "CURATED_TARGETED",
+      "notes": "AGB Ra-228 (kg, water) -> ecoinvent Ra-228 (kBq) via specific activity 1.01e13 kBq/kg (T½=5.75y, M=0.228 kg/mol)"
+    },
+    {
+      "source_name": "Kaolin ore",
+      "source_unit": "kilogram",
+      "source_context": [
+        "natural resource",
+        "in ground"
+      ],
+      "target_db": "",
+      "target_name": "Kaolinite",
+      "target_unit": "kilogram",
+      "unit_conversion": 1.0,
+      "tier": "CURATED_TARGETED",
+      "notes": "AGB 'Kaolin ore' (resource, in ground, kg) -> biosphere3 'Kaolinite' (resource, in ground, kg). Kaolin ore is the natural deposit of kaolinite clay."
+    },
+    {
+      "source_name": "Natural aggregate",
+      "source_unit": "kilogram",
+      "source_context": [
+        "natural resource",
+        "in ground"
+      ],
+      "target_db": "",
+      "target_name": "Sand, unspecified",
+      "target_unit": "kilogram",
+      "unit_conversion": 1.0,
+      "tier": "CURATED_TARGETED",
+      "notes": "AGB 'Natural aggregate' (resource, kg) -> biosphere3 'Sand, unspecified' (resource, in ground, kg). Aggregate (gravel/sand mix) approximated as sand for impact assessment; ecoinvent has no dedicated 'aggregate' resource flow."
+    },
+    {
+      "source_name": "Methane",
+      "source_unit": "kilogram",
+      "source_context": [
+        "natural resource"
+      ],
+      "target_db": "",
+      "target_name": "Gas, natural",
+      "target_unit": "standard cubic meter",
+      "unit_conversion": 1.395,
+      "tier": "CURATED_TARGETED",
+      "notes": "AGB 'Methane' (resource, kg) -> ecoinvent 'Gas, natural' (Sm³). Methane density at STP ≈ 0.717 kg/Sm³ → 1 kg methane ≈ 1.395 Sm³. Approximation: AGB likely uses 'Methane' generically for natural gas extraction; biosphere3 has no separate methane resource flow."
+    },
+    {
+      "source_name": "Crude oil",
+      "source_context": [
+        "water"
+      ],
+      "is_unmatchable": true,
+      "notes": "AGB 'Crude oil' as water emission has no equivalent. biosphere3 'Oil, crude' is a resource flow only. The resource↔emission firewall (and chemistry difference: extracted resource vs spilled pollutant) makes the bridge inappropriate."
+    },
+    {
+      "source_name": "Asbestos",
+      "source_context": [
+        "air"
+      ],
+      "is_unmatchable": true,
+      "notes": "AGB Asbestos (air emission) has no biosphere3/EF counterpart. biosphere3 'Chrysotile' is a mineral-resource flow, not an air-pollution emission flow; mapping would conflate dispersed-fiber pollution with raw-mineral extraction."
+    },
+    {
+      "source_name": "Potashsalt, crude",
+      "source_context": [
+        "natural resource"
+      ],
+      "is_unmatchable": true,
+      "notes": "AGB resource flow 'Potashsalt, crude' has no biosphere3 resource equivalent. biosphere3 'Potassium chloride' exists only as emission flows (air/water/soil), not as a resource extraction."
+    },
+    {
+      "source_name": "Soil",
+      "source_context": [
+        "natural resource",
+        "in ground"
+      ],
+      "is_unmatchable": true,
+      "notes": "AGB 'Soil' as kg-mass resource has no biosphere3 counterpart. Soil-loss in biosphere3 is expressed as land occupation (m²-year), which requires bulk-density × depth assumptions to bridge from kg — too much uncertainty for a defensible default."
+    },
+    {
+      "source_name": "Thifensulfuron",
+      "source_unit": "kilogram",
+      "source_context": [
+        "soil"
+      ],
+      "target_name": "Thifensulfuron-methyl",
+      "tier": "CURATED_TARGETED",
+      "notes": "AGB 'Thifensulfuron' (soil, kg) = thifensulfuron-methyl. Exists in ecoinvent-3.9.1-biosphere and EF [soil]."
+    },
+    {
+      "source_name": "Biological pest controls",
+      "source_context": [
+        "soil",
+        "agricultural"
+      ],
+      "is_unmatchable": true,
+      "notes": "AGB 'Biological pest controls' (soil, kg) is an aggregate placeholder for biocontrol agents. No individual biosphere3 / EF flow can represent the heterogeneous mix."
+    },
+    {
+      "source_name": "Emission, unspecified",
+      "source_context": [
+        "water"
+      ],
+      "is_unmatchable": true,
+      "notes": "Generic 'Emission, unspecified' has no LCIA-quantified flow; the placeholder name carries no chemistry."
+    },
+    {
+      "source_name": "Unspecified input",
+      "source_context": [
+        "natural resource"
+      ],
+      "is_unmatchable": true,
+      "notes": "Generic 'Unspecified input' has no resource-flow equivalent in biosphere3 / EF; SimaPro placeholder for unmodelled inputs."
+    },
+    {
+      "source_name": "Wood, dry matter",
+      "source_unit": "kilogram",
+      "source_context": [
+        "natural resource",
+        "biotic"
+      ],
+      "target_db": "",
+      "target_name": "Wood, unspecified, standing",
+      "target_unit": "cubic meter",
+      "unit_conversion": 0.00167,
+      "tier": "CURATED_TARGETED",
+      "notes": "AGB 'Wood, dry matter' (kg dry biomass) -> ecoinvent 'Wood, unspecified, standing' (m³). Typical dry-wood density ≈ 600 kg/m³ → 1/600 ≈ 0.00167 m³/kg. Approximate (species-dependent ±30%); acceptable for LCIA screening."
+    },
+    {
+      "source_name": "Wood and wood waste, 9.5 MJ per kg",
+      "source_unit": "kilogram",
+      "source_context": [
+        "natural resource",
+        "biotic"
+      ],
+      "target_db": "",
+      "target_name": "Wood, unspecified, standing",
+      "target_unit": "cubic meter",
+      "unit_conversion": 0.00125,
+      "tier": "CURATED_TARGETED",
+      "notes": "AGB 'Wood and wood waste, 9.5 MJ/kg' -> ecoinvent 'Wood, unspecified, standing' (m³). 9.5 MJ/kg LHV implies ~30% moisture; wet-wood density ≈ 800 kg/m³ → 1/800 = 0.00125 m³/kg."
+    },
+    {
+      "source_name": "Correction flow for delayed emission of biogenic carbon dioxide",
+      "source_context": [
+        "air"
+      ],
+      "is_unmatchable": true,
+      "notes": "AGB SimaPro temporal-correction flow (kg·year unit). Captures delayed-emission integral for dynamic LCA / GWP-T methods; biosphere3 / EF have no flow with kg·year units, and collapsing to kg loses the time dimension. Recognize as dead-end rather than approximate."
+    },
+    {
+      "source_name": "Waste water/m3",
+      "source_context": [
+        "water",
+        "surface water"
+      ],
+      "is_unmatchable": true,
+      "notes": "AGB 'Waste water/m3' (m³, water emission) has no biosphere3 / EF emission flow. The LLM-suggested target 'Non-hazardous waste disposed' is mass-keyed (kg) and conceptually different (treated waste vs untreated wastewater discharge); the volume↔mass collapse is too lossy to default."
+    },
+    {
+      "source_name": "Radionuclides (Including Radon)",
+      "source_context": [
+        "air"
+      ],
+      "is_unmatchable": true,
+      "notes": "AGB 'Radionuclides (Including Radon)' (kg, air) is an aggregate group across heterogeneous nuclides. No single specific-activity factor can convert kg to kBq for the mix; biosphere3 only has nuclide-specific flows."
+    },
+    {
+      "source_name": "Ruthenium",
+      "source_context": [
+        "water"
+      ],
+      "is_unmatchable": true,
+      "notes": "AGB 'Ruthenium' (kg, water) is generic elemental Ru. The tier-3 mapping target 'Ruthenium-103' would conflate elemental Ru with a specific isotope; biosphere3 has no kg-mass elemental-Ru emission."
+    },
+    {
+      "source_name": "Glufosinate",
+      "source_context": [
+        "air"
+      ],
+      "target_name": "Glufosinate ammonium",
+      "tier": "CURATED_SYNONYM_FALLBACK",
+      "notes": "AGB 'Glufosinate' (air) = glufosinate ammonium (salt form). Exists in ecoinvent-3.9.1-biosphere and biosphere3 [air]."
+    },
+    {
+      "source_name": "Iodosulfuron",
+      "source_context": [
+        "air"
+      ],
+      "target_name": "iodosulfuron-methyl-sodium",
+      "tier": "CURATED_SYNONYM_FALLBACK",
+      "notes": "AGB 'Iodosulfuron' (air) = iodosulfuron-methyl-sodium. Exists in EF [air]."
+    },
+    {
+      "source_name": "Primisulfuron",
+      "source_context": [
+        "air"
+      ],
+      "target_name": "primisulfuron-methyl",
+      "tier": "CURATED_SYNONYM_FALLBACK",
+      "notes": "AGB 'Primisulfuron' (air) = primisulfuron-methyl. Exists in EF [air]."
+    },
+    {
+      "source_name": "Americium-241",
+      "source_context": [
+        "soil"
+      ],
+      "is_unmatchable": true,
+      "notes": "AGB 'Americium-241' [soil, Becquerel] — exists in ecoinvent/biosphere3 only in air compartment (kilo Becquerel). Cross-compartment matching disabled per reviewer policy."
+    },
+    {
+      "source_name": "Cesium-134",
+      "source_context": [
+        "soil"
+      ],
+      "is_unmatchable": true,
+      "notes": "AGB 'Cesium-134' [soil, Becquerel] — exists in ecoinvent/biosphere3 only in air compartment (kilo Becquerel). Cross-compartment matching disabled per reviewer policy."
+    },
+    {
+      "source_name": "Cesium-137",
+      "source_context": [
+        "soil"
+      ],
+      "is_unmatchable": true,
+      "notes": "AGB 'Cesium-137' [soil, Becquerel] — exists in ecoinvent/biosphere3 only in air compartment (kilo Becquerel). Cross-compartment matching disabled per reviewer policy."
+    },
+    {
+      "source_name": "Iodine-129",
+      "source_context": [
+        "soil"
+      ],
+      "is_unmatchable": true,
+      "notes": "AGB 'Iodine-129' [soil, Becquerel] — exists in ecoinvent/biosphere3 only in air compartment (kilo Becquerel). Cross-compartment matching disabled per reviewer policy."
+    },
+    {
+      "source_name": "Iodine-131",
+      "source_context": [
+        "soil"
+      ],
+      "is_unmatchable": true,
+      "notes": "AGB 'Iodine-131' [soil, Becquerel] — exists in ecoinvent/biosphere3 only in air compartment (kilo Becquerel). Cross-compartment matching disabled per reviewer policy."
+    },
+    {
+      "source_name": "Palladium-234m",
+      "source_context": [
+        "soil"
+      ],
+      "is_unmatchable": true,
+      "notes": "AGB 'Palladium-234m' [soil, Becquerel] — exists in ecoinvent/biosphere3 only in air compartment (kilo Becquerel). Cross-compartment matching disabled per reviewer policy."
+    },
+    {
+      "source_name": "Radium-226",
+      "source_context": [
+        "soil"
+      ],
+      "is_unmatchable": true,
+      "notes": "AGB 'Radium-226' [soil, Becquerel] — exists in ecoinvent/biosphere3 only in air compartment (kilo Becquerel). Cross-compartment matching disabled per reviewer policy."
+    },
+    {
+      "source_name": "Strontium-90",
+      "source_context": [
+        "soil"
+      ],
+      "is_unmatchable": true,
+      "notes": "AGB 'Strontium-90' [soil, Becquerel] — exists in ecoinvent/biosphere3 only in air compartment (kilo Becquerel). Cross-compartment matching disabled per reviewer policy."
+    },
+    {
+      "source_name": "Technetium-99",
+      "source_context": [
+        "soil"
+      ],
+      "is_unmatchable": true,
+      "notes": "AGB 'Technetium-99' [soil, Becquerel] — exists in ecoinvent/biosphere3 only in air compartment (kilo Becquerel). Cross-compartment matching disabled per reviewer policy."
+    },
+    {
+      "source_name": "Thorium-230",
+      "source_context": [
+        "soil"
+      ],
+      "is_unmatchable": true,
+      "notes": "AGB 'Thorium-230' [soil, Becquerel] — exists in ecoinvent/biosphere3 only in air compartment (kilo Becquerel). Cross-compartment matching disabled per reviewer policy."
+    },
+    {
+      "source_name": "Uranium-234",
+      "source_context": [
+        "soil"
+      ],
+      "is_unmatchable": true,
+      "notes": "AGB 'Uranium-234' [soil, Becquerel] — exists in ecoinvent/biosphere3 only in air compartment (kilo Becquerel). Cross-compartment matching disabled per reviewer policy."
+    },
+    {
+      "source_name": "Uranium-235",
+      "source_context": [
+        "soil"
+      ],
+      "is_unmatchable": true,
+      "notes": "AGB 'Uranium-235' [soil, Becquerel] — exists in ecoinvent/biosphere3 only in air compartment (kilo Becquerel). Cross-compartment matching disabled per reviewer policy."
+    },
+    {
+      "source_name": "Uranium-238",
+      "source_context": [
+        "soil"
+      ],
+      "is_unmatchable": true,
+      "notes": "AGB 'Uranium-238' [soil, Becquerel] — exists in ecoinvent/biosphere3 only in air compartment (kilo Becquerel). Cross-compartment matching disabled per reviewer policy."
+    },
+    {
+      "source_name": "Zirconium-95",
+      "source_context": [
+        "soil"
+      ],
+      "is_unmatchable": true,
+      "notes": "AGB 'Zirconium-95' [soil, Becquerel] — exists in ecoinvent/biosphere3 only in air compartment (kilo Becquerel). Cross-compartment matching disabled per reviewer policy."
+    },
+    {
+      "source_name": "Sulfide",
+      "source_context": [
+        "soil"
+      ],
+      "is_unmatchable": true,
+      "notes": "AGB 'Sulfide' [soil, kg] — no generic sulfide flow in ecoinvent, EF, or biosphere3. Only specific compounds (Hydrogen sulfide, Carbon disulfide) exist."
+    },
+    {
+      "source_name": "Bifenazate",
+      "source_unit": "kilogram",
+      "source_context": [
+        "air",
+        "non-urban air or from high stacks"
+      ],
+      "target_db": "ef",
+      "target_code": "b3d2162d-f423-47c4-8769-3c48c913d3b8",
+      "target_name": "Insecticides, unspecified",
+      "target_unit": "kilogram",
+      "unit_conversion": 1.0,
+      "tier": "CURATED_TARGETED",
+      "notes": "Per ADEME/DdS reviewer (XZ_MC.xlsx, May 2026): AGB Bifenazate (air, kg) has no Bifenazate-specific CF in EF v3.1. Reclassify as 'Insecticides, unspecified' [air, non-urban air or from high stacks] (EF v3.1) so the air-emission picks up generic insecticide CFs. Bio3 has no air variant of Insecticides, unspecified — pin to EF."
+    },
+    {
+      "source_name": "Boscalid",
+      "source_unit": "kilogram",
+      "source_context": [
+        "air",
+        "non-urban air or from high stacks"
+      ],
+      "target_db": "ef",
+      "target_code": "866f1cde-9ce4-4697-817d-b37476a3a307",
+      "target_name": "Fungicides, unspecified",
+      "target_unit": "kilogram",
+      "unit_conversion": 1.0,
+      "tier": "CURATED_TARGETED",
+      "notes": "Per ADEME/DdS reviewer (XZ_MC.xlsx, May 2026): AGB Boscalid (air, kg) has no Boscalid-specific CF. Reclassify as 'Fungicides, unspecified' [air, non-urban air or from high stacks] (EF v3.1)."
+    },
+    {
+      "source_name": "Cloransulam-methyl",
+      "source_unit": "kilogram",
+      "source_context": [
+        "water",
+        "surface water"
+      ],
+      "target_db": "biosphere3",
+      "target_code": "9ffcc5df-8eb2-43f1-9915-b1cdcb853162",
+      "target_name": "Herbicides, unspecified",
+      "target_unit": "kilogram",
+      "unit_conversion": 1.0,
+      "tier": "CURATED_TARGETED",
+      "notes": "Per ADEME/DdS reviewer (XZ_MC.xlsx, May 2026): AGB Cloransulam-methyl (water/surface water, kg) has no Cloransulam-methyl-specific CF. Reclassify as 'Herbicides, unspecified' [water, surface water] (bio3) — same-bucket match."
+    },
+    {
+      "source_name": "Emamectin benzoate",
+      "source_unit": "kilogram",
+      "source_context": [
+        "air",
+        "non-urban air or from high stacks"
+      ],
+      "target_db": "ef",
+      "target_code": "b3d2162d-f423-47c4-8769-3c48c913d3b8",
+      "target_name": "Insecticides, unspecified",
+      "target_unit": "kilogram",
+      "unit_conversion": 1.0,
+      "tier": "CURATED_TARGETED",
+      "notes": "Per ADEME/DdS reviewer (XZ_MC.xlsx, May 2026): AGB Emamectin benzoate (air, kg) has no substance-specific CF. Reclassify as 'Insecticides, unspecified' [air, non-urban air or from high stacks] (EF v3.1)."
+    },
+    {
+      "source_name": "Quinoxyfen",
+      "source_unit": "kilogram",
+      "source_context": [
+        "air",
+        "non-urban air or from high stacks"
+      ],
+      "target_db": "ef",
+      "target_code": "866f1cde-9ce4-4697-817d-b37476a3a307",
+      "target_name": "Fungicides, unspecified",
+      "target_unit": "kilogram",
+      "unit_conversion": 1.0,
+      "tier": "CURATED_TARGETED",
+      "notes": "Per ADEME/DdS reviewer (XZ_MC.xlsx, May 2026): AGB Quinoxyfen (air, kg) has no substance-specific CF. Reclassify as 'Fungicides, unspecified' [air, non-urban air or from high stacks] (EF v3.1)."
+    },
+    {
+      "source_name": "Spinosad",
+      "source_unit": "kilogram",
+      "source_context": [
+        "air",
+        "non-urban air or from high stacks"
+      ],
+      "target_db": "ef",
+      "target_code": "b3d2162d-f423-47c4-8769-3c48c913d3b8",
+      "target_name": "Insecticides, unspecified",
+      "target_unit": "kilogram",
+      "unit_conversion": 1.0,
+      "tier": "CURATED_TARGETED",
+      "notes": "Per ADEME/DdS reviewer (XZ_MC.xlsx, May 2026): AGB Spinosad (air, kg) has no substance-specific CF. Reclassify as 'Insecticides, unspecified' [air, non-urban air or from high stacks] (EF v3.1)."
+    },
+    {
+      "source_name": "Sulfosate",
+      "source_unit": "kilogram",
+      "source_context": [
+        "air",
+        "non-urban air or from high stacks"
+      ],
+      "target_db": "ef",
+      "target_code": "d02eb395-bb54-4e03-8226-22f48a026fc3",
+      "target_name": "Herbicides, unspecified",
+      "target_unit": "kilogram",
+      "unit_conversion": 1.0,
+      "tier": "CURATED_TARGETED",
+      "notes": "Per ADEME/DdS reviewer (XZ_MC.xlsx, May 2026): AGB Sulfosate (air, kg, glyphosate-trimesium salt) has no substance-specific CF. Reclassify as 'Herbicides, unspecified' [air, non-urban air or from high stacks] (EF v3.1). Replaces the prior cross-compartment air→soil placeholder + the unmatchable entry."
+    },
+    {
+      "source_name": "Thiacloprid",
+      "source_unit": "kilogram",
+      "source_context": [
+        "air",
+        "non-urban air or from high stacks"
+      ],
+      "target_db": "ef",
+      "target_code": "b3d2162d-f423-47c4-8769-3c48c913d3b8",
+      "target_name": "Insecticides, unspecified",
+      "target_unit": "kilogram",
+      "unit_conversion": 1.0,
+      "tier": "CURATED_TARGETED",
+      "notes": "Per ADEME/DdS reviewer (XZ_MC.xlsx, May 2026): AGB Thiacloprid (air, kg) has no substance-specific CF. Reclassify as 'Insecticides, unspecified' [air, non-urban air or from high stacks] (EF v3.1)."
+    },
+    {
+      "source_name": "Triazamate",
+      "source_unit": "kilogram",
+      "source_context": [
+        "air",
+        "non-urban air or from high stacks"
+      ],
+      "target_db": "ef",
+      "target_code": "b3d2162d-f423-47c4-8769-3c48c913d3b8",
+      "target_name": "Insecticides, unspecified",
+      "target_unit": "kilogram",
+      "unit_conversion": 1.0,
+      "tier": "CURATED_TARGETED",
+      "notes": "Per ADEME/DdS reviewer (XZ_MC.xlsx, May 2026): AGB Triazamate (air, kg) has no substance-specific CF. Reclassify as 'Insecticides, unspecified' [air, non-urban air or from high stacks] (EF v3.1)."
+    },
+    {
+      "source_name": "Zoxamide",
+      "source_unit": "kilogram",
+      "source_context": [
+        "air",
+        "non-urban air or from high stacks"
+      ],
+      "target_db": "ef",
+      "target_code": "866f1cde-9ce4-4697-817d-b37476a3a307",
+      "target_name": "Fungicides, unspecified",
+      "target_unit": "kilogram",
+      "unit_conversion": 1.0,
+      "tier": "CURATED_TARGETED",
+      "notes": "Per ADEME/DdS reviewer (XZ_MC.xlsx, May 2026): AGB Zoxamide (air, kg) has no substance-specific CF. Reclassify as 'Fungicides, unspecified' [air, non-urban air or from high stacks] (EF v3.1)."
+    }
+  ]
+}
