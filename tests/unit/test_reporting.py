@@ -399,176 +399,271 @@ class TestBacktestPass1Emitter:
 
 
 # ============================================================================
-# CfStatsEmitter
+# CF comparison: join builder, CSV emitter, by-code sidecar
 
-from cli.compare_cfs import MethodRow
-from reporting import CfStatsEmitter
+import numpy as np
+
+from ef.cf_flow_join import ContextNormaliser, JoinedFlowFrame
+from reporting import (
+    CfComparisonByCodeBuilder,
+    CfComparisonCsvEmitter,
+    CfComparisonJoinBuilder,
+    CfComparisonJoinLoader,
+)
+
+_ACID_KEY = ("ecoinvent-3.9.1", "EF v3.1", "acidification", "accumulated exceedance (AE)")
+_WATER_KEY = (
+    "ecoinvent-3.9.1",
+    "EF v3.1",
+    "water use",
+    "user deprivation potential (deprivation-weighted water consumption)",
+)
 
 
-class TestCfStatsEmitter:
-    HEADER = (
-        "method,alignment,"
-        "sp_count,ef_count,"
-        "sp_min,ef_min,sp_max,ef_max,"
-        "sp_mean,ef_mean,sp_median,ef_median,"
-        "sp_std,ef_std,sp_sum,ef_sum,"
-        "diff_count,diff_min,diff_max,diff_mean,diff_median,diff_std,diff_sum"
+def _empty_normaliser() -> ContextNormaliser:
+    # No rules needed: the builder only uses the built-in compartment buckets
+    # (ecoinvent top → Air/Water/Soil/Raw) and the JRC EF category table.
+    return ContextNormaliser(rules=pd.DataFrame({"source_context": [], "target_context": []}))
+
+
+def _joined_frame(method_key, rows: list[dict]) -> JoinedFlowFrame:
+    return JoinedFlowFrame(
+        method_key=method_key,
+        df=pd.DataFrame(rows, columns=list(JoinedFlowFrame.COLUMNS)),
     )
 
+
+def _matched_row(**kw) -> dict:
+    base = {
+        "code": "c1",
+        "database": "ecoinvent-3.9.1-biosphere",
+        "name": "nitrogen dioxide",
+        "categories": np.array(["air", "urban air close to ground"], dtype=object),
+        "sp_cf": 0.74,
+        "ef_cf": 0.74,
+        "sp_match_provenance": "exact_name",
+        "sp_name": "Nitrogen dioxide",
+        "sp_compartment": "Air",
+        "sp_sub_compartment": "high. pop.",
+    }
+    base.update(kw)
+    return base
+
+
+def _registry_only_row(**kw) -> dict:
+    base = {
+        "code": "c9",
+        "database": "ef",
+        "name": "some ecoinvent organic",
+        "categories": np.array(["water", "ground-"], dtype=object),
+        "sp_cf": np.nan,
+        "ef_cf": 5.0,
+        "sp_match_provenance": "unmatched",
+        "sp_name": "",
+        "sp_compartment": "",
+        "sp_sub_compartment": "",
+    }
+    base.update(kw)
+    return base
+
+
+class TestCfComparisonJoinBuilder:
+    def test_matched_row_computes_status_compartments_and_metrics(self) -> None:
+        frame = _joined_frame(_ACID_KEY, [_matched_row(sp_cf=0.80, ef_cf=0.74)])
+        df = CfComparisonJoinBuilder(normaliser=_empty_normaliser()).build([frame])
+        row = df.iloc[0]
+        assert row["method"] == "acidification"
+        assert row["compartment"] == "air"  # ecoinvent top "air" → bucket
+        assert row["compartment_registry"] == "air / urban air close to ground"
+        assert row["compartment_simapro"] == "Air / high. pop."
+        assert row["name_simapro"] == "Nitrogen dioxide"
+        assert row["status"] == "both_differ"
+        assert row["match_provenance"] == "exact_name"
+        assert row["sp_reg_ratio"] == pytest.approx(0.80 / 0.74)
+        assert row["rel_diff"] == pytest.approx(abs(0.80 - 0.74) / 0.74)
+
+    def test_equal_cfs_are_both_agree(self) -> None:
+        frame = _joined_frame(_ACID_KEY, [_matched_row(sp_cf=0.74, ef_cf=0.74)])
+        df = CfComparisonJoinBuilder(normaliser=_empty_normaliser()).build([frame])
+        assert df.iloc[0]["status"] == "both_agree"
+
+    def test_tiny_cfs_with_large_relative_gap_are_both_differ(self) -> None:
+        # Both CFs are far below the 1e-9 absolute floor (routine for
+        # toxicity methods), but SimaPro is ~1.7x the registry value. The
+        # *relative* gap must drive the verdict — gating the reference on
+        # AGREE_ABS used to let this 70% disagreement read as "agree".
+        frame = _joined_frame(_ACID_KEY, [_matched_row(sp_cf=1.4735e-9, ef_cf=8.6876e-10)])
+        row = CfComparisonJoinBuilder(normaliser=_empty_normaliser()).build([frame]).iloc[0]
+        assert row["status"] == "both_differ"
+        assert row["rel_diff"] == pytest.approx(abs(1.4735e-9 - 8.6876e-10) / 8.6876e-10)
+
+    def test_equal_tiny_cfs_are_both_agree(self) -> None:
+        # A genuinely tiny but matching CF stays "agree" (relative gap ~0).
+        frame = _joined_frame(_ACID_KEY, [_matched_row(sp_cf=8.6876e-10, ef_cf=8.6876e-10)])
+        row = CfComparisonJoinBuilder(normaliser=_empty_normaliser()).build([frame]).iloc[0]
+        assert row["status"] == "both_agree"
+        assert row["rel_diff"] == pytest.approx(0.0)
+
+    def test_both_cfs_zero_are_both_agree(self) -> None:
+        # Registry CF is exactly zero: no usable reference, but SimaPro is
+        # also zero, so the pair agrees via the absolute floor.
+        frame = _joined_frame(_ACID_KEY, [_matched_row(sp_cf=0.0, ef_cf=0.0)])
+        row = CfComparisonJoinBuilder(normaliser=_empty_normaliser()).build([frame]).iloc[0]
+        assert row["status"] == "both_agree"
+
+    def test_unspecified_subcompartment_collapses(self) -> None:
+        frame = _joined_frame(
+            _ACID_KEY,
+            [
+                _matched_row(
+                    categories=np.array(["air", "(unspecified)"], dtype=object),
+                    sp_compartment="Air",
+                    sp_sub_compartment="(unspecified)",
+                )
+            ],
+        )
+        df = CfComparisonJoinBuilder(normaliser=_empty_normaliser()).build([frame])
+        assert df.iloc[0]["compartment_registry"] == "air"
+        assert df.iloc[0]["compartment_simapro"] == "Air"
+
+    def test_registry_only_row_has_blank_simapro_side(self) -> None:
+        frame = _joined_frame(_WATER_KEY, [_registry_only_row()])
+        df = CfComparisonJoinBuilder(normaliser=_empty_normaliser()).build([frame])
+        row = df.iloc[0]
+        assert row["status"] == "registry_only"
+        assert pd.isna(row["cf_simapro"])
+        assert row["name_simapro"] is None
+        assert row["compartment_simapro"] == ""
+        assert row["compartment"] == "water"
+        assert row["cf_registry"] == 5.0
+
+
+class TestUsedFlowFilter:
+    def test_keeps_only_flows_whose_flow_id_is_in_the_package(self) -> None:
+        from ef.cf_flow_join import JoinedFlowFrame
+        from reporting import UsedFlowFilter
+        from scoring.exchange_frame_builder import ExchangeFrameBuilder
+
+        frames = [
+            _joined_frame(
+                _ACID_KEY,
+                [
+                    _matched_row(code="used1", database="ecoinvent-3.9.1-biosphere"),
+                    _matched_row(code="unused1", database="ef"),
+                ],
+            )
+        ]
+        join = CfComparisonJoinBuilder(normaliser=_empty_normaliser()).build(frames)
+        used_id = ExchangeFrameBuilder.flow_id_for(("ecoinvent-3.9.1-biosphere", "used1"))
+        flt = UsedFlowFilter.from_biosphere_row_ids({str(used_id): 0})
+        out = flt.filter(join)
+        assert list(out["code"]) == ["used1"]
+
+    def test_empty_package_keeps_nothing(self) -> None:
+        from reporting import UsedFlowFilter
+
+        frames = [_joined_frame(_ACID_KEY, [_matched_row()])]
+        join = CfComparisonJoinBuilder(normaliser=_empty_normaliser()).build(frames)
+        assert len(UsedFlowFilter.from_biosphere_row_ids({}).filter(join)) == 0
+
+
+class TestCfComparisonCsvEmitter:
     @staticmethod
-    def _stats(**overrides):
-        base = {
-            "count": 100,
-            "min": 1.0,
-            "max": 10.0,
-            "mean": 5.0,
-            "median": 5.0,
-            "std": 2.0,
-            "sum": 500.0,
-        }
-        base.update(overrides)
-        return base
+    def _join() -> pd.DataFrame:
+        frames = [
+            _joined_frame(_ACID_KEY, [_matched_row()]),
+            _joined_frame(_WATER_KEY, [_registry_only_row()]),
+        ]
+        return CfComparisonJoinBuilder(normaliser=_empty_normaliser()).build(frames)
 
-    def _row(self, name, sp=None, ef=None):
-        return MethodRow(
-            display_name=name,
-            norm_key=name.lower(),
-            simapro_stats=sp,
-            ef31_stats=ef,
-        )
+    def test_writes_columns_in_comparison_first_order(self, tmp_path: Path) -> None:
+        out = tmp_path / "cf_comparison.csv"
+        CfComparisonCsvEmitter(out_path=out).write(self._join())
+        header = out.read_text().splitlines()[0].split(",")
+        assert header == list(CfComparisonCsvEmitter.COLUMNS)
+        # name/cf SimaPro fields sit immediately beside the registry ones.
+        assert header.index("name_registry") == header.index("name_simapro") + 1
+        assert header.index("cf_registry") == header.index("cf_simapro") + 1
+        assert "compartment_simapro" in header and "compartment_registry" in header
+        assert "match_provenance" in header
+        # No candidate-era columns survive.
+        assert "n_candidates" not in header
+        assert "candidate_cfs" not in header
 
-    def test_writes_header_in_documented_order(self, tmp_path: Path) -> None:
-        out = tmp_path / "cf_stats.csv"
-        CfStatsEmitter(out_path=out).write([])
-        first_line = out.read_text().splitlines()[0]
-        assert first_line == self.HEADER
-
-    def test_both_sides_emits_symmetric_diff_fractions(self, tmp_path: Path) -> None:
-        out = tmp_path / "cf_stats.csv"
-        sp = self._stats(mean=5.0, sum=500.0)
-        ef = self._stats(mean=6.0, sum=550.0)
-        CfStatsEmitter(out_path=out).write([self._row("Acidification", sp, ef)])
+    def test_matched_only_by_default_drops_registry_only(self, tmp_path: Path) -> None:
+        out = tmp_path / "cf_comparison.csv"
+        CfComparisonCsvEmitter(out_path=out).write(self._join())
         df = pd.read_csv(out)
+        assert set(df["status"]) == {"both_agree"}
         row = df.iloc[0]
-        assert row["alignment"] == "both"
-        assert row["sp_mean"] == 5.0
-        assert row["ef_mean"] == 6.0
-        # diff = (ef - sp) / max(|sp|, |ef|), bounded in [-1, +1]
-        assert row["diff_mean"] == pytest.approx((6.0 - 5.0) / 6.0)
-        assert row["diff_sum"] == pytest.approx((550.0 - 500.0) / 550.0)
+        assert row["name_simapro"] == "Nitrogen dioxide"
+        assert row["compartment_simapro"] == "Air / high. pop."
+        assert row["match_provenance"] == "exact_name"
 
-    def test_sp_only_leaves_ef_and_diff_blank(self, tmp_path: Path) -> None:
-        out = tmp_path / "cf_stats.csv"
-        CfStatsEmitter(out_path=out).write([self._row("Land use", self._stats(), None)])
+    def test_full_mode_keeps_registry_only(self, tmp_path: Path) -> None:
+        out = tmp_path / "cf_comparison.csv"
+        CfComparisonCsvEmitter(out_path=out, matched_only=False).write(self._join())
         df = pd.read_csv(out)
+        assert "registry_only" in set(df["status"])
+
+    def test_raises_on_missing_expected_column(self, tmp_path: Path) -> None:
+        out = tmp_path / "cf_comparison.csv"
+        df = self._join().drop(columns=["cf_simapro"])
+        with pytest.raises(ValueError, match="cf_simapro"):
+            CfComparisonCsvEmitter(out_path=out).write(df)
+
+    def test_loader_raises_when_parquet_absent(self, tmp_path: Path) -> None:
+        with pytest.raises(FileNotFoundError, match="CF comparison join"):
+            CfComparisonJoinLoader(tmp_path / "nope.parquet").load()
+
+
+class TestCfComparisonByCodeBuilder:
+    def test_emits_matched_rows_only_in_lookup_schema(self) -> None:
+        frames = [
+            _joined_frame(_ACID_KEY, [_matched_row(code="c1"), _registry_only_row(code="c2")]),
+        ]
+        df = CfComparisonByCodeBuilder().build(frames)
+        assert list(df.columns) == list(CfComparisonByCodeBuilder.COLUMNS)
+        assert list(df["code"]) == ["c1"]
         row = df.iloc[0]
-        assert row["alignment"] == "sp_only"
-        assert row["sp_count"] == 100
-        assert pd.isna(row["ef_count"])
-        assert pd.isna(row["diff_count"])
-        assert pd.isna(row["diff_mean"])
+        assert row["method"] == "acidification"
+        assert row["cf_simapro"] == 0.74
+        assert row["match_basis"] == "exact_name"
+        assert row["name_simapro"] == "Nitrogen dioxide"
+        assert row["name_registry"] == "nitrogen dioxide"
 
-    def test_ef_only_leaves_sp_and_diff_blank(self, tmp_path: Path) -> None:
-        out = tmp_path / "cf_stats.csv"
-        CfStatsEmitter(out_path=out).write([self._row("Resource use", None, self._stats())])
-        df = pd.read_csv(out)
-        row = df.iloc[0]
-        assert row["alignment"] == "ef_only"
-        assert pd.isna(row["sp_count"])
-        assert row["ef_count"] == 100
-        assert pd.isna(row["diff_count"])
+    def test_dedups_on_method_and_code(self) -> None:
+        frames = [
+            _joined_frame(_ACID_KEY, [_matched_row(code="c1"), _matched_row(code="c1", sp_cf=9.9)]),
+        ]
+        df = CfComparisonByCodeBuilder().build(frames)
+        assert len(df) == 1
+        assert df.iloc[0]["cf_simapro"] == 0.74  # first wins
 
-    def test_sp_zero_with_nonzero_ef_saturates_to_plus_one(self, tmp_path: Path) -> None:
-        out = tmp_path / "cf_stats.csv"
-        sp = self._stats(min=0.0, mean=5.0)
-        ef = self._stats(min=0.1, mean=6.0)
-        CfStatsEmitter(out_path=out).write([self._row("Acidification", sp, ef)])
-        df = pd.read_csv(out)
-        row = df.iloc[0]
-        # Symmetric formula: sp=0, ef=0.1 -> +1.0 (saturated), not blank.
-        assert row["diff_min"] == pytest.approx(1.0)
-        assert row["diff_mean"] == pytest.approx((6.0 - 5.0) / 6.0)
-        assert row["sp_min"] == 0.0
-        assert row["ef_min"] == 0.1
+    def test_sidecar_is_consumable_by_simapro_cf_lookup(self) -> None:
+        from reporting.simapro_cf_lookup import SimaProCfLookup
 
-    def test_both_zero_yields_zero_diff(self, tmp_path: Path) -> None:
-        out = tmp_path / "cf_stats.csv"
-        sp = self._stats(min=0.0, mean=0.0)
-        ef = self._stats(min=0.0, mean=0.0)
-        CfStatsEmitter(out_path=out).write([self._row("Climate change - Biogenic", sp, ef)])
-        df = pd.read_csv(out)
-        row = df.iloc[0]
-        assert row["diff_min"] == 0.0
-        assert row["diff_mean"] == 0.0
+        frames = [_joined_frame(_ACID_KEY, [_matched_row(code="c1")])]
+        sidecar = CfComparisonByCodeBuilder().build(frames)
+        lookup = SimaProCfLookup.from_dataframe(sidecar)
+        entry = lookup.get("c1", "acidification")
+        assert entry is not None
+        assert entry.sp_cf == 0.74
+        assert entry.provenance == "exact_name"
+        assert entry.sp_name == "Nitrogen dioxide"
 
-    def test_diff_is_bounded_within_pm_unit_when_signs_match(self, tmp_path: Path) -> None:
-        out = tmp_path / "cf_stats.csv"
-        # Historically (ef - sp) / |sp| produced +9900% on Ozone depletion
-        # median (sp=0.005, ef=0.5). The symmetric form bounds to [-1, +1]
-        # whenever sp and ef share a sign.
-        sp = self._stats(median=0.005)
-        ef = self._stats(median=0.5)
-        CfStatsEmitter(out_path=out).write([self._row("Ozone depletion", sp, ef)])
-        df = pd.read_csv(out)
-        row = df.iloc[0]
-        assert -1.0 <= row["diff_median"] <= 1.0
-        assert row["diff_median"] == pytest.approx((0.5 - 0.005) / 0.5)
+    def test_loader_round_trips_parquet(self, tmp_path: Path) -> None:
+        frames = [_joined_frame(_ACID_KEY, [_matched_row(), _registry_only_row()])]
+        join = CfComparisonJoinBuilder(normaliser=_empty_normaliser()).build(frames)
+        src = tmp_path / "cf_comparison_join.parquet"
+        join.to_parquet(src, index=False)
+        loaded = CfComparisonJoinLoader(src).load()
+        assert set(CfComparisonCsvEmitter.COLUMNS).issubset(loaded.columns)
+        assert len(loaded) == 2
 
-    def test_diff_sign_flip_can_exceed_unit(self, tmp_path: Path) -> None:
-        out = tmp_path / "cf_stats.csv"
-        # When sp and ef have opposite signs the symmetric formula can
-        # produce |diff| > 1 (max |diff| = 2 at sp = -ef). Real example:
-        # Water use joined median sp=-4.575, ef=+4.59 → +1.997.
-        sp = self._stats(median=-4.575)
-        ef = self._stats(median=4.59)
-        CfStatsEmitter(out_path=out).write([self._row("Water use", sp, ef)])
-        df = pd.read_csv(out)
-        row = df.iloc[0]
-        expected = (4.59 - (-4.575)) / max(abs(-4.575), abs(4.59))
-        assert row["diff_median"] == pytest.approx(expected)
-        assert row["diff_median"] > 1.0  # confirms sign-flip signal
-
-    def test_per_flow_diff_stats_override_diff_columns(self, tmp_path: Path) -> None:
-        # In joined-mode, the comparator computes per-flow diff stats
-        # separately so diff_<stat> reads as "<stat> of per-flow diffs"
-        # instead of "(ef_<stat> - sp_<stat>) / max(|sp|, |ef|)".
-        # Water-use case: with 2 matched flows where positives and
-        # negatives cancel, the "diff of means" formula reads -100%
-        # while the per-flow mean diff is -6%. The emitter must trust
-        # per_flow_diff_stats when present.
-        out = tmp_path / "cf_stats.csv"
-        sp = self._stats(mean=-0.0025, median=-0.0025)
-        ef = self._stats(mean=-2.575, median=-2.575)
-        per_flow = {
-            "count": 2,
-            "min": -0.12,
-            "max": 0.0,
-            "mean": -0.06,
-            "median": -0.06,
-            "std": 0.085,
-            "sum": -0.12,
-        }
-        row = MethodRow(
-            display_name="Water use",
-            norm_key="water use",
-            simapro_stats=sp,
-            ef31_stats=ef,
-            per_flow_diff_stats=per_flow,
-        )
-        CfStatsEmitter(out_path=out).write([row])
-        df = pd.read_csv(out)
-        r = df.iloc[0]
-        # Per-flow values used for min/max/mean/median/std
-        assert r["diff_mean"] == pytest.approx(-0.06)
-        assert r["diff_median"] == pytest.approx(-0.06)
-        assert r["diff_min"] == pytest.approx(-0.12)
-        assert r["diff_max"] == pytest.approx(0.0)
-        # count and sum keep the historical formula
-        # (sp_sum=500, ef_sum=500 in the default _stats() → diff_sum = 0)
-        assert r["diff_count"] == pytest.approx(0.0)
-        assert r["diff_sum"] == pytest.approx(0.0)
-
-    def test_creates_parent_dir(self, tmp_path: Path) -> None:
-        out = tmp_path / "nested" / "dir" / "cf_stats.csv"
-        CfStatsEmitter(out_path=out).write([])
+    def test_emitter_creates_parent_dir(self, tmp_path: Path) -> None:
+        frames = [_joined_frame(_ACID_KEY, [_matched_row()])]
+        join = CfComparisonJoinBuilder(normaliser=_empty_normaliser()).build(frames)
+        out = tmp_path / "nested" / "dir" / "cf_comparison.csv"
+        CfComparisonCsvEmitter(out_path=out).write(join)
         assert out.exists()

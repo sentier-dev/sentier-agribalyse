@@ -50,8 +50,9 @@
     "not_a_bug": true
   },
   "ht_c": {
-    "tag": null,
+    "tag": "EF v3.1 CF bias",
     "count": 0,
+    "impact_level": true,
     "median_pct": null,
     "short": "Same activities, mappings, and elementary flows as ADEME. A handful of high-leverage CFs in bw2io's EF v3.1 snapshot differ from the EF revision ADEME used, producing a +4.3% mean bias library-wide (max +41.5%, no SKU above ±50%).",
     "not_a_bug": true
@@ -71,8 +72,9 @@
     "not_a_bug": true
   },
   "ecotox": {
-    "tag": null,
+    "tag": "EF v3.1 CF bias",
     "count": 0,
+    "impact_level": true,
     "median_pct": null,
     "short": "Same activities, mappings, and elementary flows as ADEME. A few elementary-flow CFs in bw2io's EF v3.1 snapshot differ from ADEME's EF revision, producing a +6.5% mean bias (max 46.5%, no SKU above ±50%) — same shape as ht_c.",
     "not_a_bug": true

@@ -33,7 +33,10 @@ also as `python -m cli.<name>`):
 | `dds-build-registry` | Build `registry/*.parquet` from every source — the foundation everything else depends on. |
 | `dds-link-all` | Full link pipeline: Brightway setup → ecoinvent → EF layer → CSV → transforms → biosphere matcher → technosphere matcher → write DB → matrix-square purge. |
 | `dds-run-end-to-end` | Link + register LCIA + score a sample of products. |
-| `dds-backtest` | Score every mapped product vs. ADEME's reference and write parquet diffs to `dashboard/backtest/`. |
+| `dds-backtest` | Score every mapped product vs. ADEME's reference and write parquet diffs to `dashboard/backtest/` plus `dashboard/backtest_pass1.csv` — the data source for the dashboard's **Product %diff** tab. |
+| `dds-compare-cfs` | Build the SimaPro-vs-registry per-flow CF comparison (`dashboard/cf_comparison.csv` + `registry/cf_comparison_*.parquet`) that powers the dashboard's **CF comparison** tab. |
+| `dds-build-flow-decomp` | Write per-product flow-decomposition JSONs to `dashboard/decomp/` for the dashboard's per-product drill-down panel. |
+| `dds-build-product-reasons` | Author per-product, per-outlier-impact LLM explanations into `dashboard/product_reasons.json`, shown in the dashboard's cell tooltips. Needs the local `claude` binary (default) or `--use-api` with an Anthropic key. Optional. |
 | `dds-decompose-score` | Explain a single `(product, method)` score: top biosphere flows, technosphere activities, and `(activity, flow)` edges. |
 | `dds-build-packages` | Author the publishable randonneur datapackages (`source/randonneur_packages/*.json`) and the residuals review xlsx. |
 | `dds-mappings-comparison` | Regenerate `to_review/mappings_comparison.xlsx` from the persisted DB without re-running the link pipeline. |
@@ -47,34 +50,91 @@ Common flags on `dds-link-all`:
 --no-purge        Skip matrix-square purge (still writes DB).
 ```
 
-### Typical workflow
+### Full workflow (from scratch)
 
-```
-1. dds-build-registry      # one-time per source change
-2. dds-link-all            # full link → write DB → matrix purge
-3. dds-run-end-to-end      # link + LCIA + score sample (covers 1-2 if needed)
-4. dds-backtest            # full ADEME backtest (parquet outputs)
+Run these in order on a clean checkout. Step 0 is a one-time bootstrap
+for a licensed ecoinvent user; steps 1-6 rebuild everything the
+dashboard renders. All artifacts they write under `source/`,
+`registry/`, and the generated `dashboard/` data are gitignored (see
+[Dashboard data & the EULA](#dashboard-data--the-ecoinvent-eula)).
+
+```bash
+# 0. One-time: regenerate the ecoinvent-derived source/ files from your
+#    own ecoinvent licence. See BOOTSTRAP.md. Skip if source/ is already
+#    populated.
+
+# 1. Build registry/*.parquet from every source (foundation for the rest).
+dds-build-registry
+
+# 2. Full link pipeline → writes the scoring package + run_report.json.
+dds-link-all
+
+# 3. Score every product vs ADEME → dashboard/backtest_pass1.csv
+#    (Product %diff tab). pardiso is recommended — see the solver note.
+dds-backtest --solver pardiso
+
+# 4. SimaPro-vs-ours per-flow CF comparison → dashboard/cf_comparison.csv
+#    (CF comparison tab).
+dds-compare-cfs
+
+# 5. Per-product flow-decomposition JSONs → dashboard/decomp/
+#    (the drill-down panel opened by clicking a product row).
+dds-build-flow-decomp --solver pardiso
+
+# 6. Optional: per-product LLM outlier notes → dashboard/product_reasons.json
+#    (cell tooltips). Needs the local `claude` binary or --use-api.
+dds-build-product-reasons
 ```
 
-After the first full run, use `--skip-ecoinvent` (and on
-`dds-run-end-to-end`, `--skip-linking`) to skip expensive steps.
+`dds-run-end-to-end --solver pardiso` is an optional quick smoke that
+links + registers LCIA + scores a small sample; `dds-backtest` (step 3)
+supersedes it for the dashboard. After the first full run, add
+`--skip-ecoinvent` (and on `dds-run-end-to-end`, `--skip-linking`) to
+skip the expensive relink.
+
+> **Solver:** use `--solver pardiso` on `dds-backtest`,
+> `dds-run-end-to-end`, and `dds-build-flow-decomp`. The scoring-package
+> matrix has zero-diagonal placeholder activities that scipy's SuperLU
+> rejects as "exactly singular"; pypardiso's pivoting handles them.
+> Install it with the `pardiso` extra: `pip install -e ".[pardiso]"`.
+> The CLIs fall back to scipy if pardiso is absent.
 
 ### View the backtest dashboard locally
 
-`dds-backtest` writes the React dashboard's data source
-(`dashboard/backtest_pass1.csv`) alongside the parquet artifacts. To
-view `dashboard/backtest_dashboard.html`:
+After steps 3-6 above, serve `dashboard/` and open the static React UI:
 
 ```bash
 python -m http.server 8000 --directory dashboard
 # then open http://localhost:8000/backtest_dashboard.html
 ```
 
-The CSV is regenerated automatically every `dds-backtest` run with the
+The dashboard has three tabs, each driven by a file the workflow writes:
+
+| Tab | Data source | Built by |
+|---|---|---|
+| **Product %diff** | `dashboard/backtest_pass1.csv` | `dds-backtest` |
+| **CF comparison** | `dashboard/cf_comparison.csv` | `dds-compare-cfs` |
+| drill-down panel | `dashboard/decomp/<code>.json` | `dds-build-flow-decomp` |
+| cell tooltips | `dashboard/product_reasons.json` | `dds-build-product-reasons` |
+
+`backtest_pass1.csv` is emitted every `dds-backtest` run with the
 [`NearZeroFloor`](src/reporting/near_zero_floor.py) noise-suppression
 rule and the long-name → short-id translation
 ([`BacktestPass1Emitter`](src/reporting/backtest_dashboard_csv.py))
-already applied — no manual export step required.
+already applied — no manual export step. The dashboard degrades
+gracefully if a data file is missing (that tab is just empty), so
+steps 4-6 are only needed for the features they feed.
+
+### Dashboard data & the ecoinvent EULA
+
+The static UI shell (`backtest_dashboard.html`, the vendored
+`react*.min.js` / `babel.min.js`, `dds-logo.svg`) and the
+impact-category notes (`outlier_reasons.json`) ship in git. The
+**generated** data files — `dashboard/cf_comparison.csv`,
+`dashboard/product_reasons.json`, and `dashboard/decomp/` — do **not**:
+they embed ecoinvent elementary-flow nomenclature (flow name +
+compartment of the matched registry flow) and are gitignored under the
+ecoinvent EULA. Regenerate them locally with steps 4-6.
 
 ### Decompose a score
 
@@ -364,8 +424,11 @@ AGB+ecoinvent schema mix.
 | `dashboard/override_audit.parquet` | `AuditLog` | Every match decision (new link / override / unit reject / ambiguous skip) |
 | `dashboard/suppressed_strategies.parquet` | `SuppressedStrategyLog` | bw2io strategies that threw |
 | `dashboard/backtest/*.parquet` | `BacktestPipeline` | scores / diff_abs / diff_pct / summary |
-| `dashboard/backtest_pass1.csv` | `BacktestPass1Emitter` | React dashboard's data source — 19 method short IDs per mapped product |
-| `dashboard/backtest_dashboard.html` | hand-maintained | Static React UI rendering `backtest_pass1.csv`; serve with `python -m http.server --directory dashboard` |
+| `dashboard/backtest_pass1.csv` | `BacktestPass1Emitter` | Dashboard **Product %diff** data source — 19 method short IDs per mapped product |
+| `dashboard/cf_comparison.csv` | `CfComparisonCsvEmitter` (`dds-compare-cfs`) | Dashboard **CF comparison** data source — SimaPro-vs-ours matched per-flow CFs. Gitignored (embeds ecoinvent nomenclature). |
+| `dashboard/decomp/<code>.json` | `dds-build-flow-decomp` | Per-product flow-decomposition for the drill-down panel. Gitignored. |
+| `dashboard/product_reasons.json` | `dds-build-product-reasons` | Per-product LLM outlier notes for cell tooltips. Gitignored. |
+| `dashboard/backtest_dashboard.html` | hand-maintained | Static React UI (vendored react/babel, `dds-logo.svg`); serve with `python -m http.server --directory dashboard` |
 | `unlinked/technosphere_unlinked.json` | `UnlinkedExporter` | Residual unlinked technosphere names |
 | `unlinked/biosphere_unlinked.xlsx` | `UnlinkedExporter` | Residual unlinked biosphere flows |
 | `to_review/mappings_comparison.xlsx` | `MappingsComparisonExporter` | Placeholder ecoinvent / EF / Neither / novel comparison |

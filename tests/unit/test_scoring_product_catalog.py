@@ -222,3 +222,90 @@ class TestProductCatalogBuilderEdgeCases:
         ProductCatalogBuilder().build(sp_data, path)
         df = pd.read_parquet(path)
         assert len(df) == 1
+
+
+class TestBuildFromColumns:
+    """The divergence-free label catalog: one row per technosphere column,
+    keyed by ``activity_id``, resolving agribalyse, ecoinvent, and Allocator
+    multifunctional-split columns; unresolved columns are surfaced, not
+    dropped."""
+
+    def _fid(self, database: str, code: str) -> int:
+        return ExchangeFrameBuilder.flow_id_for((database, code))
+
+    def test_resolves_all_column_kinds(self, tmp_path: Path):
+        # A foreground agribalyse activity that produces product "p1".
+        sp_data = [
+            {
+                "database": "agribalyse-3.2",
+                "code": "act",
+                "name": "Milk, raw",
+                "type": "multifunctional",
+                "unit": "kg",
+                "exchanges": [
+                    {"type": "production", "input": ["agribalyse-3.2", "prod-milk"]},
+                ],
+            },
+            # the product node it makes (so the synthetic can be named from it)
+            {
+                "database": "agribalyse-3.2",
+                "code": "prod-milk",
+                "name": "Milk (product)",
+                "type": "product",
+                "unit": "kg",
+            },
+        ]
+        ei_catalog = pd.DataFrame(
+            [{
+                "database": "ecoinvent-3.9.1-cutoff", "code": "ei1",
+                "name": "market for electricity", "unit": "kilowatt hour",
+                "location": "GLO", "reference_product": "electricity",
+            }]
+        )
+        act_id = self._fid("agribalyse-3.2", "act")
+        prod_id = self._fid("agribalyse-3.2", "prod-milk")
+        ei_id = self._fid("ecoinvent-3.9.1-cutoff", "ei1")
+        # Allocator synthetic id derived from (parent act, product prod-milk).
+        from scoring.allocator import Allocator
+
+        syn_id = Allocator._synthetic_id(act_id, prod_id)
+        provenance = {syn_id: (act_id, prod_id)}
+        unresolved_id = 424242
+
+        target = tmp_path / "activity_catalog.parquet"
+        ProductCatalogBuilder().build_from_columns(
+            col_ids=[act_id, ei_id, syn_id, unresolved_id],
+            sp_data=sp_data,
+            ei_catalog_df=ei_catalog,
+            synthetic_provenance=provenance,
+            target=target,
+        )
+        df = pd.read_parquet(target).set_index("activity_id")
+
+        assert df.loc[act_id, "name"] == "Milk, raw"
+        assert df.loc[act_id, "unit"] == "kg"
+        assert df.loc[ei_id, "name"] == "market for electricity"
+        assert df.loc[ei_id, "unit"] == "kilowatt hour"
+        assert df.loc[ei_id, "location"] == "GLO"
+        # Synthetic column labelled from parent + product, unit from product.
+        assert "Milk" in df.loc[syn_id, "name"]
+        assert df.loc[syn_id, "type"] == "multifunctional_split"
+        assert df.loc[syn_id, "unit"] == "kg"
+        # Unresolved surfaced, never dropped.
+        assert df.loc[unresolved_id, "type"] == "unresolved"
+        assert df.loc[unresolved_id, "name"] == f"activity {unresolved_id}"
+
+    def test_keyed_by_activity_id_one_row_per_column(self, tmp_path: Path):
+        sp_data = [{"database": "agribalyse-3.2", "code": "a", "name": "A", "type": "process", "unit": "kg"}]
+        aid = self._fid("agribalyse-3.2", "a")
+        target = tmp_path / "activity_catalog.parquet"
+        ProductCatalogBuilder().build_from_columns(
+            col_ids=[aid, aid],  # duplicate column ids collapse
+            sp_data=sp_data,
+            ei_catalog_df=pd.DataFrame(),
+            synthetic_provenance={},
+            target=target,
+        )
+        df = pd.read_parquet(target)
+        assert list(df["activity_id"]) == [aid]
+        assert "activity_id" in df.columns

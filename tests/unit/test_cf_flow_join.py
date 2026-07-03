@@ -13,7 +13,6 @@ from ef.cf_flow_join import (
     ContextNormaliser,
     FlowLevelCfJoiner,
     JoinedFlowFrame,
-    JoinedFlowParquetWriter,
     SimaProCfIndex,
     SimaProCfUnitHarmoniser,
 )
@@ -234,28 +233,70 @@ class TestSimaProCfIndex:
         return SimaProCfIndex.from_dataframe(_sp_df_fixture())
 
     def test_exact_name_lookup_hits(self, sp_index: SimaProCfIndex) -> None:
-        cf, prov = sp_index.lookup(
+        match = sp_index.lookup(
             registry_method_key=self.OZONE_KEY,
             name="Methane, trichlorofluoro-, CFC-11",
             context=("Air", "(unspecified)"),
             synonyms=None,
             cas=None,
         )
-        assert cf == pytest.approx(1.0)
-        assert prov == SimaProCfIndex.PROV_EXACT
+        assert match.cf == pytest.approx(1.0)
+        assert match.provenance == SimaProCfIndex.PROV_EXACT
+
+    def test_match_carries_simapro_row_identity(self, sp_index: SimaProCfIndex) -> None:
+        # The match exposes the SimaPro row the CF came from (name + context),
+        # so the comparison can show the SimaPro flow beside ours.
+        match = sp_index.lookup(
+            registry_method_key=self.OZONE_KEY,
+            name="Methane, trichlorofluoro-, CFC-11",
+            context=("Air", "(unspecified)"),
+            synonyms=None,
+            cas=None,
+        )
+        assert match.name == "Methane, trichlorofluoro-, CFC-11"
+        assert match.compartment == "Air"
+        assert match.sub_compartment == "(unspecified)"
+
+    def test_synonym_match_reports_canonical_simapro_name(
+        self, sp_index: SimaProCfIndex
+    ) -> None:
+        # Matched via synonym "Bromomethane" → identity is the SP canonical
+        # name, not the synonym used to find it.
+        match = sp_index.lookup(
+            registry_method_key=self.OZONE_KEY,
+            name="Methyl bromide",
+            context=("Air", "(unspecified)"),
+            synonyms=["Bromomethane"],
+            cas=None,
+        )
+        assert match.name == "Bromomethane"
+        assert match.provenance == SimaProCfIndex.PROV_SYNONYM
+
+    def test_unmatched_has_empty_identity(self, sp_index: SimaProCfIndex) -> None:
+        match = sp_index.lookup(
+            registry_method_key=self.OZONE_KEY,
+            name="Definitely not a substance",
+            context=("Air", "(unspecified)"),
+            synonyms=None,
+            cas=None,
+        )
+        assert match.cf is None
+        assert match.name == ""
+        assert match.compartment == ""
+        assert match.sub_compartment == ""
 
     def test_synonym_fallback(self, sp_index: SimaProCfIndex) -> None:
         # Bromomethane is the SP name; a synonym "Methyl bromide" should
         # also hit (with the same key).
-        cf, prov = sp_index.lookup(
+        match = sp_index.lookup(
             registry_method_key=self.OZONE_KEY,
             name="Methyl bromide",  # not present as primary
             context=("Air", "(unspecified)"),
             synonyms=["Bromomethane"],
             cas=None,
         )
-        assert cf == pytest.approx(0.57)
-        assert prov == SimaProCfIndex.PROV_SYNONYM
+        assert match.cf == pytest.approx(0.57)
+        assert match.provenance == SimaProCfIndex.PROV_SYNONYM
 
     def test_cas_lookup_prefers_unspecified_over_indoor_zero(
         self, sp_index: SimaProCfIndex
@@ -265,15 +306,15 @@ class TestSimaProCfIndex:
         # through to (unspecified)=0.57, not the indoor zero — even when
         # the indoor row is processed first during index construction
         # (the priority tuple (is_unspec, -name_len) ensures unspec wins).
-        cf, prov = sp_index.lookup(
+        match = sp_index.lookup(
             registry_method_key=self.OZONE_KEY,
             name="Methane, bromo-",  # not in SP primary
             context=("Air", "low. pop., long-term"),
             synonyms=None,
             cas="000074-83-9",
         )
-        assert cf == pytest.approx(0.57)
-        assert prov == SimaProCfIndex.PROV_CAS
+        assert match.cf == pytest.approx(0.57)
+        assert match.provenance == SimaProCfIndex.PROV_CAS
 
     def test_cas_lookup_breaks_ties_by_shortest_name(self) -> None:
         # SP has three rows sharing one CAS (e.g. Uranium variants of
@@ -317,7 +358,7 @@ class TestSimaProCfIndex:
             ]
         )
         index = SimaProCfIndex.from_dataframe(df)
-        cf, prov = index.lookup(
+        match = index.lookup(
             registry_method_key=(
                 "ecoinvent-3.9.1",
                 "EF v3.1",
@@ -335,8 +376,8 @@ class TestSimaProCfIndex:
         )
         # Canonical "Uranium" (shortest name) wins, not the 451 GJ variant
         # or 2291 GJ variant.
-        assert cf == pytest.approx(560_000.0)
-        assert prov == SimaProCfIndex.PROV_CAS
+        assert match.cf == pytest.approx(560_000.0)
+        assert match.provenance == SimaProCfIndex.PROV_CAS
 
     def test_short_name_skipped_for_non_chemical_identifiers(self) -> None:
         # SP has "Energy, unspecified" (cf=1.00) — short_name "unspecified".
@@ -359,7 +400,7 @@ class TestSimaProCfIndex:
             ]
         )
         index = SimaProCfIndex.from_dataframe(df)
-        cf, prov = index.lookup(
+        match = index.lookup(
             registry_method_key=(
                 "ecoinvent-3.9.1",
                 "EF v3.1",
@@ -371,8 +412,8 @@ class TestSimaProCfIndex:
             synonyms=None,
             cas=None,
         )
-        assert cf is None
-        assert prov == SimaProCfIndex.PROV_UNMATCHED
+        assert match.cf is None
+        assert match.provenance == SimaProCfIndex.PROV_UNMATCHED
 
     def test_water_use_kg_cf_is_scaled_by_1000_to_match_registry(self) -> None:
         # SP's "Water" emission CF is stored as ``-0.042955`` per kg (SP
@@ -396,7 +437,7 @@ class TestSimaProCfIndex:
             ]
         )
         index = SimaProCfIndex.from_dataframe(df)
-        cf, _ = index.lookup(
+        match = index.lookup(
             registry_method_key=(
                 "ecoinvent-3.9.1",
                 "EF v3.1",
@@ -408,7 +449,7 @@ class TestSimaProCfIndex:
             synonyms=None,
             cas=None,
         )
-        assert cf == pytest.approx(-42.955)
+        assert match.cf == pytest.approx(-42.955)
 
     def test_water_use_m3_cf_is_not_scaled(self) -> None:
         # SP's "Water, fresh" resource CF is already per m3 (matches
@@ -429,7 +470,7 @@ class TestSimaProCfIndex:
             ]
         )
         index = SimaProCfIndex.from_dataframe(df)
-        cf, _ = index.lookup(
+        match = index.lookup(
             registry_method_key=(
                 "ecoinvent-3.9.1",
                 "EF v3.1",
@@ -441,7 +482,78 @@ class TestSimaProCfIndex:
             synonyms=None,
             cas=None,
         )
-        assert cf == pytest.approx(42.95)
+        assert match.cf == pytest.approx(42.95)
+
+    def test_water_use_air_emission_bridges_to_simapro_raw_water(self) -> None:
+        # The water flows the inventory uses are ecoinvent "Water" emissions
+        # to *air* (evaporative consumption, +42.95). SimaPro carries no Air
+        # water-use CF — its water-use deprivation lives on the Raw resource
+        # input (+42.95, the value SimaPro uses anyway). For the water-use
+        # method the registry Air flow must bridge to SimaPro's Raw water CF.
+        df = pd.DataFrame(
+            [
+                {
+                    "simapro_method": "Water use",
+                    "simapro_method_unit": "m3 depriv.",
+                    "compartment": "Raw",
+                    "sub_compartment": "(unspecified)",
+                    "name": "Water, fresh",
+                    "cas": "007732-18-5",
+                    "cf": 42.95,
+                    "flow_unit": "m3",
+                    "cf_unit": "m3 depriv. / m3",
+                },
+            ]
+        )
+        index = SimaProCfIndex.from_dataframe(df)
+        match = index.lookup(
+            registry_method_key=(
+                "ecoinvent-3.9.1",
+                "EF v3.1",
+                "water use",
+                "user deprivation potential (deprivation-weighted water consumption)",
+            ),
+            name="Water",
+            context=("Air", "(unspecified)"),
+            synonyms=None,
+            cas="007732-18-5",
+        )
+        assert match.cf == pytest.approx(42.95)
+        assert match.provenance == SimaProCfIndex.PROV_CAS
+
+    def test_air_bridge_does_not_apply_to_non_water_methods(self) -> None:
+        # The Air→Raw bridge is water-use-only. An Air flow in another method
+        # must NOT reach a Raw SimaPro CF.
+        df = pd.DataFrame(
+            [
+                {
+                    "simapro_method": "Resource use, minerals and metals",
+                    "simapro_method_unit": "kg Sb eq",
+                    "compartment": "Raw",
+                    "sub_compartment": "(unspecified)",
+                    "name": "Lead",
+                    "cas": "007439-92-1",
+                    "cf": 1.23,
+                    "flow_unit": "kg",
+                    "cf_unit": "kg Sb eq / kg",
+                },
+            ]
+        )
+        index = SimaProCfIndex.from_dataframe(df)
+        match = index.lookup(
+            registry_method_key=(
+                "ecoinvent-3.9.1",
+                "EF v3.1",
+                "material resources: metals/minerals",
+                "abiotic depletion potential (ADP): elements (ultimate reserves)",
+            ),
+            name="Lead",
+            context=("Air", "(unspecified)"),
+            synonyms=None,
+            cas="007439-92-1",
+        )
+        assert match.cf is None
+        assert match.provenance == SimaProCfIndex.PROV_UNMATCHED
 
     def test_primary_falls_back_to_unspecified_sub(self) -> None:
         # SP only has one row for "Coal, brown" at (Raw, (unspecified)).
@@ -463,7 +575,7 @@ class TestSimaProCfIndex:
             ]
         )
         index = SimaProCfIndex.from_dataframe(df)
-        cf, prov = index.lookup(
+        match = index.lookup(
             registry_method_key=(
                 "ecoinvent-3.9.1",
                 "EF v3.1",
@@ -475,32 +587,32 @@ class TestSimaProCfIndex:
             synonyms=None,
             cas=None,
         )
-        assert cf == pytest.approx(9.41)
-        assert prov == SimaProCfIndex.PROV_EXACT
+        assert match.cf == pytest.approx(9.41)
+        assert match.provenance == SimaProCfIndex.PROV_EXACT
 
     def test_short_name_fallback(self, sp_index: SimaProCfIndex) -> None:
         # JRC short name "CFC-115" must match SP's long name
         # "Ethane, chloropentafluoro-, CFC-115".
-        cf, prov = sp_index.lookup(
+        match = sp_index.lookup(
             registry_method_key=self.OZONE_KEY,
             name="CFC-115",
             context=("Air", "(unspecified)"),
             synonyms=None,
             cas=None,
         )
-        assert cf == pytest.approx(0.26)
-        assert prov == SimaProCfIndex.PROV_SHORT_NAME
+        assert match.cf == pytest.approx(0.26)
+        assert match.provenance == SimaProCfIndex.PROV_SHORT_NAME
 
     def test_unmatched_when_no_strategy_hits(self, sp_index: SimaProCfIndex) -> None:
-        cf, prov = sp_index.lookup(
+        match = sp_index.lookup(
             registry_method_key=self.OZONE_KEY,
             name="Definitely not a substance",
             context=("Air", "(unspecified)"),
             synonyms=None,
             cas="invalid-cas",
         )
-        assert cf is None
-        assert prov == SimaProCfIndex.PROV_UNMATCHED
+        assert match.cf is None
+        assert match.provenance == SimaProCfIndex.PROV_UNMATCHED
 
 
 # ---------------------------------------------------------------------------
@@ -603,67 +715,6 @@ class TestFlowLevelCfJoiner:
         out = joiner.join_method(self.OZONE_KEY, ef)
         assert out.df.empty
         assert list(out.df.columns) == list(JoinedFlowFrame.COLUMNS)
-
-
-# ---------------------------------------------------------------------------
-# JoinedFlowParquetWriter.
-
-
-class TestJoinedFlowParquetWriter:
-    OZONE_KEY: tuple[str, str, str, str] = (
-        "ecoinvent-3.9.1",
-        "EF v3.1",
-        "ozone depletion",
-        "ozone depletion potential (ODP)",
-    )
-
-    def test_writes_frames_with_method_key_columns(self, tmp_path: Path) -> None:
-        frame = JoinedFlowFrame(
-            method_key=self.OZONE_KEY,
-            df=pd.DataFrame(
-                [
-                    {
-                        "code": "abc",
-                        "name": "X",
-                        "categories": ["air", "(unspecified)"],
-                        "sp_cf": 1.0,
-                        "ef_cf": 1.0,
-                        "sp_match_provenance": SimaProCfIndex.PROV_EXACT,
-                    }
-                ]
-            ),
-        )
-        out_path = tmp_path / "cf_per_flow_joined.parquet"
-        written = JoinedFlowParquetWriter(out_path=out_path).write([frame])
-        assert written == out_path
-        df = pd.read_parquet(written)
-        assert len(df) == 1
-        # Method key fans out across 4 cols
-        assert df.loc[0, "method_database"] == self.OZONE_KEY[0]
-        assert df.loc[0, "method_ef_version"] == self.OZONE_KEY[1]
-        assert df.loc[0, "method_category"] == self.OZONE_KEY[2]
-        assert df.loc[0, "method_indicator"] == self.OZONE_KEY[3]
-        assert df.loc[0, "code"] == "abc"
-        assert df.loc[0, "sp_cf"] == pytest.approx(1.0)
-
-    def test_empty_input_writes_empty_parquet_with_schema(self, tmp_path: Path) -> None:
-        out_path = tmp_path / "cf_per_flow_joined.parquet"
-        JoinedFlowParquetWriter(out_path=out_path).write([])
-        df = pd.read_parquet(out_path)
-        assert df.empty
-        expected = {
-            "method_database",
-            "method_ef_version",
-            "method_category",
-            "method_indicator",
-            "code",
-            "name",
-            "categories",
-            "sp_cf",
-            "ef_cf",
-            "sp_match_provenance",
-        }
-        assert set(df.columns) == expected
 
 
 # ---------------------------------------------------------------------------

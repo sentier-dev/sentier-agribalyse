@@ -127,8 +127,9 @@ class FlowDecompositionEmitter:
             if decomp is None:
                 continue
             # The method tuple is (database, ef_version, category, indicator);
-            # the last two key the per-flow SimaPro CF table.
-            category, indicator = (full[2], full[3]) if len(full) >= 4 else ("", "")
+            # the category keys the per-flow SimaPro CF sidecar (its ``method``
+            # column is the registry category, which uniquely identifies a method).
+            category = full[2] if len(full) >= 3 else ""
             flows = decomp.flow_contributions
             total_abs = float(np.abs(flows["contribution"]).sum()) if not flows.empty else 0.0
             top = flows.head(self.top_n)
@@ -136,7 +137,7 @@ class FlowDecompositionEmitter:
             for r in top.itertuples(index=False):
                 flow_id = int(r.flow_id)
                 sp_entry = (
-                    self.simapro_cf.get(code_lookup.get(flow_id, ""), category, indicator)
+                    self.simapro_cf.get(code_lookup.get(flow_id, ""), category)
                     if self.simapro_cf is not None
                     else None
                 )
@@ -152,6 +153,8 @@ class FlowDecompositionEmitter:
                         "sp_match_provenance": (
                             sp_entry.provenance if sp_entry is not None else None
                         ),
+                        "sp_cf_name": (sp_entry.sp_name if sp_entry is not None else None),
+                        "ef_cf_name": (sp_entry.ef_name if sp_entry is not None else None),
                         "contribution": float(r.contribution),
                         "share": (float(abs(r.contribution) / total_abs) if total_abs else 0.0),
                     }

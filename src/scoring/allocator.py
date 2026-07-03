@@ -58,10 +58,26 @@ class Allocator:
     is independent of prior calls."""
 
     def allocate(self, frame: ExchangeFrame) -> ExchangeFrame:
+        """Split multifunctional activities; return only the frame.
+
+        Thin wrapper over :meth:`allocate_with_provenance` for callers
+        that don't need the synthetic-id provenance map."""
+        return self.allocate_with_provenance(frame)[0]
+
+    def allocate_with_provenance(
+        self, frame: ExchangeFrame
+    ) -> tuple[ExchangeFrame, dict[int, tuple[int, int]]]:
+        """Allocate and also return the synthetic-activity provenance.
+
+        The provenance maps every synthetic ``output_id`` this call
+        minted to the ``(parent_activity_id, product_id)`` pair it was
+        derived from. Catalog builders use it to label synthetic columns
+        (whose ids are *not* ``flow_id_for((database, code))`` hashes and
+        therefore resolve against no source ``(database, code)``)."""
         if "allocation_factor" not in frame.df.columns:
             # Nothing to allocate — every activity is single-product
             # by assumption (or the allocator is not in use yet).
-            return frame
+            return frame, {}
 
         df = frame.df.copy()
         production_mask = df["edge_type"].isin(("production", "generic production"))
@@ -80,7 +96,8 @@ class Allocator:
         prod_counts = production.groupby("output_id").size()
         multi_ids = set(prod_counts[prod_counts >= 2].index)
         if not multi_ids:
-            return ExchangeFrame.from_long(df) if len(df) != frame.n_rows else frame
+            out = ExchangeFrame.from_long(df) if len(df) != frame.n_rows else frame
+            return out, {}
 
         self._validate_factors(production, multi_ids)
         # Normalise per-activity so factors sum to 1.0 regardless of input
@@ -89,33 +106,42 @@ class Allocator:
 
         keep_rows: list[pd.DataFrame] = []
         new_rows: list[pd.DataFrame] = []
+        provenance: dict[int, tuple[int, int]] = {}
 
         for activity_id, group in df.groupby("output_id", sort=False):
             if activity_id not in multi_ids:
                 keep_rows.append(group)
                 continue
-            new_rows.extend(self._split_activity(activity_id, group))
+            rows, prov = self._split_activity(activity_id, group)
+            new_rows.extend(rows)
+            provenance.update(prov)
 
         out = pd.concat([*keep_rows, *new_rows], ignore_index=True)
-        return ExchangeFrame.from_long(out)
+        return ExchangeFrame.from_long(out), provenance
 
     # ------------------------------------------------------------------
 
-    def _split_activity(self, activity_id: int, rows: pd.DataFrame) -> list[pd.DataFrame]:
+    def _split_activity(
+        self, activity_id: int, rows: pd.DataFrame
+    ) -> tuple[list[pd.DataFrame], dict[int, tuple[int, int]]]:
         """Emit one synthetic activity per production row.
 
         Consumption + biosphere edges are scaled by the allocation
         factor of the corresponding synthetic activity. The activity's
         original ``output_id`` is replaced with a derived synthetic id
-        so the technosphere matrix becomes square.
+        so the technosphere matrix becomes square. Returns the emitted
+        row frames and the ``{synthetic_id: (activity_id, product_id)}``
+        provenance for the splits it produced.
         """
         production = rows[rows["edge_type"].isin(("production", "generic production"))]
         non_production = rows[~rows["edge_type"].isin(("production", "generic production"))]
         outputs: list[pd.DataFrame] = []
+        provenance: dict[int, tuple[int, int]] = {}
         for _, prod_edge in production.iterrows():
             product_id = int(prod_edge["input_id"])
             factor = float(prod_edge["allocation_factor"])
             synthetic_id = self._synthetic_id(activity_id, product_id)
+            provenance[synthetic_id] = (int(activity_id), product_id)
 
             # The single production edge for the synthetic activity:
             # output_id = synthetic, input_id = product_id, amount kept.
@@ -129,7 +155,7 @@ class Allocator:
             scaled["output_id"] = synthetic_id
             scaled["amount"] = scaled["amount"] * factor
             outputs.append(scaled)
-        return outputs
+        return outputs, provenance
 
     @staticmethod
     def _synthetic_id(activity_id: int, product_id: int) -> int:

@@ -355,7 +355,9 @@ class TestCompareCfsCli:
     def test_default_uses_joined_registry(self, capsys: pytest.CaptureFixture) -> None:
         self._skip_if_artifacts_missing()
 
-        exit_code = CompareCfsCli().run([])
+        # --no-emit so the smoke test prints stats without rewriting the real
+        # registry/dashboard artifacts (the emit path is covered separately).
+        exit_code = CompareCfsCli().run(["--no-emit"])
 
         assert exit_code == 0
         out = capsys.readouterr().out
@@ -370,10 +372,58 @@ class TestCompareCfsCli:
         assert "only in SimaPro: 0" in out
         assert "only in EF31: 0" in out
 
+    def test_emit_writes_three_artifacts_under_settings_paths(self, tmp_path: Path) -> None:
+        # Drives the CLI's emit wiring with synthetic frames + a tmp-rooted
+        # Settings, so no real inputs are needed and nothing real is written.
+        import numpy as np
+        from config import Settings
+        from config.paths import Paths
+        from ef.cf_flow_join import ContextNormaliser, JoinedFlowFrame
+
+        acid_key = ("ecoinvent-3.9.1", "EF v3.1", "acidification", "accumulated exceedance (AE)")
+        frame = JoinedFlowFrame(
+            method_key=acid_key,
+            df=pd.DataFrame(
+                [
+                    {
+                        "code": "c1",
+                        "database": "ecoinvent-3.9.1-biosphere",
+                        "name": "ammonia",
+                        "categories": np.array(["air", "(unspecified)"], dtype=object),
+                        "cas": "7664-41-7",
+                        "sp_cf": 3.02,
+                        "ef_cf": 3.02,
+                        "sp_match_provenance": "exact_name",
+                        "sp_name": "Ammonia",
+                        "sp_compartment": "Air",
+                        "sp_sub_compartment": "(unspecified)",
+                    }
+                ],
+                columns=list(JoinedFlowFrame.COLUMNS),
+            ),
+        )
+        normaliser = ContextNormaliser(
+            rules=pd.DataFrame({"source_context": [], "target_context": []})
+        )
+        settings = Settings(paths=Paths(package_root=tmp_path))
+        # No run_report under tmp → used-flow filter unavailable → falls back to
+        # keeping all flows, so the artifact still writes.
+        CompareCfsCli(settings=settings)._emit_dashboard_artifacts(
+            [frame], normaliser, used_only=True
+        )
+
+        assert settings.paths.dashboard_cf_comparison_csv.exists()
+        assert settings.paths.registry_cf_comparison_join.exists()
+        assert settings.paths.registry_cf_comparison_by_code.exists()
+        df = pd.read_csv(settings.paths.dashboard_cf_comparison_csv)
+        assert {"compartment_simapro", "compartment_registry", "match_provenance"} <= set(df.columns)
+        assert df.iloc[0]["name_simapro"] == "Ammonia"
+        assert df.iloc[0]["status"] == "both_agree"
+
     def test_source_raw_uses_jrc_parquet(self, capsys: pytest.CaptureFixture) -> None:
         self._skip_if_artifacts_missing()
 
-        exit_code = CompareCfsCli().run(["--source", "raw"])
+        exit_code = CompareCfsCli().run(["--source", "raw", "--no-emit"])
 
         assert exit_code == 0
         out = capsys.readouterr().out
@@ -387,71 +437,6 @@ class TestCompareCfsCli:
 
         exit_code = CompareCfsCli().run(["--method", "definitely-not-a-method"])
         assert exit_code != 0
-
-    def test_emits_cf_stats_csv(self) -> None:
-        self._skip_if_artifacts_missing()
-
-        from config import Settings
-
-        paths = Settings().paths
-        csv_path = paths.dashboard_cf_stats_csv
-        joined_path = paths.cache_cf_per_flow_joined_parquet
-        if csv_path.exists():
-            csv_path.unlink()
-        if joined_path.exists():
-            joined_path.unlink()
-
-        exit_code = CompareCfsCli().run([])
-
-        assert exit_code == 0
-        assert csv_path.exists(), f"emitter did not write {csv_path}"
-        assert joined_path.exists(), f"joiner did not write {joined_path}"
-        df = pd.read_csv(csv_path)
-        # Joined-registry default produces 19 aligned methods.
-        assert len(df) == 19
-        assert (df["alignment"] == "both").sum() == 19
-        for stat in ("count", "min", "max", "mean", "median", "std", "sum"):
-            assert f"sp_{stat}" in df.columns
-            assert f"ef_{stat}" in df.columns
-            assert f"diff_{stat}" in df.columns
-        # Symmetric diff formula bounds all values in [-2, +2] (|diff|>1
-        # indicates sp and ef have opposite signs, e.g. for Water use
-        # where SP and the registry produce opposite-sign median CFs on
-        # the joined flow set).
-        for stat in ("count", "min", "max", "mean", "median", "std", "sum"):
-            col = df[f"diff_{stat}"].dropna()
-            assert (col.abs() <= 2.0 + 1e-9).all(), f"diff_{stat} out of [-2,+2]: {col.tolist()}"
-        # Joined-registry behaviour: sp_count <= ef_count for every method
-        # because SP-side stats are computed over flows that found a
-        # match, ef-side over all flows the registry carries.
-        assert (df["sp_count"] <= df["ef_count"]).all()
-        # Per-flow diff semantics: diff_<stat> for min/max/mean/median/std
-        # aggregates the per-flow symmetric relative diff over matched
-        # flows. For methods where the OVERWHELMING majority of matched
-        # flows agree exactly, diff_median must be 0 (the median per-flow
-        # diff is zero because most flows agree). diff_min/max can be
-        # non-zero — they pick up the worst single-flow disagreement
-        # (e.g. one substance CF revision in Resource use, minerals and
-        # metals reads diff_min ≈ -0.96 while diff_median = 0).
-        methods_with_zero_median = [
-            "Acidification",
-            "Eutrophication, freshwater",
-            "Eutrophication, marine",
-            "Particulate matter",
-            "Ionising radiation",
-            "Photochemical ozone formation",
-            "Climate change - Biogenic",
-            "Climate change - Land use and LU change",
-            "Resource use, minerals and metals",
-        ]
-        for m in methods_with_zero_median:
-            rows = df[df["method"] == m]
-            assert not rows.empty, f"method missing from cf_stats.csv: {m}"
-            row = rows.iloc[0]
-            assert row["diff_median"] == pytest.approx(0.0), (
-                f"{m} expected diff_median≈0 under per-flow semantics "
-                f"(most matched flows agree exactly), got {row['diff_median']}"
-            )
 
 
 class TestMethodAliasResolver:

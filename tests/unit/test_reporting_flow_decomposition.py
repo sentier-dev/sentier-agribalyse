@@ -33,17 +33,15 @@ def _simapro_lookup() -> SimaProCfLookup:
             [
                 {
                     "code": "co2",
-                    "method_category": climate[2],
-                    "method_indicator": climate[3],
-                    "sp_cf": 1.1,
-                    "sp_match_provenance": "exact_name",
+                    "method": climate[2],
+                    "cf_simapro": 1.1,
+                    "match_basis": "code",
                 },
                 {
                     "code": "ch4",
-                    "method_category": climate[2],
-                    "method_indicator": climate[3],
-                    "sp_cf": None,
-                    "sp_match_provenance": None,
+                    "method": climate[2],
+                    "cf_simapro": None,
+                    "match_basis": None,
                 },
             ]
         )
@@ -328,7 +326,7 @@ class TestFlowDecompositionEmitterSimaProCf:
         by_name = {f["flow_name"]: f for f in payload["methods"]["climate"]["flows"]}
         # CO2 has a comparable SimaPro CF; CH4's row is present but sp_cf is null.
         assert by_name["Carbon dioxide"]["sp_cf"] == pytest.approx(1.1)
-        assert by_name["Carbon dioxide"]["sp_match_provenance"] == "exact_name"
+        assert by_name["Carbon dioxide"]["sp_match_provenance"] == "code"
         assert by_name["Carbon dioxide"]["cf"] == pytest.approx(1.0)
         assert by_name["Methane"]["sp_cf"] is None
         assert by_name["Methane"]["sp_match_provenance"] is None
@@ -341,13 +339,13 @@ class TestSimaProCfLookup:
     def test_skips_null_sp_cf_and_resolves_present(self):
         lookup = _simapro_lookup()
         climate = MethodAliases.resolve("climate")
-        hit = lookup.get("co2", climate[2], climate[3])
+        hit = lookup.get("co2", climate[2])
         assert hit is not None
         assert hit.sp_cf == pytest.approx(1.1)
-        assert hit.provenance == "exact_name"
-        # Null sp_cf rows are not stored, and unknown methods miss cleanly.
-        assert lookup.get("ch4", climate[2], climate[3]) is None
-        assert lookup.get("co2", "ozone depletion", "x") is None
+        assert hit.provenance == "code"
+        # Null cf_simapro rows are not stored, and unknown methods miss cleanly.
+        assert lookup.get("ch4", climate[2]) is None
+        assert lookup.get("co2", "ozone depletion") is None
 
     def test_missing_columns_raise(self):
         with pytest.raises(ValueError, match="missing columns"):

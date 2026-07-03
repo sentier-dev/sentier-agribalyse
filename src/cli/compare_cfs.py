@@ -9,9 +9,7 @@ method export) against one of:
   looks up the SimaPro CF for the same substance/compartment, then the
   per-method stats are computed over the joined ``(sp_cf, ef_cf)`` pairs.
   Both sides of every stat are now at the same granularity, so deltas
-  measure real CF disagreement rather than data-shape mismatch. The
-  joined per-flow frame is also written to
-  ``cache/cf_per_flow_joined.parquet`` for future drill-down.
+  measure real CF disagreement rather than data-shape mismatch.
 * ``source/EF-LCIAMethod_CF(EF-v3.1)__lciamethods_CF.parquet`` — the raw JRC
   EF v3.1 reference (opt-in via ``--source raw``). Computes distribution
   stats over the full SimaPro and JRC substance × compartment exports
@@ -19,8 +17,7 @@ method export) against one of:
   EF v3.1 universe without the registry's flow-matching applied.
 
 Output is one block per LCIA method on stdout (count/min/max/mean/
-median/std/sum on each side) plus ``dashboard/cf_stats.csv`` for the
-CF-stats dashboard tab.
+median/std/sum on each side).
 """
 
 from __future__ import annotations
@@ -38,16 +35,22 @@ import pandas as pd
 
 from cli._base import BaseCli
 from core.logging import Logging
+from core.parquet_io import ParquetAtomicWriter
 from ef.cf_flow_join import (
     BiosphereCatalogLoader,
     ContextNormaliser,
     FlowLevelCfJoiner,
     JoinedFlowFrame,
-    JoinedFlowParquetWriter,
     SimaProCfIndex,
 )
 from ef.simapro_cf_table import SimaProEFCfTable
-from reporting import CfStatsEmitter
+from reporting import (
+    CfComparisonByCodeBuilder,
+    CfComparisonCsvEmitter,
+    CfComparisonJoinBuilder,
+    UsedFlowFilter,
+)
+from scoring.scoring_package import ScoringPackageStore
 
 
 class MethodNameNormalizer:
@@ -212,24 +215,12 @@ class MethodCfsRegistryLoader:
 
 @dataclass(frozen=True)
 class MethodRow:
-    """One row of the comparison table.
-
-    ``per_flow_diff_stats`` is populated when the comparator can compute
-    a per-(method, flow) join (currently only the joined-registry path).
-    When present, :class:`reporting.CfStatsEmitter` uses these stats for
-    the ``diff_<stat>`` columns so the displayed %diff reflects per-flow
-    agreement rather than the inherently-noisy "diff of summary stats"
-    (which blows up when one side's stat is near zero — e.g. Water use
-    with 2 matched flows reading ``diff_mean = -100%`` when the actual
-    per-flow disagreement averages ``-6%``). ``None`` falls back to the
-    historical formula ``(ef_<stat> - sp_<stat>) / max(|sp|, |ef|)``.
-    """
+    """One row of the comparison table: per-method SimaPro and EF31 stat blocks."""
 
     display_name: str
     norm_key: str
     simapro_stats: dict[str, float] | None
     ef31_stats: dict[str, float] | None
-    per_flow_diff_stats: dict[str, float] | None = None
 
 
 @dataclass(frozen=True)
@@ -347,8 +338,8 @@ class JoinedFlowCfComparator:
        ``ef_cf`` columns directly. pandas' default NaN-skipping means
        SP-side stats automatically ignore flows that didn't match in SP.
 
-    Returns the rows plus the list of joined frames so the CLI can also
-    write the per-flow parquet sidecar.
+    Returns the rows plus the list of joined frames (the frames are a
+    byproduct of the per-method stat computation; the CLI uses only the rows).
     """
 
     registry_dir: Path
@@ -384,14 +375,13 @@ class JoinedFlowCfComparator:
             )
             jf = self.joiner.join_method(method_key, ef_cfs)
             frames.append(jf)
-            sp_stats, ef_stats, per_flow_diff_stats = self._intersected_stats(jf)
+            sp_stats, ef_stats = self._intersected_stats(jf)
             rows.append(
                 MethodRow(
                     display_name=display_name,
                     norm_key=display_name.lower(),
                     simapro_stats=sp_stats,
                     ef31_stats=ef_stats,
-                    per_flow_diff_stats=per_flow_diff_stats,
                 )
             )
         return rows, frames
@@ -399,9 +389,8 @@ class JoinedFlowCfComparator:
     @staticmethod
     def _intersected_stats(
         jf: JoinedFlowFrame,
-    ) -> tuple[dict[str, float] | None, dict[str, float] | None, dict[str, float] | None]:
-        """Return ``(sp_stats, ef_stats, per_flow_diff_stats)`` for one
-        method's joined frame.
+    ) -> tuple[dict[str, float] | None, dict[str, float] | None]:
+        """Return ``(sp_stats, ef_stats)`` for one method's joined frame.
 
         Distribution stats (``min, max, mean, median, std, sum``) are
         computed over the **intersection** — the subset of flows where
@@ -410,26 +399,15 @@ class JoinedFlowCfComparator:
         be over the full registry, reintroducing a data-shape mismatch
         at a finer granularity.
 
-        ``per_flow_diff_stats`` aggregates the per-(method, flow)
-        symmetric relative diff ``(ef_cf - sp_cf) / max(|sp_cf|, |ef_cf|)``
-        over the matched flows. This is the honest "how much do SP and
-        EF disagree on the same flow" metric: the historical
-        ``(ef_<stat> - sp_<stat>) / max(...)`` formula goes to ±100%
-        whenever one side's summary stat lands near zero (because
-        positive and negative CFs cancel), producing misleading
-        customer-facing numbers (e.g. Water use with 2 matched flows
-        reading ``diff_mean = -100%`` when the actual per-flow
-        disagreement averages ``-6%``).
-
         Only the ``count`` stat keeps the asymmetric form: ``sp_count``
         is the size of the intersection while ``ef_count`` is the total
         number of flows in this method's registry. This keeps the
-        dashboard cardinality column meaningful — it reads as "flows SP
-        covers / flows the registry has".
+        cardinality reading meaningful — "flows SP covers / flows the
+        registry has".
         """
         df = jf.df
         if df.empty:
-            return (None, None, None)
+            return (None, None)
         matched = df[df["sp_cf"].notna()]
         total_count = len(df)
         if matched.empty:
@@ -443,7 +421,7 @@ class JoinedFlowCfComparator:
                 "std": float(ef.std()),
                 "sum": float(ef.sum()),
             }
-            return (None, ef_stats, None)
+            return (None, ef_stats)
         sp = matched["sp_cf"]
         ef_match = matched["ef_cf"]
         sp_stats = {
@@ -464,21 +442,7 @@ class JoinedFlowCfComparator:
             "std": float(ef_match.std()),
             "sum": float(ef_match.sum()),
         }
-        # Per-flow symmetric relative diff.
-        denom = pd.concat([sp.abs(), ef_match.abs()], axis=1).max(axis=1)
-        per_flow = pd.Series(0.0, index=sp.index)
-        nonzero = denom > 0
-        per_flow.loc[nonzero] = (ef_match[nonzero] - sp[nonzero]) / denom[nonzero]
-        per_flow_diff_stats = {
-            "count": int(per_flow.count()),
-            "min": float(per_flow.min()),
-            "max": float(per_flow.max()),
-            "mean": float(per_flow.mean()),
-            "median": float(per_flow.median()),
-            "std": float(per_flow.std()),
-            "sum": float(per_flow.sum()),
-        }
-        return (sp_stats, ef_stats, per_flow_diff_stats)
+        return (sp_stats, ef_stats)
 
     def _matches_filters(self, display_name: str) -> bool:
         if not self.method_filters:
@@ -557,6 +521,11 @@ class CompareConfig:
     decimals: int = 4
     method_filters: tuple[str, ...] = ()
     source: str = SOURCE_REGISTRY
+    emit: bool = True
+    # Default: the dashboard CSV shows only flows the scoring pipeline uses
+    # (the biosphere flows the linked inventory emits). --all-flows keeps the
+    # full CF reference universe in the CSV too.
+    used_only: bool = True
 
 
 class CompareCfsCli(BaseCli):
@@ -603,6 +572,29 @@ class CompareCfsCli(BaseCli):
             default=4,
             help="Float precision in the printed table (default: 4).",
         )
+        p.add_argument(
+            "--no-emit",
+            action="store_true",
+            help=(
+                "Skip writing the dashboard CF-comparison artifacts "
+                "(registry/cf_comparison_join.parquet, dashboard/cf_comparison.csv, "
+                "registry/cf_comparison_by_code.parquet). Only meaningful with "
+                "--source registry; by default the artifacts are (re)written from the "
+                "per-flow join. The --method filter never restricts the artifacts "
+                "(they always span all 19 methods); it only narrows the printed table."
+            ),
+        )
+        p.add_argument(
+            "--all-flows",
+            action="store_true",
+            help=(
+                "Keep every CF-reference flow in dashboard/cf_comparison.csv. By "
+                "default the CSV is restricted to the biosphere flows the scoring "
+                "pipeline actually uses (the linked inventory's flows, resolved from "
+                "the current scoring package). The full join, including unused "
+                "reference flows, is always kept in cf_comparison_join.parquet."
+            ),
+        )
         return p
 
     def execute(self, args: argparse.Namespace) -> None:
@@ -610,6 +602,8 @@ class CompareCfsCli(BaseCli):
             decimals=args.decimals,
             method_filters=tuple(args.method),
             source=args.source,
+            emit=not args.no_emit,
+            used_only=not args.all_flows,
         )
         if config.source == CompareConfig.SOURCE_REGISTRY:
             rows = self._run_joined_registry(config)
@@ -618,14 +612,6 @@ class CompareCfsCli(BaseCli):
         if config.method_filters and not rows:
             raise ValueError(f"No methods matched filters: {list(config.method_filters)}")
         ConsoleReporter(decimals=config.decimals).render(rows)
-        csv_path = CfStatsEmitter(
-            out_path=self.settings.paths.dashboard_cf_stats_csv,
-        ).write(rows)
-        Logging.get(self.PROG).info(
-            "compare.dashboard.emitted",
-            path=str(csv_path),
-            n_rows=len(rows),
-        )
         Logging.get(self.PROG).info("compare.done", source=config.source, n_methods=len(rows))
 
     def _run_joined_registry(self, config: CompareConfig) -> list[MethodRow]:
@@ -641,22 +627,93 @@ class CompareCfsCli(BaseCli):
             normaliser=normaliser,
             sp_index=sp_index,
         )
+        # Join every method once (no display filter), so the emitted artifacts
+        # always span all 19 methods; the --method filter only narrows the
+        # printed table below.
         comparator = JoinedFlowCfComparator(
             registry_dir=paths.registry_method_cfs_dir,
             joiner=joiner,
-            method_filters=config.method_filters,
+            method_filters=(),
         )
         rows, frames = comparator.build_rows()
-        joined_path = JoinedFlowParquetWriter(
-            out_path=paths.cache_cf_per_flow_joined_parquet,
-        ).write(frames)
-        Logging.get(self.PROG).info(
-            "compare.joined_parquet.written",
-            path=str(joined_path),
-            n_methods=len(frames),
-            n_rows=sum(len(jf.df) for jf in frames),
+        if config.emit:
+            self._emit_dashboard_artifacts(frames, normaliser, config.used_only)
+        if not config.method_filters:
+            return rows
+        return [r for r in rows if self._row_matches_filters(r, config.method_filters)]
+
+    def _emit_dashboard_artifacts(
+        self, frames: list[JoinedFlowFrame], normaliser: ContextNormaliser, used_only: bool
+    ) -> None:
+        """Write the per-flow CF comparison to the registry + dashboard.
+
+        Three artifacts, all from the same per-flow join (no candidate
+        ambiguity — each registry flow resolves to exactly one SimaPro CF):
+
+        * ``registry/cf_comparison_join.parquet`` — the complete join (matched +
+          registry-only, every CF-reference flow), for auditing.
+        * ``dashboard/cf_comparison.csv`` — matched rows; restricted to the flows
+          the scoring pipeline actually uses unless ``used_only`` is False.
+        * ``registry/cf_comparison_by_code.parquet`` — per-code SimaPro CF
+          sidecar for the flow-decomposition toggle.
+        """
+        paths = self.settings.paths
+        join = CfComparisonJoinBuilder(normaliser=normaliser).build(frames)
+        ParquetAtomicWriter.write(join, paths.registry_cf_comparison_join)
+        log = Logging.get(self.PROG)
+
+        csv_join = join
+        if used_only:
+            used = self._load_used_flow_filter()
+            if used is not None:
+                before = len(csv_join)
+                csv_join = used.filter(csv_join)
+                log.info(
+                    "cf_comparison.used_flow_filter.applied",
+                    kept=len(csv_join),
+                    dropped=before - len(csv_join),
+                )
+            else:
+                log.warning(
+                    "cf_comparison.used_flow_filter.unavailable",
+                    hint="no scoring package resolvable from run_report.json; "
+                    "CSV keeps all reference flows. Run dds-link-all, or pass --all-flows.",
+                )
+        csv_path = CfComparisonCsvEmitter(out_path=paths.dashboard_cf_comparison_csv).write(csv_join)
+        sidecar = CfComparisonByCodeBuilder().build(frames)
+        ParquetAtomicWriter.write(sidecar, paths.registry_cf_comparison_by_code)
+        matched = int(join["status"].isin(["both_agree", "both_differ"]).sum())
+        log.info(
+            "cf_comparison.artifacts.emitted",
+            join_rows=len(join),
+            matched_rows=matched,
+            csv=str(csv_path),
+            sidecar_rows=len(sidecar),
         )
-        return rows
+
+    def _load_used_flow_filter(self) -> UsedFlowFilter | None:
+        """Resolve the current scoring package and build a :class:`UsedFlowFilter`.
+
+        Mirrors ``build_flow_decomp``: the active package's content hash lives in
+        ``dashboard/run_report.json``. Returns ``None`` (caller falls back to all
+        flows) if the report or the package is missing.
+        """
+        paths = self.settings.paths
+        report_path = paths.dashboard_run_report
+        if not report_path.exists():
+            return None
+        try:
+            report = json.loads(report_path.read_text())
+            content_hash = report["stages"]["scoring_package"]["content_hash"]
+            package = ScoringPackageStore(root=paths.scoring_packages_root).read(content_hash)
+        except (KeyError, FileNotFoundError, ValueError):
+            return None
+        return UsedFlowFilter.from_biosphere_row_ids(package.biosphere.row_id_to_idx)
+
+    @staticmethod
+    def _row_matches_filters(row: MethodRow, method_filters: tuple[str, ...]) -> bool:
+        lowered = row.display_name.lower()
+        return any(f.lower() in lowered for f in method_filters)
 
     def _run_raw_jrc(self, config: CompareConfig) -> list[MethodRow]:
         comparator = CfComparator(

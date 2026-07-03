@@ -1,17 +1,22 @@
 """``SimaProCfLookup`` — per-flow SimaPro CF lookup for the flow panel.
 
-Wraps ``cache/cf_per_flow_joined.parquet`` (produced by ``dds-compare-cfs``:
-one row per biosphere flow × method, carrying SimaPro's characterization
-factor ``sp_cf`` joined against our EF CF ``ef_cf``) as an in-memory map
-keyed by ``(biosphere code, method category, method indicator)``. The flow
-decomposition emitter consults it to put SimaPro's CF beside our EF CF for
-every characterised flow it serialises.
+Wraps ``registry/cf_comparison_by_code.parquet`` (produced by ``dds-compare-cfs``
+via :class:`reporting.CfComparisonByCodeBuilder`: one row per registry biosphere
+``code`` × method, carrying SimaPro's properly-matched characterization factor
+``cf_simapro``) as an in-memory map keyed by ``(biosphere code, method
+category)``. The flow decomposition emitter consults it to put SimaPro's CF
+beside our EF CF for every characterised flow it serialises.
 
-The key is unique in the joined frame — each distinct biosphere ``code``
-already encodes its full context (compartment + sub-compartment), so a
-``(code, category, indicator)`` triple resolves to a single SimaPro CF.
-Only flows for which SimaPro has a comparable CF are stored; a miss returns
-``None`` and the dashboard renders an em-dash.
+The comparison is a deterministic per-flow 1:1 join (``FlowLevelCfJoiner``):
+every registry biosphere ``code`` resolves to exactly one SimaPro CF via full
+``(name, compartment, sub_compartment)`` identity, so the SimaPro CF shown is the
+value SimaPro/ADEME actually applied to that flow — not a name-heuristic match
+(and not one of several "candidates"). The sidecar's ``method`` column is the
+registry *category* (e.g.
+``"acidification"``), which uniquely identifies a method, so a
+``(code, category)`` pair resolves to a single SimaPro CF. Only flows for which
+SimaPro has a comparable CF are stored; a miss returns ``None`` and the
+dashboard renders an em-dash.
 
 OOP-only per ``CLAUDE.md``: frozen dataclasses, dependencies injected,
 no module-level helpers.
@@ -28,24 +33,30 @@ import pandas as pd
 
 @dataclass(frozen=True)
 class SimaProCfEntry:
-    """SimaPro's CF for one flow under one method, plus how it was matched."""
+    """SimaPro's CF for one flow under one method, plus how it was matched.
+
+    ``sp_name`` / ``ef_name`` are the comparison's matched molecule names on the
+    SimaPro and registry sides — surfaced in the flow panel so a reviewer can see
+    *which* molecule each CF came from (empty string when the sidecar omits them).
+    """
 
     sp_cf: float
     provenance: str
+    sp_name: str = ""
+    ef_name: str = ""
 
 
 @dataclass(frozen=True)
 class SimaProCfLookup:
-    """Map ``(code, category, indicator) -> SimaProCfEntry``."""
+    """Map ``(code, method_category) -> SimaProCfEntry``."""
 
-    by_key: dict[tuple[str, str, str], SimaProCfEntry]
+    by_key: dict[tuple[str, str], SimaProCfEntry]
 
     REQUIRED_COLUMNS: ClassVar[tuple[str, ...]] = (
         "code",
-        "method_category",
-        "method_indicator",
-        "sp_cf",
-        "sp_match_provenance",
+        "method",
+        "cf_simapro",
+        "match_basis",
     )
 
     @classmethod
@@ -57,24 +68,32 @@ class SimaProCfLookup:
         missing = [c for c in cls.REQUIRED_COLUMNS if c not in df.columns]
         if missing:
             raise ValueError(
-                f"cf_per_flow_joined frame missing columns {missing}; got {list(df.columns)}"
+                f"cf_comparison_by_code frame missing columns {missing}; got {list(df.columns)}"
             )
-        by_key: dict[tuple[str, str, str], SimaProCfEntry] = {}
+        has_sp_name = "name_simapro" in df.columns
+        has_ef_name = "name_registry" in df.columns
+
+        def _name(value: object) -> str:
+            return "" if value is None or pd.isna(value) else str(value)
+
+        by_key: dict[tuple[str, str], SimaProCfEntry] = {}
         for row in df.itertuples(index=False):
-            sp = row.sp_cf
+            sp = row.cf_simapro
             if sp is None or pd.isna(sp):
                 continue
-            key = (str(row.code), str(row.method_category), str(row.method_indicator))
+            key = (str(row.code), str(row.method))
             # First-wins over the parquet's stable row order keeps the map
-            # deterministic; the key is unique in practice (verified on build).
+            # deterministic; the sidecar is already deduped on (method, code).
             if key in by_key:
                 continue
-            prov = row.sp_match_provenance
+            basis = row.match_basis
             by_key[key] = SimaProCfEntry(
                 sp_cf=float(sp),
-                provenance=("" if prov is None or pd.isna(prov) else str(prov)),
+                provenance=("" if basis is None or pd.isna(basis) else str(basis)),
+                sp_name=_name(row.name_simapro) if has_sp_name else "",
+                ef_name=_name(row.name_registry) if has_ef_name else "",
             )
         return cls(by_key=by_key)
 
-    def get(self, code: str, category: str, indicator: str) -> SimaProCfEntry | None:
-        return self.by_key.get((code, category, indicator))
+    def get(self, code: str, method_category: str) -> SimaProCfEntry | None:
+        return self.by_key.get((code, method_category))

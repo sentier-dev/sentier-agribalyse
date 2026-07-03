@@ -325,6 +325,31 @@ class SimaProCfUnitHarmoniser:
 
 
 @dataclass(frozen=True)
+class SimaProCfMatch:
+    """Result of a :meth:`SimaProCfIndex.lookup`.
+
+    Carries the matched SimaPro CF plus the **identity of the SimaPro row the
+    CF came from** — its name and ``(compartment, sub_compartment)`` — so callers
+    can show which SimaPro flow a registry flow reconciled against (the
+    reviewer's "which flow is used" / reconciliation signal). On a miss, ``cf`` is
+    ``None``, ``provenance`` is :data:`SimaProCfIndex.PROV_UNMATCHED`, and the
+    identity fields are empty strings.
+    """
+
+    cf: float | None
+    provenance: str
+    name: str = ""
+    compartment: str = ""
+    sub_compartment: str = ""
+
+
+# Stored per index entry: the harmonised CF plus the source SimaPro row's
+# display name + context. Kept as a plain tuple for compact storage in the
+# large lookup dicts; unpacked into a :class:`SimaProCfMatch` at lookup time.
+_SpRecord = tuple[float, str, str, str]  # (cf, name, compartment, sub_compartment)
+
+
+@dataclass(frozen=True)
 class SimaProCfIndex:
     """O(1) lookup of SimaPro CFs keyed on registry method + flow identity.
 
@@ -368,10 +393,10 @@ class SimaProCfIndex:
        would otherwise match SP's ``"Energy, unspecified"``).
     """
 
-    primary: dict[tuple[str, str, str, str, str], float]
-    by_cas_sub: dict[tuple[str, str, str, str, str], float]
-    by_cas_unspec: dict[tuple[str, str, str, str], float]
-    by_short_name: dict[tuple[str, str, str, str, str], float]
+    primary: dict[tuple[str, str, str, str, str], _SpRecord]
+    by_cas_sub: dict[tuple[str, str, str, str, str], _SpRecord]
+    by_cas_unspec: dict[tuple[str, str, str, str], _SpRecord]
+    by_short_name: dict[tuple[str, str, str, str, str], _SpRecord]
 
     # Provenance strings emitted by ``lookup``.
     PROV_EXACT: ClassVar[str] = "exact_name"
@@ -383,20 +408,30 @@ class SimaProCfIndex:
     _SUBMETHOD_SUFFIXES: ClassVar[tuple[str, ...]] = (" - inorganics", " - organics")
     _UNSPECIFIED: ClassVar[str] = "(unspecified)"
 
+    # Water use is bookkept differently on the two sides. Our registry's used
+    # water flows are ecoinvent "Water" *emissions to air* (evaporative
+    # consumption, +42.95); SimaPro carries no Air water-use CF — its
+    # deprivation factor lives on the ``Raw`` resource input (the +42.95 value
+    # SimaPro uses anyway). For this one method, a registry flow that misses in
+    # its own compartment retries against ``Raw`` so the same-substance,
+    # same-magnitude SimaPro CF is found. Keyed on the registry category.
+    _WATER_USE_CATEGORY: ClassVar[str] = "water use"
+    _WATER_USE_BRIDGE_COMPARTMENT: ClassVar[str] = "Raw"
+
     @classmethod
     def from_dataframe(cls, df: pd.DataFrame) -> SimaProCfIndex:
-        primary: dict[tuple[str, str, str, str, str], float] = {}
+        primary: dict[tuple[str, str, str, str, str], _SpRecord] = {}
         # CAS-keyed indices use a priority tuple to pick the canonical row
         # when SP has multiple rows sharing the same key. Higher priority
         # wins. The priority is (is_unspec, -name_len) for the unspec
         # fallback (prefer the (unspecified) sub-compartment, then the
         # shortest name) and -name_len for the exact-sub index (shortest
         # name only, since the sub is already pinned).
-        by_cas_sub: dict[tuple[str, str, str, str, str], float] = {}
+        by_cas_sub: dict[tuple[str, str, str, str, str], _SpRecord] = {}
         by_cas_sub_priority: dict[tuple[str, str, str, str, str], int] = {}
-        by_cas_unspec: dict[tuple[str, str, str, str], float] = {}
+        by_cas_unspec: dict[tuple[str, str, str, str], _SpRecord] = {}
         by_cas_unspec_priority: dict[tuple[str, str, str, str], tuple[bool, int]] = {}
-        by_short_name: dict[tuple[str, str, str, str, str], float] = {}
+        by_short_name: dict[tuple[str, str, str, str, str], _SpRecord] = {}
         sp_to_registry = SimaProEFCfTable.METHOD_TO_OUR_KEY
         for _, r in df.iterrows():
             sp_method = str(r["simapro_method"])
@@ -416,23 +451,24 @@ class SimaProCfIndex:
             sub = str(r["sub_compartment"]).strip()
             sp_flow_unit = str(r["flow_unit"]).strip()
             cf = float(r["cf"]) * SimaProCfUnitHarmoniser.scale_for(cat, sp_flow_unit)
-            primary[(cat, ind, name, comp, sub)] = cf
+            record: _SpRecord = (cf, raw_name, comp, sub)
+            primary[(cat, ind, name, comp, sub)] = record
             cas = str(r["cas"]).strip() if pd.notna(r["cas"]) else ""
             if cas:
                 cas_key = (cat, ind, cas, comp, sub)
                 priority = -name_len
                 if priority > by_cas_sub_priority.get(cas_key, -(10**9)):
-                    by_cas_sub[cas_key] = cf
+                    by_cas_sub[cas_key] = record
                     by_cas_sub_priority[cas_key] = priority
                 unspec_key = (cat, ind, cas, comp)
                 unspec_priority = (sub == cls._UNSPECIFIED, -name_len)
                 if unspec_priority > by_cas_unspec_priority.get(unspec_key, (False, -(10**9))):
-                    by_cas_unspec[unspec_key] = cf
+                    by_cas_unspec[unspec_key] = record
                     by_cas_unspec_priority[unspec_key] = unspec_priority
             short = cls._short_name(raw_name)
             if short:
                 short_key = (cat, ind, short, comp, sub)
-                by_short_name[short_key] = cf
+                by_short_name[short_key] = record
         return cls(
             primary=primary,
             by_cas_sub=by_cas_sub,
@@ -448,18 +484,64 @@ class SimaProCfIndex:
         context: tuple[str, str],
         synonyms: list[str] | tuple[str, ...] | None,
         cas: str | None,
-    ) -> tuple[float | None, str]:
+    ) -> SimaProCfMatch:
         cat, ind = registry_method_key[2], registry_method_key[3]
         comp, sub = context
+        # Try the flow's own compartment first, then any method-specific
+        # bridge compartment (water use: Air/Water emissions ↔ SimaPro's Raw
+        # resource CF). The first compartment that yields a hit wins, so a
+        # flow that matches in its own compartment keeps that match.
+        for candidate_comp in self._candidate_compartments(cat, comp):
+            match = self._lookup_in_compartment(
+                cat=cat,
+                ind=ind,
+                name=name,
+                comp=candidate_comp,
+                sub=sub,
+                synonyms=synonyms,
+                cas=cas,
+            )
+            if match is not None:
+                return match
+        return SimaProCfMatch(cf=None, provenance=self.PROV_UNMATCHED)
+
+    def _candidate_compartments(self, cat: str, comp: str) -> tuple[str, ...]:
+        """Compartments to try, in order, for a registry flow in ``comp``.
+
+        The flow's own compartment is always tried first. For the water-use
+        method, ``Raw`` is appended as a bridge (see
+        :data:`_WATER_USE_BRIDGE_COMPARTMENT`) so an evaporative ``Water``
+        emission still finds SimaPro's resource-side deprivation CF.
+        """
+        if cat == self._WATER_USE_CATEGORY and comp != self._WATER_USE_BRIDGE_COMPARTMENT:
+            return (comp, self._WATER_USE_BRIDGE_COMPARTMENT)
+        return (comp,)
+
+    def _lookup_in_compartment(
+        self,
+        *,
+        cat: str,
+        ind: str,
+        name: str,
+        comp: str,
+        sub: str,
+        synonyms: list[str] | tuple[str, ...] | None,
+        cas: str | None,
+    ) -> SimaProCfMatch | None:
+        """Run the four match tiers within a single SimaPro compartment.
+
+        Returns the matched :class:`SimaProCfMatch`, or ``None`` if no tier
+        hits in this compartment (so the caller can try the next candidate).
+        """
         primary_name = name.lower().strip()
         # Tier 1: exact name + exact sub, then exact name + (unspecified).
         hit = self.primary.get((cat, ind, primary_name, comp, sub))
         if hit is not None:
-            return (hit, self.PROV_EXACT)
+            return self._match(hit, self.PROV_EXACT)
         if sub != self._UNSPECIFIED:
             hit = self.primary.get((cat, ind, primary_name, comp, self._UNSPECIFIED))
             if hit is not None:
-                return (hit, self.PROV_EXACT)
+                return self._match(hit, self.PROV_EXACT)
         # Tier 2: synonyms with same sub-compartment fallback.
         for syn in synonyms or ():
             syn_norm = str(syn).lower().strip()
@@ -467,21 +549,21 @@ class SimaProCfIndex:
                 continue
             hit = self.primary.get((cat, ind, syn_norm, comp, sub))
             if hit is not None:
-                return (hit, self.PROV_SYNONYM)
+                return self._match(hit, self.PROV_SYNONYM)
             if sub != self._UNSPECIFIED:
                 hit = self.primary.get((cat, ind, syn_norm, comp, self._UNSPECIFIED))
                 if hit is not None:
-                    return (hit, self.PROV_SYNONYM)
+                    return self._match(hit, self.PROV_SYNONYM)
         # Tier 3: CAS, exact sub then (unspecified). Tie-break by shortest
         # name happens at index-build time.
         if cas:
             cas_norm = str(cas).strip()
             hit = self.by_cas_sub.get((cat, ind, cas_norm, comp, sub))
             if hit is not None:
-                return (hit, self.PROV_CAS)
+                return self._match(hit, self.PROV_CAS)
             hit = self.by_cas_unspec.get((cat, ind, cas_norm, comp))
             if hit is not None:
-                return (hit, self.PROV_CAS)
+                return self._match(hit, self.PROV_CAS)
         # Tier 4: short-name only if it looks like a chemical identifier
         # (must contain a digit; generic suffixes like "unspecified" are
         # filtered out at index-build time).
@@ -489,11 +571,18 @@ class SimaProCfIndex:
         if short and self._is_chemical_identifier(short):
             hit = self.by_short_name.get((cat, ind, short, comp, sub))
             if hit is not None:
-                return (hit, self.PROV_SHORT_NAME)
+                return self._match(hit, self.PROV_SHORT_NAME)
             hit = self.by_short_name.get((cat, ind, short, comp, self._UNSPECIFIED))
             if hit is not None:
-                return (hit, self.PROV_SHORT_NAME)
-        return (None, self.PROV_UNMATCHED)
+                return self._match(hit, self.PROV_SHORT_NAME)
+        return None
+
+    @staticmethod
+    def _match(record: _SpRecord, provenance: str) -> SimaProCfMatch:
+        cf, name, comp, sub = record
+        return SimaProCfMatch(
+            cf=cf, provenance=provenance, name=name, compartment=comp, sub_compartment=sub
+        )
 
     @staticmethod
     def _is_chemical_identifier(short: str) -> bool:
@@ -548,11 +637,18 @@ class JoinedFlowFrame:
 
     COLUMNS: ClassVar[tuple[str, ...]] = (
         "code",
+        "database",
         "name",
         "categories",
+        "cas",
         "sp_cf",
         "ef_cf",
         "sp_match_provenance",
+        # Identity of the SimaPro row the CF came from (empty when unmatched) —
+        # lets the comparison show the SimaPro flow name + compartment beside ours.
+        "sp_name",
+        "sp_compartment",
+        "sp_sub_compartment",
     )
 
 
@@ -616,6 +712,7 @@ class FlowLevelCfJoiner:
         rows: list[dict] = []
         for _, r in ef_cfs.iterrows():
             code = str(r["code"])
+            database = str(r["database"])
             ef_cf = float(r["amount"])
             meta = self._catalog_by_code.get(code)
             if meta is not None:
@@ -636,7 +733,7 @@ class FlowLevelCfJoiner:
                 if short:
                     cas = self._cas_by_short_name.get(short, "")
             sp_context = self.normaliser.normalise(categories)
-            sp_cf, prov = self.sp_index.lookup(
+            match = self.sp_index.lookup(
                 registry_method_key=method_key,
                 name=name,
                 context=sp_context,
@@ -646,47 +743,17 @@ class FlowLevelCfJoiner:
             rows.append(
                 {
                     "code": code,
+                    "database": database,
                     "name": name,
                     "categories": categories,
-                    "sp_cf": sp_cf,
+                    "cas": cas,
+                    "sp_cf": match.cf,
                     "ef_cf": ef_cf,
-                    "sp_match_provenance": prov,
+                    "sp_match_provenance": match.provenance,
+                    "sp_name": match.name,
+                    "sp_compartment": match.compartment,
+                    "sp_sub_compartment": match.sub_compartment,
                 }
             )
         df = pd.DataFrame(rows, columns=list(JoinedFlowFrame.COLUMNS))
         return JoinedFlowFrame(method_key=method_key, df=df)
-
-
-# ---------------------------------------------------------------------------
-# Joined-parquet writer.
-
-
-@dataclass(frozen=True)
-class JoinedFlowParquetWriter:
-    """Write all joined per-method frames to a single parquet for future drill-down."""
-
-    out_path: Path
-
-    _METHOD_COLS: ClassVar[tuple[str, ...]] = (
-        "method_database",
-        "method_ef_version",
-        "method_category",
-        "method_indicator",
-    )
-
-    def write(self, frames: list[JoinedFlowFrame]) -> Path:
-        all_rows: list[pd.DataFrame] = []
-        for jf in frames:
-            if jf.df.empty:
-                continue
-            chunk = jf.df.copy()
-            for col, value in zip(self._METHOD_COLS, jf.method_key, strict=True):
-                chunk[col] = value
-            all_rows.append(chunk)
-        if all_rows:
-            combined = pd.concat(all_rows, ignore_index=True)
-        else:
-            combined = pd.DataFrame(columns=list(self._METHOD_COLS) + list(JoinedFlowFrame.COLUMNS))
-        self.out_path.parent.mkdir(parents=True, exist_ok=True)
-        combined.to_parquet(self.out_path, index=False)
-        return self.out_path

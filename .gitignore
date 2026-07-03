@@ -49,12 +49,21 @@ registry/*.parquet
 
 # Run-time artifacts under dashboard/, to_review/, unlinked/.
 # Directory tracked via .gitkeep; contents ignored unless explicitly checked in.
+#
+# The dashboard's generated data (cf_comparison.csv, product_reasons.json) is
+# NOT shipped: those files embed ecoinvent elementary-flow nomenclature
+# (name/compartment of registry flows) and are regenerated locally by a
+# licensed user via `dds-compare-cfs` / `dds-build-cf-comparison-csv` /
+# `dds-build-product-reasons`. Only the static UI shell + vendored JS ship.
 dashboard/*
 !dashboard/.gitkeep
 !dashboard/backtest_dashboard.html
 !dashboard/backtest_pass1.csv
-!dashboard/cf_stats.csv
 !dashboard/outlier_reasons.json
+!dashboard/dds-logo.svg
+!dashboard/react.min.js
+!dashboard/react-dom.min.js
+!dashboard/babel.min.js
 to_review/*
 !to_review/.gitkeep
 unlinked/*

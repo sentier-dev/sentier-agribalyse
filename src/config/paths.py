@@ -175,14 +175,6 @@ class Paths:
     def importer_cache_pkl(self) -> Path:
         return self.cache / "importer_cache.pkl"
 
-    @property
-    def cache_cf_per_flow_joined_parquet(self) -> Path:
-        """Per-(method, ecoinvent biosphere flow) join of SimaPro CFs against
-        the scoring registry's CFs. Written by ``FlowLevelCfJoiner`` from the
-        ``dds-compare-cfs`` CLI. Not yet consumed by the dashboard; reserved
-        for a future drill-down view."""
-        return self.cache / "cf_per_flow_joined.parquet"
-
     # --- Registry parquets ------------------------------------------------
 
     @property
@@ -250,6 +242,36 @@ class Paths:
         return self.registry / "product_catalog.parquet"
 
     @property
+    def registry_activity_catalog(self) -> Path:
+        """Label catalog keyed by the technosphere's own column id
+        (``activity_id``): one row per matrix column, covering agribalyse
+        foreground, ecoinvent background, and Allocator multifunctional
+        splits. Built from the same run's ScoringPackage so it can never
+        skew from the matrix. Consumed by the bundle's key resolver to
+        name every activity/technosphere-flow in exports (e.g. Activity
+        Browser); distinct from ``product_catalog`` (agribalyse-only,
+        backtest product mapping)."""
+        return self.registry / "activity_catalog.parquet"
+
+    @property
+    def registry_cf_comparison_join(self) -> Path:
+        """Complete per-flow join of SimaPro adapted EF 3.1 CFs against the built
+        registry CFs (one row per registry biosphere code × method, matched +
+        registry-only). Written by ``dds-compare-cfs`` via
+        :class:`reporting.CfComparisonJoinBuilder`; the matched rows are flattened
+        to the dashboard by :pyattr:`dashboard_cf_comparison_csv`."""
+        return self.registry / "cf_comparison_join.parquet"
+
+    @property
+    def registry_cf_comparison_by_code(self) -> Path:
+        """Per-registry-``code`` SimaPro CF sidecar ``(code, method, cf_simapro,
+        match_basis, name_simapro, name_registry)``. Written by ``dds-compare-cfs``
+        via :class:`reporting.CfComparisonByCodeBuilder` (all 19 methods); consumed
+        by :class:`reporting.SimaProCfLookup` to put SimaPro's properly-matched CF
+        beside ours in the flow-decomposition toggle."""
+        return self.registry / "cf_comparison_by_code.parquet"
+
+    @property
     def scoring_packages_root(self) -> Path:
         return self.cache / "scoring_packages"
 
@@ -284,8 +306,38 @@ class Paths:
         return self.dashboard / "orphan_activities.parquet"
 
     @property
-    def dashboard_cf_stats_csv(self) -> Path:
-        return self.dashboard / "cf_stats.csv"
+    def dashboard_cf_comparison_csv(self) -> Path:
+        """Flat CSV of the matched SimaPro-vs-registry per-flow comparisons,
+        consumed by the dashboard's CF-comparison tab. Written by
+        ``CfComparisonCsvEmitter`` — directly from ``dds-compare-cfs``, or
+        re-flattened from :pyattr:`registry_cf_comparison_join` by
+        ``dds-build-cf-comparison-csv``."""
+        return self.dashboard / "cf_comparison.csv"
+
+    @property
+    def dashboard_backtest_pass1_csv(self) -> Path:
+        """Per-product × method %-diff matrix the dashboard renders. Written by
+        ``BacktestPass1Emitter``."""
+        return self.dashboard / "backtest_pass1.csv"
+
+    @property
+    def dashboard_decomp_dir(self) -> Path:
+        """Per-product flow-decomposition JSONs (``<code>.json``). Written by
+        ``dds-build-flow-decomp``."""
+        return self.dashboard / "decomp"
+
+    @property
+    def dashboard_outlier_reasons(self) -> Path:
+        """Per-impact-category outlier explanations (the column-header / cell
+        notes). Hand-curated; consumed by the dashboard's backtest tab."""
+        return self.dashboard / "outlier_reasons.json"
+
+    @property
+    def dashboard_product_reasons(self) -> Path:
+        """Per-product × outlier-impact explanations, authored by an LLM pass
+        over the flow decomposition. Written by ``dds-build-product-reasons``;
+        rendered above the impact-level note in the cell tooltip."""
+        return self.dashboard / "product_reasons.json"
 
     # --- Helpers ----------------------------------------------------------
 
