@@ -195,3 +195,30 @@ class TestAllocatorEnablesSquareTechnosphere:
         assert prod_count == act_count
         # Builder will succeed on a square frame.
         TechnosphereBuilder().build(out)
+
+
+class TestAllocatorProvenance:
+    def test_provenance_maps_synthetic_to_parent_and_product(self):
+        # Activity 1 → products 10 (60%) and 20 (40%).
+        frame = _make_frame(
+            [
+                (1, 10, 1.0, "production", False, 0.6),
+                (1, 20, 1.0, "production", False, 0.4),
+                (1, 30, 0.5, "technosphere", False, 1.0),
+            ]
+        )
+        out, prov = Allocator().allocate_with_provenance(frame)
+        # Two synthetic activities, each with a (parent=1, product) entry.
+        assert len(prov) == 2
+        assert set(prov.values()) == {(1, 10), (1, 20)}
+        # The provenance keys are exactly the synthetic column ids emitted.
+        assert set(prov) == set(out.activities)
+        # Ids match the documented deterministic derivation.
+        for syn_id, (parent, product) in prov.items():
+            assert syn_id == Allocator._synthetic_id(parent, product)
+
+    def test_no_split_yields_empty_provenance(self):
+        frame = _make_frame([(1, 10, 1.0, "production", False, 1.0)])
+        out, prov = Allocator().allocate_with_provenance(frame)
+        assert prov == {}
+        assert out.n_rows == frame.n_rows

@@ -492,7 +492,7 @@ class LinkAllPipeline:
         )
         auditor = DanglingEdgeAuditor(resolver=IdNameResolver.from_sources(sp.data, ei_catalog_df))
         auditor.snapshot("initial", frame)
-        frame = Allocator().allocate(frame)
+        frame, synthetic_provenance = Allocator().allocate_with_provenance(frame)
         auditor.snapshot("after_allocator", frame)
         # Pre-refactor's ``MatrixPurger`` deleted excess producers in a
         # fixed-point loop after every ``Database.process()``. Replacing
@@ -580,7 +580,22 @@ class LinkAllPipeline:
         package_path = store.write(pkg)
 
         catalog_path = settings.paths.registry_product_catalog
+        # product_catalog stays agribalyse-only (backtest product mapping).
         ProductCatalogBuilder().build(sp.data, catalog_path)
+        # activity_catalog is the divergence-free label catalog: one row per
+        # *final* technosphere column (agribalyse + ecoinvent + Allocator
+        # synthetic splits), keyed by the column's own id. Built from the
+        # same run's ScoringPackage so catalog and matrix can never skew —
+        # this is what closes the "column id with no catalog row" gap. The
+        # synthetic columns (ids that are not flow_id_for hashes) are
+        # labelled from their (parent, product) provenance.
+        ProductCatalogBuilder().build_from_columns(
+            col_ids=pkg.technosphere.col_id_to_idx.keys(),
+            sp_data=sp.data,
+            ei_catalog_df=ei_catalog_df,
+            synthetic_provenance=synthetic_provenance,
+            target=settings.paths.registry_activity_catalog,
+        )
 
         report.set_matrix_shape(pkg.n_products, pkg.n_activities)
         return cls._scoring_package_payload(
