@@ -96,6 +96,156 @@ class ProductCatalogBuilder:
             "product_id": ExchangeFrameBuilder.flow_id_for(product_key),
         }
 
+    # ------------------------------------------------------------------
+    # Divergence-free catalog: one row per *actual technosphere column*.
+    # ------------------------------------------------------------------
+
+    _COLUMN_COLUMNS = [
+        "activity_id",
+        "database",
+        "code",
+        "name",
+        "type",
+        "unit",
+        "location",
+        "reference_product",
+        "product_id",
+    ]
+
+    def build_from_columns(
+        self,
+        *,
+        col_ids: Iterable[int],
+        sp_data: Iterable[dict],
+        ei_catalog_df: pd.DataFrame,
+        synthetic_provenance: dict[int, tuple[int, int]],
+        target: Path,
+    ) -> Path:
+        """Emit one catalog row per technosphere column, keyed by the
+        matrix's own ``activity_id`` (the column id).
+
+        Built from the *same run*'s ``ScoringPackage`` column set, so the
+        catalog and the matrix can never skew (the historic bug that left
+        column ids with no catalog row). Each column is labelled from, in
+        priority order:
+
+          1. the SimaPro ``sp_data`` activity whose ``(database, code)``
+             hashes to the column id (agribalyse foreground),
+          2. the ecoinvent catalog row whose ``(database, code)`` hashes
+             to it (ecoinvent background),
+          3. the Allocator ``synthetic_provenance`` (multifunctional
+             splits — their ids are *not* ``flow_id_for`` hashes, so they
+             resolve against no source ``(database, code)``),
+          4. a labelled ``unresolved`` fallback — surfaced and counted,
+             never silently dropped.
+        """
+        activities = self._activity_index(sp_data)
+        ecoinvent = self._ecoinvent_index(ei_catalog_df)
+        rows: list[dict] = []
+        n_unresolved = 0
+        for raw in col_ids:
+            cid = int(raw)
+            meta = activities.get(cid) or ecoinvent.get(cid)
+            if meta is None and cid in synthetic_provenance:
+                meta = self._synthetic_row(synthetic_provenance[cid], activities, ecoinvent)
+            if meta is None:
+                n_unresolved += 1
+                meta = {
+                    "database": "",
+                    "code": str(cid),
+                    "name": f"activity {cid}",
+                    "type": "unresolved",
+                    "unit": "",
+                    "location": "",
+                    "reference_product": "",
+                    "product_id": cid,
+                }
+            rows.append({**meta, "activity_id": cid})
+
+        df = pd.DataFrame(rows, columns=self._COLUMN_COLUMNS).astype(
+            {
+                "activity_id": "int64",
+                "database": "string",
+                "code": "string",
+                "name": "string",
+                "type": "string",
+                "unit": "string",
+                "location": "string",
+                "reference_product": "string",
+                "product_id": "int64",
+            }
+        )
+        df = df.drop_duplicates(subset=["activity_id"])
+        df = df.sort_values(by=["activity_id"]).reset_index(drop=True)
+        ParquetAtomicWriter.write(df, target)
+        return target
+
+    @classmethod
+    def _activity_index(cls, sp_data: Iterable[dict]) -> dict[int, dict]:
+        """``flow_id_for((database, code)) -> row`` for every ``sp_data``
+        activity — the column id of every non-synthetic agribalyse node."""
+        out: dict[int, dict] = {}
+        for ds in sp_data:
+            base = cls._row_for(ds)
+            database, code = base["database"], base["code"]
+            if not database and not code:
+                continue
+            base["location"] = str(ds.get("location") or "")
+            base["reference_product"] = str(
+                ds.get("reference product") or ds.get("reference_product") or ""
+            )
+            out[ExchangeFrameBuilder.flow_id_for((database, code))] = base
+        return out
+
+    @staticmethod
+    def _ecoinvent_index(ei_catalog_df: pd.DataFrame) -> dict[int, dict]:
+        """``flow_id_for((database, code)) -> row`` for ecoinvent columns."""
+        out: dict[int, dict] = {}
+        if ei_catalog_df is None or ei_catalog_df.empty:
+            return out
+        for r in ei_catalog_df.itertuples(index=False):
+            database = str(getattr(r, "database", "") or "")
+            code = str(getattr(r, "code", "") or "")
+            if not database and not code:
+                continue
+            out[ExchangeFrameBuilder.flow_id_for((database, code))] = {
+                "database": database,
+                "code": code,
+                "name": str(getattr(r, "name", "") or ""),
+                "type": "process",
+                "unit": str(getattr(r, "unit", "") or ""),
+                "location": str(getattr(r, "location", "") or ""),
+                "reference_product": str(getattr(r, "reference_product", "") or ""),
+                "product_id": ExchangeFrameBuilder.flow_id_for((database, code)),
+            }
+        return out
+
+    @staticmethod
+    def _synthetic_row(
+        provenance: tuple[int, int],
+        activities: dict[int, dict],
+        ecoinvent: dict[int, dict],
+    ) -> dict:
+        """Label an Allocator synthetic column from its ``(parent, product)``
+        provenance: the parent supplies the activity identity, the product
+        supplies the unit and reference product."""
+        parent_id, product_id = provenance
+        parent = activities.get(parent_id) or ecoinvent.get(parent_id) or {}
+        product = activities.get(product_id) or ecoinvent.get(product_id) or {}
+        parent_name = parent.get("name") or f"activity {parent_id}"
+        product_name = product.get("name") or ""
+        name = f"{parent_name} | {product_name}" if product_name else parent_name
+        return {
+            "database": parent.get("database") or "",
+            "code": f"{parent.get('code', '')}::{product_id}",
+            "name": name,
+            "type": "multifunctional_split",
+            "unit": product.get("unit") or parent.get("unit") or "",
+            "location": parent.get("location") or "",
+            "reference_product": product_name,
+            "product_id": product_id,
+        }
+
 
 @dataclass(frozen=True)
 class ProductCatalog:

@@ -130,18 +130,19 @@ class BuildFlowDecompCli(BaseCli):
     def _load_simapro_cf(self) -> SimaProCfLookup | None:
         """Per-flow SimaPro CFs for the side-by-side comparison column.
 
-        Optional: if the joined CF cache is missing the panel still renders
-        (SimaPro column shows em-dashes). Rebuild it with ``dds-compare-cfs``.
+        Sourced from the properly-matched CF-comparison sidecar. Optional: if
+        the sidecar is missing the panel still renders (SimaPro column shows
+        em-dashes). Rebuild it with ``dds-compare-cfs``.
         """
-        joined_path = self.settings.paths.cache_cf_per_flow_joined_parquet
-        if not joined_path.exists():
+        by_code_path = self.settings.paths.registry_cf_comparison_by_code
+        if not by_code_path.exists():
             Logging.get(self.PROG).warning(
                 "flow_decomp.simapro_cf_missing",
-                path=str(joined_path),
+                path=str(by_code_path),
                 hint="run dds-compare-cfs to enable the SimaPro CF column",
             )
             return None
-        return SimaProCfLookup.from_parquet(joined_path)
+        return SimaProCfLookup.from_parquet(by_code_path)
 
 
 def main() -> int:
