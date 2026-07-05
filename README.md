@@ -1,4 +1,4 @@
-# sentier_agribalyse
+# sentier-agribalyse
 
 Sentier-native adapter that imports Agribalyse 3.2 into Brightway 2.5,
 links it against ecoinvent 3.9.1, and registers EF v3.1 LCIA methods
