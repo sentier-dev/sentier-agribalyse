@@ -9,7 +9,7 @@
 set -euo pipefail
 
 # Extended-regex of forbidden staged paths.
-forbidden='^(source/ecoinvent-3\.9\.1-cutoff-exchanges\.parquet|source/ecoinvent-3\.9\.1-cutoff-activities\.json|source/ecoinvent-3\.9\.1-biosphere-flows\.json|source/ef-v31-methods\.json|registry/method_cfs/ecoinvent-3\.9\.1__)'
+forbidden='^(source/ecoinvent-3\.9\.1-cutoff-exchanges\.parquet|source/ecoinvent-3\.9\.1-cutoff-activities\.json|source/ecoinvent-3\.9\.1-biosphere-flows\.json|source/ef-v31-methods\.json|registry/method_cfs/ecoinvent-3\.9\.1__|bw_package/)'
 
 staged="$(git diff --cached --name-only --diff-filter=AM)"
 

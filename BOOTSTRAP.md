@@ -193,6 +193,11 @@ dds-run-end-to-end --solver pardiso     # link + register LCIA + score a sample
 
 ## 6. Never re-commit the regenerated data
 
+This applies equally to everything *derived* from the regenerated data —
+including the Brightway export `bw_package/` written by
+`dds-build-bw-package` after the pipeline has run (it embeds ecoinvent
+LCI amounts).
+
 The repo blocks these paths in two places:
 
 1. `.gitignore` — the `ecoinvent EULA` block.
