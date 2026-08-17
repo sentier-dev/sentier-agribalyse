@@ -2101,6 +2101,10 @@ bootstrap = [
     { name = "bw2io" },
     { name = "ecoinvent-interface" },
 ]
+bw = [
+    { name = "bw-processing" },
+    { name = "bw2calc" },
+]
 llm-api = [
     { name = "anthropic" },
 ]
@@ -2113,7 +2117,9 @@ test = [
 [package.metadata]
 requires-dist = [
     { name = "anthropic", marker = "extra == 'llm-api'", specifier = ">=0.40" },
+    { name = "bw-processing", marker = "extra == 'bw'", specifier = ">=1.0" },
     { name = "bw-simapro-csv", specifier = ">=0.4.2" },
+    { name = "bw2calc", marker = "extra == 'bw'", specifier = ">=2.0" },
     { name = "bw2data", marker = "extra == 'bootstrap'", specifier = ">=4.5.3" },
     { name = "bw2io", marker = "extra == 'bootstrap'", specifier = ">=0.9.11" },
     { name = "ecoinvent-interface", marker = "extra == 'bootstrap'", specifier = ">=3.0" },
@@ -2130,7 +2136,7 @@ requires-dist = [
     { name = "scipy", specifier = ">=1.10" },
     { name = "structlog", specifier = ">=25.0" },
 ]
-provides-extras = ["bootstrap", "test", "llm-api"]
+provides-extras = ["bootstrap", "test", "llm-api", "bw"]
 
 [[package]]
 name = "six"

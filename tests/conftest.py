@@ -108,6 +108,18 @@ def _quiet_logs(monkeypatch):
 
 
 # --------------------------------------------------------------------------
+# bw_export / bw_import fixture: a tiny fully-known ScoringPackage (see
+# tests/fixtures/bw_synthetic.py for the worked arithmetic).
+
+
+@pytest.fixture
+def synthetic_package():
+    from tests.fixtures.bw_synthetic import make_synthetic_scoring_package
+
+    return make_synthetic_scoring_package()
+
+
+# --------------------------------------------------------------------------
 # Re-exported names live at module scope so tests can ``from tests.conftest
 # import make_settings``; pytest auto-discovers fixture functions only.
 

@@ -40,6 +40,7 @@ also as `python -m cli.<name>`):
 | `dds-decompose-score` | Explain a single `(product, method)` score: top biosphere flows, technosphere activities, and `(activity, flow)` edges. |
 | `dds-build-packages` | Author the publishable randonneur datapackages (`source/randonneur_packages/*.json`) and the residuals review xlsx. |
 | `dds-mappings-comparison` | Regenerate `to_review/mappings_comparison.xlsx` from the persisted DB without re-running the link pipeline. |
+| `dds-build-bw-package` | Export the linked system as native Brightway artifacts: `bw_processing` datapackages + a standalone importer for Brightway 2.0/2.5 and Activity Browser. See [Export to Brightway](#export-to-brightway--activity-browser). Needs the `bw` extra. |
 
 Common flags on `dds-link-all`:
 
@@ -84,6 +85,10 @@ dds-build-flow-decomp --solver pardiso
 # 6. Optional: per-product LLM outlier notes → dashboard/product_reasons.json
 #    (cell tooltips). Needs the local `claude` binary or --use-api.
 dds-build-product-reasons
+
+# 7. Optional: export the linked system for Brightway / Activity Browser
+#    (needs: pip install -e ".[bw]"). Output bw_package/ is licence-gated.
+dds-build-bw-package
 ```
 
 `dds-run-end-to-end --solver pardiso` is an optional quick smoke that
@@ -135,6 +140,38 @@ impact-category notes (`outlier_reasons.json`) ship in git. The
 they embed ecoinvent elementary-flow nomenclature (flow name +
 compartment of the matched registry flow) and are gitignored under the
 ecoinvent EULA. Regenerate them locally with steps 4-6.
+
+### Export to Brightway / Activity Browser
+
+After `dds-link-all`, the whole linked system (Agribalyse 3.2 ×
+ecoinvent 3.9.1 × the 19 EF v3.1 methods, AWARE corrections included)
+can be exported as native Brightway artifacts:
+
+```bash
+pip install -e ".[bw]"       # bw_processing + bw2calc, export-time only
+dds-build-bw-package         # writes bw_package/ and parity-checks it
+```
+
+The export comes in two ready-to-use shapes (see the generated
+`bw_package/README.md` for full usage):
+
+1. **`bw_processing` datapackages** (`inventory/`, `methods/<slug>/`) —
+   score directly with stock `bw2calc` 2.x, no import step, no project:
+   `cd bw_package && python run_example.py`.
+2. **A standalone importer** (`import_into_brightway.py`, copied into the
+   export) — run it *inside your Brightway / Activity Browser environment*
+   to build a named `bw2data` project + databases + methods. Works on both
+   Brightway generations (legacy `bw2data` 3.x and `bw2data` 4.x / bw2.5):
+   `cd bw_package && python import_into_brightway.py --verify 3`.
+
+Scores are guaranteed to match the pipeline: the export fails unless a
+`bw2calc` round-trip over sampled products reproduces the
+`NativeLciaScorer` scores, and the importer's `--verify` re-checks a
+sample against `metadata/parity_samples.json` using *your* bw2calc.
+
+> **EULA:** `bw_package/` contains ecoinvent LCI amounts composed from
+> your locally regenerated `source/` data. It is gitignored and blocked
+> by the pre-commit guard — never commit or redistribute it.
 
 ### Decompose a score
 
