@@ -39,7 +39,8 @@ _CATEGORY_SEP = "::"
 _RUN_EXAMPLE = '''\
 """Compute one LCIA score from the exported datapackages.
 
-Requires only: pip install bw_processing bw2calc pandas
+Requires only: pip install bw_processing bw2calc pandas pyarrow
+(add pypardiso for much faster solves)
 Run from inside this folder: python run_example.py
 """
 from pathlib import Path
@@ -79,7 +80,7 @@ sentier-agribalyse (`dds-build-bw-package`), in two ready-to-use shapes:
 
 ## A. Score directly with bw2calc
 
-    pip install bw_processing bw2calc pandas
+    pip install bw_processing bw2calc pandas pyarrow
     python run_example.py
 
 Or in your own code:
@@ -99,8 +100,8 @@ The demand is keyed by the **product id** directly — look it up in
 method keys and datapackage paths. The AWARE water-use correction is embedded as
 a synthetic biosphere flow (flagged in `metadata/biosphere.parquet`), so scores
 match the pipeline's backtested numbers exactly. `pip install pypardiso` is
-recommended: the technosphere carries zero-diagonal placeholder activities that
-scipy's default SuperLU factorization rejects as singular.
+strongly recommended: plain scipy works but each solve takes ~20s on this
+~42k-activity system vs ~2s with pypardiso.
 
 ## B. Import into Brightway / Activity Browser
 
@@ -132,11 +133,10 @@ importer) wins over the defaults. `.env` keys: `BRIGHTWAY2_DIR`, `BW_PROJECT`.
 
 Notes on `--verify`:
 
-- It needs a solver that tolerates this technosphere's zero-diagonal
-  placeholder activities. Install `pypardiso` in the Brightway environment
-  (plus the `mkl` wheel, or point `PYPARDISO_MKL_RT` at a `libmkl_rt` shared
-  library) — with plain scipy the verification may abort with a
-  "factor is exactly singular" error.
+- `pypardiso` in the Brightway environment makes it much faster (~2s vs ~20s
+  per product with plain scipy). If pypardiso reports it cannot find
+  `mkl_rt`, install the `mkl` wheel into the same environment or point
+  `PYPARDISO_MKL_RT` at a `libmkl_rt` shared library.
 - The verify tolerance is `1e-6` (not tighter) because `bw2data` processes
   imported exchange amounts into float32 arrays: scores recomputed through a
   bw2data project carry ~1e-7 relative quantization on both Brightway
