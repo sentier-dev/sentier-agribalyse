@@ -18,9 +18,9 @@ for impact scoring.
 ## Setup
 
 ```bash
-python -m venv .venv
+python3.11 -m venv .venv
 source .venv/bin/activate
-pip install -e .
+pip install -e ".[pardiso]"   # pardiso = recommended solver (see the solver note)
 ```
 
 ## Commands
@@ -87,7 +87,7 @@ dds-build-flow-decomp --solver pardiso
 dds-build-product-reasons
 
 # 7. Optional: export the linked system for Brightway / Activity Browser
-#    (needs: pip install -e ".[bw]"). Output bw_package/ is licence-gated.
+#    (needs: pip install -e ".[bw,pardiso]"). Output bw_package/ is licence-gated.
 dds-build-bw-package
 ```
 
@@ -148,7 +148,8 @@ ecoinvent 3.9.1 × the 19 EF v3.1 methods, AWARE corrections included)
 can be exported as native Brightway artifacts:
 
 ```bash
-pip install -e ".[bw]"       # bw_processing + bw2calc, export-time only
+pip install -e ".[bw,pardiso]"   # bw2calc + bw_processing + the pardiso solver
+                                 # (the parity check needs pardiso on this matrix)
 dds-build-bw-package         # writes bw_package/ and parity-checks it
 ```
 
@@ -168,6 +169,11 @@ Scores are guaranteed to match the pipeline: the export fails unless a
 `bw2calc` round-trip over sampled products reproduces the
 `NativeLciaScorer` scores, and the importer's `--verify` re-checks a
 sample against `metadata/parity_samples.json` using *your* bw2calc.
+`--verify` runs fine on plain scipy but is ~10x faster with
+`pypardiso` installed in the Brightway environment, and verifies to
+1e-6: bw2data stores processed amounts as float32, so
+project-recomputed scores carry ~1e-7 quantization — the generated
+README documents both points.
 
 > **EULA:** `bw_package/` contains ecoinvent LCI amounts composed from
 > your locally regenerated `source/` data. It is gitignored and blocked
