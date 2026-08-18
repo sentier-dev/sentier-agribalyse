@@ -95,6 +95,10 @@ def test_execute_writes_verified_export(tmp_path, linked_settings, capsys):
     samples = json.loads((out / "metadata" / "parity_samples.json").read_text())
     assert [s["product_id"] for s in samples["samples"]] == PRODUCT_IDS
     assert samples["samples"][0]["expected"][0][0] == list(METHOD)
+    # The --verify tolerance must stay 1e-6, NOT the export-time 1e-9:
+    # bw2data processes imported amounts into float32 arrays, so scores
+    # recomputed through a bw2data project carry ~1e-7 quantization.
+    assert samples["tolerance"] == 1e-6
 
     assert "parity check: PASS" in capsys.readouterr().out
 
