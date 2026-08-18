@@ -209,30 +209,13 @@ def install_stubs() -> None:
     ):
         setattr(bw2io_strategies, n, _noop_strategy)
 
-    # ---- bw2calc -----------------------------------------------------
-    bw2calc = _make_module("bw2calc", _dds_test_stub=True)
-
-    class _LCA:
-        def __init__(self, demand=None, method=None, *_a, **_k):
-            self.demand = demand
-            self.method = method
-            self.score = 0.0
-
-        def lci(self, demand=None):
-            if demand is not None:
-                self.demand = demand
-            return None
-
-        def switch_method(self, method):
-            self.method = method
-
-        def lcia_calculation(self):
-            self.score = 1.0
-
-    bw2calc.LCA = _LCA
-    bw2calc_lca_base = _make_module("bw2calc.lca_base")
-    bw2calc_lca_base.spsolve = lambda *a, **k: None
-    bw2calc_lca_base.factorized = lambda *a, **k: None
+    # ---- bw2calc: NOT stubbed --------------------------------------
+    # No production or test code depends on a fake bw2calc anymore (the
+    # legacy bw2calc-based LciaScorer was removed in REFACTOR_LINKING).
+    # The bw_export parity tests need the REAL bw2calc (installed via the
+    # `[bw]` extra) to score the emitted datapackages, so stubbing it here
+    # would break them. Note pypardiso IS still stubbed below, so bw2calc
+    # and NativeLciaScorer both fall back to scipy under tests.
 
     # ---- randonneur -------------------------------------------------
     randonneur = _make_module("randonneur", _dds_test_stub=True)

@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import json
 import multiprocessing as _mp
 import re
 from collections.abc import Mapping
@@ -22,7 +21,8 @@ from reporting.near_zero_floor import NearZeroFloor
 from scoring.native_scorer import NativeLciaScorer, NativeScoreWorker, NativeWorkerPayload
 from scoring.product_catalog import ProductCatalog
 from scoring.scorer import ScoringResult
-from scoring.scoring_package import ScoringPackage, ScoringPackageStore
+from scoring.scoring_package import ScoringPackage
+from scoring.scoring_package_locator import ScoringPackageLocator
 
 
 @dataclass(frozen=True)
@@ -250,22 +250,8 @@ class BacktestPipeline:
         return [b for b in buckets if b]
 
     def _load_scoring_package(self) -> ScoringPackage:
-        """Read content_hash from dashboard/run_report.json and load the ScoringPackage."""
-        s = self.settings
-        report_path = s.paths.dashboard_run_report
-        if not report_path.exists():
-            raise FileNotFoundError(
-                f"run_report.json not found at {report_path}. Run `dds-link-all` first."
-            )
-        report = json.loads(report_path.read_text())
-        try:
-            content_hash = report["stages"]["scoring_package"]["content_hash"]
-        except KeyError as exc:
-            raise KeyError(
-                f"run_report.json at {report_path} has no stages.scoring_package.content_hash. "
-                f"Re-run `dds-link-all` to regenerate it."
-            ) from exc
-        return ScoringPackageStore(root=s.paths.scoring_packages_root).read(content_hash)
+        """Load the ScoringPackage recorded by the last link run (via run_report.json)."""
+        return ScoringPackageLocator(settings=self.settings).load()
 
     EMBALLAGE_CORRIGE_TOKEN: ClassVar[str] = "emballage corrig"
 

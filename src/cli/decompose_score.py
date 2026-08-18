@@ -36,7 +36,7 @@ import pandas as pd
 from cli._base import BaseCli
 from scoring.decomposer import ScoreDecomposer
 from scoring.product_catalog import ProductCatalog
-from scoring.scoring_package import ScoringPackageStore
+from scoring.scoring_package_locator import ScoringPackageLocator
 
 
 @dataclass(frozen=True)
@@ -281,16 +281,7 @@ class DecomposeScoreCli(BaseCli):
     # ------------------------------------------------------------------
 
     def _load_package(self):
-        report_path = self.settings.paths.dashboard_run_report
-        if not report_path.exists():
-            raise FileNotFoundError(
-                f"run_report.json not found at {report_path}. Run dds-link-all first."
-            )
-        report = json.loads(report_path.read_text())
-        content_hash = report["stages"]["scoring_package"]["content_hash"]
-        return ScoringPackageStore(root=self.settings.paths.scoring_packages_root).read(
-            content_hash
-        )
+        return ScoringPackageLocator(settings=self.settings).load()
 
     @classmethod
     def _print_human_summary(cls, result, method_alias: str) -> None:

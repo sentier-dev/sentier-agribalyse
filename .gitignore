@@ -72,6 +72,10 @@ unlinked/*
 # Parquet caches of upstream xlsx (rebuilt from source)
 cache/
 
+# Brightway export (dds-build-bw-package) — contains licensed ecoinvent
+# amounts; never commit or redistribute (also blocked by the pre-commit guard)
+bw_package/
+
 # OS
 .DS_Store
 

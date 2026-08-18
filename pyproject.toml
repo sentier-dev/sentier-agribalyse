@@ -52,6 +52,7 @@ dds-mappings-comparison = "cli.mappings_comparison:main"
 dds-llm-suggest-mappings = "cli.llm_suggest:main"
 dds-reset               = "cli.reset:main"
 dds-build-skeleton      = "cli.build_skeleton:main"
+dds-build-bw-package    = "cli.build_bw_package:main"
 
 [build-system]
 requires = ["setuptools>=68", "wheel"]
@@ -81,6 +82,22 @@ test = [
 # CLI path shells out to the local `claude` binary and needs no Python SDK.
 llm-api = [
     "anthropic>=0.40",
+]
+# Recommended sparse solver. The technosphere carries zero-diagonal
+# placeholder activities that scipy SuperLU rejects as "exactly singular";
+# pypardiso's pivoting handles them (README solver note). pypardiso pulls
+# the `mkl` wheel, which ships libmkl_rt into the venv where pypardiso
+# finds it.
+pardiso = [
+    "pypardiso>=0.4.6",
+]
+# Brightway export (`dds-build-bw-package`). Writes bw_processing
+# datapackages and parity-checks them through stock bw2calc; the core
+# runtime stays bw-free without this extra. Install together with
+# [pardiso] — the parity check needs it on the real matrix.
+bw = [
+    "bw_processing>=1.0",
+    "bw2calc>=2.0",
 ]
 
 [tool.ruff]
