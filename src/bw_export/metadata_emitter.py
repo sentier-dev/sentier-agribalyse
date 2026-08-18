@@ -130,6 +130,19 @@ Options:
 Flags win over the environment; the environment (or a `.env` file next to the
 importer) wins over the defaults. `.env` keys: `BRIGHTWAY2_DIR`, `BW_PROJECT`.
 
+Notes on `--verify`:
+
+- It needs a solver that tolerates this technosphere's zero-diagonal
+  placeholder activities. Install `pypardiso` in the Brightway environment
+  (plus the `mkl` wheel, or point `PYPARDISO_MKL_RT` at a `libmkl_rt` shared
+  library) — with plain scipy the verification may abort with a
+  "factor is exactly singular" error.
+- The verify tolerance is `1e-6` (not tighter) because `bw2data` processes
+  imported exchange amounts into float32 arrays: scores recomputed through a
+  bw2data project carry ~1e-7 relative quantization on both Brightway
+  generations. Scoring the shipped datapackages directly (option A) is exact
+  to float64 (~1e-15).
+
 ## Licence
 
 This export contains ecoinvent 3.9.1 numerical values, composed locally from

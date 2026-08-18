@@ -43,9 +43,13 @@ except ImportError as exc:  # pragma: no cover - environment-dependent
 
 # The standalone importer copied verbatim into the export root.
 _IMPORTER_SRC = Path(__file__).resolve().parents[1] / "bw_import" / "import_into_brightway.py"
-# Tolerance written to parity_samples.json when the export-time parity check is
-# skipped (with parity on, the verifier's own tighter tolerance is written).
-_DEFAULT_TOLERANCE = 1e-6
+# Tolerance written to parity_samples.json for the importer's --verify. It is
+# deliberately looser than ParityVerifier's 1e-9: the export-time check scores
+# the shipped float64 arrays directly, but bw2data processes imported exchange
+# amounts into float32 arrays, so a score recomputed through a bw2data project
+# carries ~1e-7 relative quantization by construction (measured max 3.4e-7 on
+# the real system across both bw2data generations).
+_VERIFY_TOLERANCE = 1e-6
 
 
 @dataclass
@@ -105,7 +109,6 @@ class BuildBwPackageCli(BaseCli):
 
         product_ids = self.sample_product_ids(package, n=args.parity_n, full=args.parity_full)
         parity: dict = {"skipped": True}
-        tolerance = _DEFAULT_TOLERANCE
         if not args.skip_parity:
             result = ParityVerifier().verify(
                 package=package,
@@ -113,7 +116,6 @@ class BuildBwPackageCli(BaseCli):
                 product_ids=product_ids,
                 methods=list(package.methods),
             )
-            tolerance = result.tolerance
             parity = {
                 "passed": result.passed,
                 "n_checked": result.n_checked,
@@ -167,7 +169,7 @@ class BuildBwPackageCli(BaseCli):
             bio_resolver=resolver.biosphere,
             product_catalog=product_catalog,
             parity_scores=parity_scores,
-            parity_tolerance=tolerance,
+            parity_tolerance=_VERIFY_TOLERANCE,
             manifest_extra=manifest_extra,
             parity=parity,
         )
