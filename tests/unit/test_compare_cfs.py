@@ -376,6 +376,7 @@ class TestCompareCfsCli:
         # Drives the CLI's emit wiring with synthetic frames + a tmp-rooted
         # Settings, so no real inputs are needed and nothing real is written.
         import numpy as np
+
         from config import Settings
         from config.paths import Paths
         from ef.cf_flow_join import ContextNormaliser, JoinedFlowFrame
@@ -416,7 +417,9 @@ class TestCompareCfsCli:
         assert settings.paths.registry_cf_comparison_join.exists()
         assert settings.paths.registry_cf_comparison_by_code.exists()
         df = pd.read_csv(settings.paths.dashboard_cf_comparison_csv)
-        assert {"compartment_simapro", "compartment_registry", "match_provenance"} <= set(df.columns)
+        assert {"compartment_simapro", "compartment_registry", "match_provenance"} <= set(
+            df.columns
+        )
         assert df.iloc[0]["name_simapro"] == "Ammonia"
         assert df.iloc[0]["status"] == "both_agree"
 
