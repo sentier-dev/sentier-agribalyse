@@ -25,6 +25,7 @@ from __future__ import annotations
 from collections.abc import Iterable
 from dataclasses import dataclass
 from pathlib import Path
+from typing import ClassVar
 
 import pandas as pd
 
@@ -100,7 +101,7 @@ class ProductCatalogBuilder:
     # Divergence-free catalog: one row per *actual technosphere column*.
     # ------------------------------------------------------------------
 
-    _COLUMN_COLUMNS = [
+    _COLUMN_COLUMNS: ClassVar[list[str]] = [
         "activity_id",
         "database",
         "code",
