@@ -540,7 +540,6 @@ class TestCfComparisonJoinBuilder:
 
 class TestUsedFlowFilter:
     def test_keeps_only_flows_whose_flow_id_is_in_the_package(self) -> None:
-        from ef.cf_flow_join import JoinedFlowFrame
         from reporting import UsedFlowFilter
         from scoring.exchange_frame_builder import ExchangeFrameBuilder
 
