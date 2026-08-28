@@ -175,11 +175,31 @@ class Paths:
     def importer_cache_pkl(self) -> Path:
         return self.cache / "importer_cache.pkl"
 
+    @property
+    def linked_cache_pkl(self) -> Path:
+        """Fully linked graph snapshot for the fast rescore path."""
+        return self.cache / "linked_cache.pkl"
+
+    @property
+    def parameter_overrides_csv(self) -> Path:
+        """Local what-if parameter overrides (gitignored; cleared by ``dds-reset``)."""
+        return self.source / "parameter_overrides.csv"
+
     # --- Registry parquets ------------------------------------------------
 
     @property
     def registry_meta(self) -> Path:
         return self.registry / "registry.meta.json"
+
+    @property
+    def registry_parameters(self) -> Path:
+        """Per-process parameter definitions (``dds-build-parameters``)."""
+        return self.registry / "parameters.parquet"
+
+    @property
+    def registry_exchange_formulas(self) -> Path:
+        """Exchange-formula table (``dds-build-parameters``)."""
+        return self.registry / "exchange_formulas.parquet"
 
     @property
     def registry_mappings_biosphere(self) -> Path:

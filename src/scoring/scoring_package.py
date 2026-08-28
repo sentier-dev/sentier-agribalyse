@@ -305,12 +305,20 @@ class ScoringPackageStore:
 
     root: Path
 
+    #: What-if parameter overrides fork a new content-hashed package per
+    #: distinct value; without eviction, iterating what-ifs accumulates
+    #: multi-GB package dirs without bound. Keep the most-recently-used N.
+    MAX_PACKAGES: ClassVar[int] = 5
+
     def path_for(self, content_hash: str) -> Path:
         return self.root / content_hash
 
     def write(self, package: ScoringPackage) -> Path:
         target = self.path_for(package.content_hash)
         if target.exists():
+            # Refresh mtime so the LRU eviction treats a re-used package
+            # (e.g. clearing overrides back to baseline) as recent.
+            target.touch()
             return target
         partial = self.root / f"{package.content_hash}.partial"
         partial.mkdir(parents=True, exist_ok=True)
@@ -338,7 +346,30 @@ class ScoringPackageStore:
         (partial / "ids.json").write_text(json.dumps(ids, sort_keys=True, default=str))
 
         partial.rename(target)
+        self._evict_lru(keep=target)
         return target
+
+    def _evict_lru(self, keep: Path) -> None:
+        """Prune package dirs beyond ``MAX_PACKAGES``, oldest-mtime first.
+
+        ``keep`` (the just-written package) is always preserved. Leftover
+        ``*.partial`` dirs from crashed writes are removed unconditionally.
+        """
+        import shutil
+
+        if not self.root.exists():
+            return
+        for stale_partial in self.root.glob("*.partial"):
+            shutil.rmtree(stale_partial, ignore_errors=True)
+        packages = sorted(
+            (p for p in self.root.iterdir() if p.is_dir()),
+            key=lambda p: p.stat().st_mtime,
+            reverse=True,
+        )
+        for victim in packages[self.MAX_PACKAGES :]:
+            if victim == keep:
+                continue
+            shutil.rmtree(victim, ignore_errors=True)
 
     def read(self, content_hash: str) -> ScoringPackage:
         path = self.path_for(content_hash)

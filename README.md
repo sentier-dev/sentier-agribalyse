@@ -41,6 +41,10 @@ also as `python -m cli.<name>`):
 | `dds-build-packages` | Author the publishable randonneur datapackages (`source/randonneur_packages/*.json`) and the residuals review xlsx. |
 | `dds-mappings-comparison` | Regenerate `to_review/mappings_comparison.xlsx` from the persisted DB without re-running the link pipeline. |
 | `dds-build-bw-package` | Export the linked system as native Brightway artifacts: `bw_processing` datapackages + a standalone importer for Brightway 2.0/2.5 and Activity Browser. See [Export to Brightway](#export-to-brightway--activity-browser). Needs the `bw` extra. |
+| `dds-set-parameter` | Override a SimaPro input parameter (e.g. `Packaging_Weight`) without SimaPro, then rescore. See "Changing parameters" below. |
+| `dds-list-parameters` | Browse the 577 SimaPro parameter names, definition counts, value ranges, and active overrides. |
+| `dds-clear-parameters` | Remove overrides (all, `--name`, or `--product`) — the baseline is restored on the next rebuild. |
+| `dds-build-parameters` | Materialize `registry/parameters.parquet` + `registry/exchange_formulas.parquet` from the parsed CSV. |
 
 Common flags on `dds-link-all`:
 
@@ -50,6 +54,60 @@ Common flags on `dds-link-all`:
 --no-write        Skip the database write (dry-run, audit-log inspection).
 --no-purge        Skip matrix-square purge (still writes DB).
 ```
+
+### Changing parameters (no SimaPro required)
+
+The SimaPro process-level parameters (all process-local in AGB 3.2 —
+13 725 processes with input parameters, 577 distinct names) are editable
+directly:
+
+```bash
+dds-list-parameters --name-like packaging          # discover names + ranges
+dds-set-parameter Packaging_Weight 0.03 --product EI3CQUNI000025017101234
+dds-set-parameter Packaging_Weight 0.03 --all-products   # every defining process
+dds-clear-parameters                                # back to baseline values
+```
+
+`dds-set-parameter` persists the override to
+`source/parameter_overrides.csv` (gitignored what-if state; a
+process-specific row beats a `*` row), prints the directly changed
+exchange amounts, then reruns `dds-link-all` + `dds-backtest`
+(`--no-rescore` to skip). With `--fast` the rescore replays only the
+scoring-package emit stage against the linked-graph snapshot
+(`cache/linked_cache.pkl`, written by every `dds-link-all` run) —
+skipping parse, transforms, and matching. The fast path ratio-patches
+amounts (`new_formula_value / baseline_formula_value`), which survives
+the transforms' multiplicative rescales; exchanges whose baseline
+evaluates to 0 can't be ratio-patched and are reported (use the full
+path for those). Only **input** parameters accept overrides —
+calculated parameters are formula-derived and refuse with their formula.
+Overrides re-evaluate the affected processes' formulas with the same
+machinery that baked the original amounts (`bw2parameters`), so an
+override set to the original value changes nothing. The scoring-package
+content hash covers the exchange amounts, so baseline and what-if
+packages coexist in `cache/scoring_packages/`. `dds-reset` deletes the
+overrides file (`--keep-overrides` preserves it).
+
+### Changing parameters (updated SimaPro CSV)
+
+For structural edits (new parameters, changed formulas) the pipeline is
+fully regenerable from the SimaPro export. After editing in SimaPro,
+re-export the database and replace `source/AGB32_final.CSV` (same export
+settings as the original), then:
+
+```bash
+dds-reset       # clears the scoring-package cache AND the CSV parse cache
+dds-link-all    # re-parses the CSV, re-links, rebuilds the scoring package
+dds-backtest    # re-scores everything and refreshes the dashboard data
+```
+
+`dds-reset` is required: the CSV parse is cached in
+`cache/importer_cache.pkl` with no hash of the source file, so without it
+a re-run would silently reuse the previous parse. The rebuild is
+deterministic — the same CSV always reproduces bit-identical outputs, so
+score differences between two runs are attributable to the CSV changes
+alone. (`dds-build-registry` is only needed when mapping sources under
+`source/` change; parameter edits don't touch it.)
 
 ### Full workflow (from scratch)
 
