@@ -1,6 +1,6 @@
 [project]
 name = "sentier_agribalyse"
-version = "0.2.0"
+version = "0.3.0"
 description = "Sentier-native adapter bringing Agribalyse 3.2 into Brightway 2.5 via a unified MappingRegistry and the EF v3.1 consensus-flow architecture."
 requires-python = ">=3.11"
 license = { text = "MIT" }
@@ -53,6 +53,10 @@ dds-llm-suggest-mappings = "cli.llm_suggest:main"
 dds-reset               = "cli.reset:main"
 dds-build-skeleton      = "cli.build_skeleton:main"
 dds-build-bw-package    = "cli.build_bw_package:main"
+dds-set-parameter       = "cli.set_parameter:main"
+dds-list-parameters     = "cli.list_parameters:main"
+dds-clear-parameters    = "cli.clear_parameters:main"
+dds-build-parameters    = "cli.build_parameters:main"
 
 [build-system]
 requires = ["setuptools>=68", "wheel"]

@@ -1,0 +1,164 @@
+{SimaPro 9.6.0.1}
+{processes}
+{Date: 08/11/2024}
+{Time: 17:56:59}
+{Project: AGRIBALYSE - unit}
+{CSV Format version: 9.0.0}
+{CSV separator: Semicolon}
+{Decimal separator: ,}
+{Date separator: /}
+{Short date format: dd/MM/yyyy}
+{Export platform IDs: No}
+{Skip empty fields: No}
+{Convert expressions to constants: No}
+{Selection: Selection (21510)}
+{Related objects (system descriptions, substances, units, etc.): Yes}
+{Include sub product stages and processes: No}
+{Skip unused parameters: Yes}
+{Open library: 'AGRIBALYSE - unit'}
+
+
+Process
+
+Category type
+material
+
+Process identifier
+EI3CQUNI000025017103472
+
+Type
+
+
+Process name
+
+
+Status
+
+
+Time period
+Unspecified
+
+Geography
+Unspecified
+
+Technology
+Unspecified
+
+Representativeness
+Unspecified
+
+Multiple output allocation
+Unspecified
+
+Substitution allocation
+Unspecified
+
+Cut off rules
+Unspecified
+
+Capital goods
+Unspecified
+
+Boundary with nature
+Unspecified
+
+Infrastructure
+No
+
+Date
+10/08/2023
+
+Record
+
+
+Generator
+
+
+External documents
+
+
+Literature references
+
+
+Collection method
+
+
+Data treatment
+
+
+Verification
+
+
+Comment
+AGRIBALYSE v3.2 dataset, 2024. 
+
+Allocation rules
+
+
+System description
+AGRIBALYSE;
+
+Products
+Albacore tuna, in oil, canned, at plant {FR} U;kg;1;100;not defined;Agricultural\Food\Transformation;
+
+Avoided products
+
+Resources
+
+Materials/fuels
+Albacore tuna, in oil, canned, consumption mix {FR} U;kg;ratio_ingredient1*yield_filling_kg*yield_fishpreparation_kg;Undefined;0;0;0;Tuna - Average recipe data based on 3 company data sets
+Olive oil, at plant {FR} U;kg;ratio_ingredient2*yield_filling_kg;Undefined;0;0;0;Olive oil - Average recipe data based on 3 company data sets
+Transport, freight, lorry 16-32 metric ton, EURO6 {RER}| market for transport, freight, lorry 16-32 metric ton, EURO6 | Cut-off, S - Copied from Ecoinvent U;kgkm;ratio_ingredient2*yield_filling_kg*1133;Undefined;0;0;0;olive oil transport
+Salt, consumption mix {FR} U;kg;ratio_ingredient3*yield_filling_kg;Undefined;0;0;0;Salt - Average recipe data based on 3 company data sets
+Transport, freight, lorry 16-32 metric ton, EURO6 {RER}| market for transport, freight, lorry 16-32 metric ton, EURO6 | Cut-off, S - Copied from Ecoinvent U;kgkm;ratio_ingredient3*yield_filling_kg*800;Undefined;0;0;0;salt transport
+Canning process, industrial, 1kg of canned albacore tuna {FR} U;kg;1;Undefined;0;0;0;
+
+Electricity/heat
+
+Emissions to air
+
+Emissions to water
+
+Emissions to soil
+
+Final waste flows
+
+Non material emissions
+
+Social issues
+
+Economic issues
+
+Waste to treatment
+[Dummy] Food waste, industrial, for animal feed {FR} U;kg;fish_losses_kg;Undefined;0;0;0;Fish losses from the plant for animal feed - considered to have no impact
+[Dummy] Food waste, industrial, for animal feed {FR} U;kg;ingredients_losses_kg;Undefined;0;0;0;Ingredients losses from the plant for animal feed - considered to have no impact
+
+Input parameters
+DQI_P_Processing;1;Undefined;1;0;0;No;Data Quality Index regarding the Precision (P) of the processing of the food product from good (1) to poor quality (5)
+DQI_TiR_Processing;1;Undefined;1;0;0;No;Data Quality Index regarding the Time-related representativeness (TiR) of the processing of the food product from good (1) to poor quality (5)
+DQI_GR_Processing;1;Undefined;1;0;0;No;Data Quality Index regarding the Geographical representativeness (GR) of the processing of the food product from good (1) to poor quality (5)
+DQI_TeR_Processing;1;Undefined;1;0;0;No;Data Quality Index regarding the Technological representativeness (TeR) of the processing of the food product from good (1) to poor quality (5)
+Factor_Allocation_at_processing;1,0;Undefined;1;0;0;No;Allocation ratio of the multi-output process at the processing of the food product
+DQI_P_Allocation_at_processing;0;Undefined;1;0;0;No;Data Quality Index regarding the Precision (P) of the allocation factor at the processing of the food product from good (1) to poor quality (5)
+DQI_TiR_Allocation_at_processing;0;Undefined;1;0;0;No;Data Quality Index regarding the Time-related representativeness (TiR) of the allocation factor at the processing of the food product from good (1) to poor quality (5)
+DQI_GR_Allocation_at_processing;0;Undefined;1;0;0;No;Data Quality Index regarding the Geographical representativeness (GR) of the allocation factor at the processing of the food product from good (1) to poor quality (5)
+DQI_TeR_Allocation_at_processing;0;Undefined;1;0;0;No;Data Quality Index regarding the Technological representativeness (TeR) of the allocation factor at the processing of the food product from good (1) to poor quality (5)
+Factor_R2C_at_processing;1,0;Undefined;1;0;0;No;Raw to cooked ratio (R2C, cooked mass output/raw mass input ratio) at the processing of the food product
+Factor_Inedible_at_processing;0,35;Undefined;1;0;0;No;Inedible ratio (inedible mass output/raw mass input ratio) at the processing of the food product
+Factor_Yield_at_processing;0,6509569066527796;Undefined;1;0;0;No;Yield ratio (mass output/raw mass input ratio) at the processing of the food product
+DQI_P_R2C_Inedible_at_processing;1;Undefined;1;0;0;No;Data Quality Index regarding the Precision (P) of the R2C, inedible and yield ratio at the processing of the food product from good (1) to poor quality (5)
+DQI_TiR_R2C_Inedible_at_processing;1;Undefined;1;0;0;No;Data Quality Index regarding the Time-related representativeness (TiR) of the R2C, inedible and yield ratio at the processing of the food product from good (1) to poor quality (5)
+DQI_GR_R2C_Inedible_at_processing;1;Undefined;1;0;0;No;Data Quality Index regarding the Geographical representativeness (GR) of the R2C, inedible and yield ratio at the processing of the food product from good (1) to poor quality (5)
+DQI_TeR_R2C_Inedible_at_processing;1;Undefined;1;0;0;No;Data Quality Index regarding the Technological representativeness (TeR) of the R2C, inedible and yield ratio at the processing of the food product from good (1) to poor quality (5)
+DQI_PENALTY_Dummy_process;0;Undefined;1;0;0;No;Penalty given to the data quality rating if the input product at the packaging stage is a proxy: 0 = No dummy process or 1 = Dummy process
+yield_fishpreparation_kg;1,76;Undefined;1;0;0;No;43% losses for fish preparation - Average recipe data based on 3 company data sets
+yield_filling_kg;1,02;Undefined;1;0;0;No;2% losses for filling - hypothesis
+ratio_ingredient1;0,67;Undefined;1;0;0;No;tuna
+ratio_ingredient2;0,32;Undefined;1;0;0;No;olive oil
+ratio_ingredient3;0,01;Undefined;1;0;0;No;salt
+
+Calculated parameters
+fish_losses_kg;(ratio_ingredient1*yield_filling_kg*yield_fishpreparation_kg)-ratio_ingredient1;
+ingredients_losses_kg;((ratio_ingredient2+ratio_ingredient3)*yield_filling_kg)-ratio_ingredient2-ratio_ingredient3;
+
+End

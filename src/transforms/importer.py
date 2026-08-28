@@ -32,12 +32,20 @@ class SimaProImporter:
             with StepTimer(self._log, "csv.load.cache_hit", path=cache_path.name):
                 t0 = time.time()
                 sp = pickle.loads(cache_path.read_bytes())
-                self._log.info(
-                    "csv.load.cache_hit",
-                    processes=len(sp.data),
-                    elapsed_s=round(time.time() - t0, 2),
-                )
-            return sp
+                if not hasattr(sp, "parameters"):
+                    # Pre-parameter-extraction cache format: no way to serve
+                    # ``dds-set-parameter`` / ``dds-list-parameters`` from it.
+                    self._log.warning(
+                        "csv.load.cache_stale",
+                        reason="pickle lacks 'parameters' field; re-parsing",
+                    )
+                else:
+                    self._log.info(
+                        "csv.load.cache_hit",
+                        processes=len(sp.data),
+                        elapsed_s=round(time.time() - t0, 2),
+                    )
+                    return sp
 
         csv = self.settings.paths.agribalyse_csv
         with StepTimer(

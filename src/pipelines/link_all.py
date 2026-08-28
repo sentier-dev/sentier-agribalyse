@@ -87,6 +87,7 @@ from transforms import (
     InternalAgbLinker,
     OrphanActivityPurger,
     OrphanProductRelinker,
+    ParameterOverridesApplier,
     ProductionReclassifier,
     RegionalSourceNameSnapshotter,
     RestoreSimaproNamesTransform,
@@ -95,6 +96,7 @@ from transforms import (
     WasteTreatmentDummyFixer,
     WasteTreatmentFunctionalPromoter,
 )
+from transforms.linked_cache import LinkedSpCache
 
 
 @dataclass(frozen=True)
@@ -362,6 +364,25 @@ class LinkAllPipeline:
                 f"NaN exchange amounts detected after linking. Diagnose upstream:\n{nans[:5]}"
             )
 
+        # 8b. Linked-graph snapshot for the fast rescore path
+        # (``dds-set-parameter --fast`` replays only the emit stage below
+        # against this pickle, skipping parse/transforms/matching).
+        # MUST be written BEFORE overrides apply: the snapshot is the
+        # pristine baseline, whatever the overrides store holds. Writing it
+        # after (or applying overrides at parse time) poisons the cache and
+        # makes the fast path double-apply the store.
+        with StepTimer(log, "link.linked_cache.write"):
+            LinkedSpCache(settings=s).write(sp)
+
+        # 8c. Parameter overrides — applied to the LINKED graph in ratio
+        # mode, the exact operation the fast path replays. Edits change
+        # exchange *amounts* only, so matching/linking above are
+        # identity-invariant; the scoring-package content hash covers the
+        # frame bytes and forks automatically.
+        with StepTimer(log, "link.transforms.parameter_overrides"):
+            override_stats = ParameterOverridesApplier(settings=s).apply(sp)
+        report.add_stage("parameter_overrides", override_stats)
+
         # 9. Scoring-package emit (replaces sp.write_database + MatrixPurger
         # + find_graph_dependents loop). All matrices, ids, and per-method
         # CFs are laid out under ``cache/scoring_packages/<hash>/`` and the
@@ -432,6 +453,18 @@ class LinkAllPipeline:
             regional_cf_builder=regional_cf_builder,
             sp_regional_water_cf_loader=None,
         ).build()
+
+    @classmethod
+    def emit_scoring_package(
+        cls,
+        sp: Any,
+        settings: Settings,
+        report: RunReport,
+    ) -> dict[str, Any]:
+        """Public entry for the emit stage — used by ``FastRescorePipeline``
+        to rebuild the package from a linked-cache snapshot without
+        re-running parse/transforms/matching."""
+        return cls._emit_scoring_package(sp, settings, report)
 
     @classmethod
     def _emit_scoring_package(

@@ -155,6 +155,32 @@ class TestScoringPackageStoreRoundTrip:
         path_b = store.write(pkg)
         assert path_a == path_b
 
+    def test_lru_eviction_caps_stored_packages(self, tmp_path, monkeypatch):
+        """What-if overrides fork a package per value; the store keeps only
+        the MAX_PACKAGES most-recent dirs (2026-08-18 adversarial F6b)."""
+        import os
+        import time
+
+        frame = _trivial_frame()
+        pkg = ScoringPackageBuilder().build(frame, {})
+        store = ScoringPackageStore(root=tmp_path)
+        monkeypatch.setattr(ScoringPackageStore, "MAX_PACKAGES", 2)
+        # Simulate older what-if packages with distinct hashes and old mtimes.
+        now = time.time()
+        for i, fake_hash in enumerate(["a" * 64, "b" * 64, "c" * 64]):
+            d = tmp_path / fake_hash
+            d.mkdir()
+            os.utime(d, (now - 1000 + i, now - 1000 + i))
+        (tmp_path / "dead.partial").mkdir()  # crashed-write residue
+
+        path = store.write(pkg)
+
+        survivors = {p.name for p in tmp_path.iterdir()}
+        assert path.name in survivors  # just-written always kept
+        assert "dead.partial" not in survivors  # residue removed
+        # Only MAX_PACKAGES dirs remain, newest-first: the real package + c.
+        assert survivors == {path.name, "c" * 64}
+
     def test_method_slug_is_filesystem_safe(self, tmp_path):
         # EF method tuples have spaces and parentheses; the slug must
         # round-trip them.

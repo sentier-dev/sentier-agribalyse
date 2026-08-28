@@ -395,6 +395,40 @@ class TestResetCli:
         assert rc == 0
         assert not pkl.exists()
 
+    def test_reset_deletes_linked_cache_and_overrides_by_default(self, settings):
+        """Reset restores the pristine baseline: linked cache AND the
+        parameter-overrides file both go."""
+        lc = settings.paths.linked_cache_pkl
+        lc.parent.mkdir(parents=True, exist_ok=True)
+        lc.write_bytes(b"stale linked graph")
+        ov = settings.paths.parameter_overrides_csv
+        ov.parent.mkdir(parents=True, exist_ok=True)
+        ov.write_text("parameter_name;scope;value;set_at;comment\nP;*;1.0;;\n")
+
+        rc = ResetCli(settings=settings).run([])
+        assert rc == 0
+        assert not lc.exists()
+        assert not ov.exists()
+
+    def test_reset_keep_overrides_preserves_the_file(self, settings):
+        """--keep-overrides protects the what-if state while caches clear."""
+        ov = settings.paths.parameter_overrides_csv
+        ov.parent.mkdir(parents=True, exist_ok=True)
+        ov.write_text("parameter_name;scope;value;set_at;comment\nP;*;1.0;;\n")
+        pkl = settings.paths.importer_cache_pkl
+        pkl.parent.mkdir(parents=True, exist_ok=True)
+        pkl.write_bytes(b"stale parse")
+
+        rc = ResetCli(settings=settings).run(["--keep-overrides"])
+        assert rc == 0
+        assert ov.exists()
+        assert not pkl.exists()
+
+    def test_reset_is_noop_when_overrides_absent(self, settings):
+        assert not settings.paths.parameter_overrides_csv.exists()
+        rc = ResetCli(settings=settings).run([])
+        assert rc == 0
+
     def test_reset_propagates_os_error(self, settings, monkeypatch):
         """An OS error during rmtree causes the CLI to exit with code 1."""
         target = settings.paths.scoring_packages_root
