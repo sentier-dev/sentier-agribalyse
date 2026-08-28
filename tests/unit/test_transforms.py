@@ -1111,6 +1111,17 @@ _PARSE_CALLS: list[dict] = []
 class _RecordedParse:
     """Pickle-friendly fake for ``SimaProCsvParser.parse()`` results."""
 
+    def __init__(self, data, db_name="agb", parameters=None):
+        self.data = data
+        self.db_name = db_name
+        # Mirrors ``ParsedSimaProCsv.parameters`` — the importer treats
+        # cached pickles WITHOUT this attribute as stale and re-parses.
+        self.parameters = list(parameters or [])
+
+
+class _LegacyRecordedParse:
+    """Pre-parameter-extraction cache shape: no ``parameters`` attribute."""
+
     def __init__(self, data, db_name="agb"):
         self.data = data
         self.db_name = db_name
@@ -1140,4 +1151,29 @@ class TestSimaProImporter:
         # Second load: pickle hit, no fresh parse.
         second = SimaProImporter(settings=settings).load()
         assert second.data == [{"name": "P", "exchanges": []}]
+        assert len(_PARSE_CALLS) == 1
+
+    def test_cache_without_parameters_field_is_stale(self, settings, monkeypatch):
+        """A pre-parameter-extraction pickle triggers a re-parse (and the
+        fresh result overwrites the cache)."""
+        import pickle
+
+        from transforms import sp_csv_parser
+
+        path = settings.paths.agribalyse_csv
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_bytes(b"fake csv contents")
+
+        cache = settings.paths.importer_cache_pkl
+        cache.parent.mkdir(parents=True, exist_ok=True)
+        cache.write_bytes(pickle.dumps(_LegacyRecordedParse(data=[{"name": "OLD"}])))
+
+        _PARSE_CALLS.clear()
+        monkeypatch.setattr(sp_csv_parser.SimaProCsvParser, "parse", _fake_parse)
+
+        sp = SimaProImporter(settings=settings).load()
+        assert len(_PARSE_CALLS) == 1  # stale cache ignored, fresh parse ran
+        assert sp.data == [{"name": "P", "exchanges": []}]
+        # Cache rewritten in the new shape — next load hits it.
+        SimaProImporter(settings=settings).load()
         assert len(_PARSE_CALLS) == 1

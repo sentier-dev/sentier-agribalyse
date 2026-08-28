@@ -43,6 +43,9 @@ registry/method_cfs/
 source/AGB32_final.CSV
 source/harmonised-flows-simple.json.gz
 
+# Local what-if parameter overrides (dds-set-parameter); cleared by dds-reset.
+source/parameter_overrides.csv
+
 # Built registry — regeneratable from source/ via `dds-build-registry`.
 # Bit-identical re-builds, so we keep parquets out of git.
 registry/*.parquet

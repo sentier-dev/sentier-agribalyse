@@ -21,6 +21,7 @@ import randonneur as rn
 from bw_simapro_csv import SimaProCSV
 
 from core.logging import Logging
+from transforms.parameter_extraction import ProcessParameterExtractor
 from transforms.strategies.biosphere import DropUnspecifiedSubcategories
 from transforms.strategies.internal import (
     DropUnlinkedExchanges,
@@ -67,16 +68,21 @@ class SimaProCsvParser:
         data: list[dict] = list(bw_data.get("processes", []))
         if self.separate_products:
             data.extend(bw_data.get("products", []))
+        parameters = ProcessParameterExtractor().extract(
+            spcsv, bw_processes=list(bw_data.get("processes", []))
+        )
         self._log.info(
             "csv.parser.parsed",
             n_processes=len(bw_data.get("processes", [])),
             n_products=len(bw_data.get("products", [])),
+            n_parameters=len(parameters),
             db=spcsv.database_name,
         )
         return ParsedSimaProCsv(
             db_name=spcsv.database_name,
             data=data,
             metadata=dict(bw_data.get("database", {})),
+            parameters=parameters,
         )
 
 
@@ -94,10 +100,15 @@ class ParsedSimaProCsv:
         db_name: str,
         data: list[dict],
         metadata: dict | None = None,
+        parameters: list[dict] | None = None,
     ):
         self.db_name = db_name
         self.data = data
         self.metadata = dict(metadata or {})
+        # Process-local parameter definitions (see ``ProcessParameterExtractor``).
+        # Pickles written before this field existed lack the attribute — the
+        # importer treats those caches as stale and re-parses.
+        self.parameters = list(parameters or [])
         # Default chain — same set bw2io used in
         # ``SimaProBlockCSVImporter.__init__``, all lifted in-house.
         self.strategies: list[Callable] = [
