@@ -376,6 +376,25 @@ class TestResetCli:
         assert rc == 0
         assert not target.exists()
 
+    def test_reset_deletes_importer_cache_pickle(self, settings):
+        """A stale importer_cache.pkl is removed so a swapped CSV re-parses."""
+        pkl = settings.paths.importer_cache_pkl
+        pkl.parent.mkdir(parents=True, exist_ok=True)
+        pkl.write_bytes(b"stale parse")
+
+        rc = ResetCli(settings=settings).run([])
+        assert rc == 0
+        assert not pkl.exists()
+
+    def test_reset_is_noop_when_pickle_absent(self, settings):
+        """No importer_cache.pkl on disk is not an error."""
+        pkl = settings.paths.importer_cache_pkl
+        assert not pkl.exists()
+
+        rc = ResetCli(settings=settings).run([])
+        assert rc == 0
+        assert not pkl.exists()
+
     def test_reset_propagates_os_error(self, settings, monkeypatch):
         """An OS error during rmtree causes the CLI to exit with code 1."""
         target = settings.paths.scoring_packages_root
