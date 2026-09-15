@@ -220,7 +220,9 @@ The export comes in two ready-to-use shapes (see the generated
 2. **A standalone importer** (`import_into_brightway.py`, copied into the
    export) — run it *inside your Brightway / Activity Browser environment*
    to build a named `bw2data` project + databases + methods. Works on both
-   Brightway generations (legacy `bw2data` 3.x and `bw2data` 4.x / bw2.5):
+   Brightway generations (legacy `bw2data` 3.x and `bw2data` 4.x / bw2.5).
+   That environment needs a parquet engine, which a fresh Activity Browser
+   install lacks: `conda install pyarrow` (or `pip install pyarrow`) once, then
    `cd bw_package && python import_into_brightway.py --verify 3`.
 
 Scores are guaranteed to match the pipeline: the export fails unless a

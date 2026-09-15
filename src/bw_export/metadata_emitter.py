@@ -111,6 +111,8 @@ directory, so it needs *your* `bw2data`. It works on both Brightway generations
 (legacy `bw2data` 3.x and `bw2data` 4.x / bw2.5); nothing here is pinned.
 
     # activate the env that has Activity Browser / Brightway, then:
+    conda install pyarrow          # once; a fresh Activity Browser env has pandas
+                                   # but no parquet engine (pip install pyarrow in venvs)
     python import_into_brightway.py --verify 3
 
 This creates a project (default `agribalyse-ef31`) with two databases — the
