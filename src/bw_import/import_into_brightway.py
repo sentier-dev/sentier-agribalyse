@@ -4,7 +4,10 @@ Run this **inside the Python environment where Brightway (or Activity Browser)
 is installed** — it writes into *your* Brightway data directory using *your*
 ``bw2data``. It works on both Brightway generations (legacy ``bw2data`` 3.x and
 ``bw2data`` 4.x / bw2.5); nothing here is pinned, and it imports nothing from the
-``sentier-agribalyse`` package. Its only inputs are the exported files:
+``sentier-agribalyse`` package. Besides ``bw2data`` it needs only ``pandas``
+plus a parquet engine (``pyarrow``): a fresh Activity Browser environment has
+pandas but NOT pyarrow, so run ``conda install pyarrow`` (or ``pip install
+pyarrow``) in that environment first. Its only inputs are the exported files:
 
     metadata/activities.parquet     col_id -> (database, code, name, unit,
                                     location, reference_product,
@@ -388,7 +391,30 @@ def build_methods(
 # --------------------------------------------------------------------------- #
 
 
+def _ensure_parquet_engine() -> None:
+    """Fail fast, with the fix, if pandas cannot read parquet in this env.
+
+    Activity Browser's conda environment ships pandas but no parquet engine;
+    without this check the user gets a pandas traceback on the first
+    ``read_parquet`` instead of a one-line instruction.
+    """
+    for engine in ("pyarrow", "fastparquet"):
+        try:
+            __import__(engine)
+        except ImportError:
+            continue
+        return
+    raise ImportError_(
+        "no parquet engine is installed in this Python environment (the export's "
+        "metadata is stored as parquet). Install pyarrow into the SAME environment "
+        "as Activity Browser / Brightway, then re-run:\n"
+        "    conda install pyarrow      # conda / mamba environments (Activity Browser)\n"
+        "    pip install pyarrow        # plain virtualenvs"
+    )
+
+
 def _run(args: argparse.Namespace) -> None:
+    _ensure_parquet_engine()
     bundle_dir = _resolve_bundle_dir(args)
     activities = _load_activities(bundle_dir)
     biosphere = _load_biosphere(bundle_dir)

@@ -140,3 +140,11 @@ def test_build_fails_loudly_on_unnamed_activity(tmp_path, synthetic_package):
 
     with pytest.raises(ValueError, match="empty/NA 'name'"):
         _emit(tmp_path, synthetic_package, activity=blank)
+
+
+def test_readme_tells_importer_users_to_install_pyarrow(tmp_path, synthetic_package):
+    _emit(tmp_path, synthetic_package)
+    readme = (tmp_path / "README.md").read_text()
+    section_b = readme.split("## B. Import into Brightway")[1]
+    assert "pyarrow" in section_b
+    assert "conda install pyarrow" in section_b

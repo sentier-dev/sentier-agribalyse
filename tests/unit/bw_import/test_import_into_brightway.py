@@ -11,6 +11,7 @@ from __future__ import annotations
 import argparse
 import ast
 import json
+import sys
 from pathlib import Path
 from typing import ClassVar
 
@@ -283,3 +284,25 @@ def test_guard_existing_databases_deletes_with_overwrite():
 def test_main_returns_2_on_missing_export(tmp_path):
     rc = imp.main(["--bundle-dir", str(tmp_path), "--no-verify"])
     assert rc == 2
+
+
+# --------------------------------------------------------------------------- #
+# Parquet engine preflight (a fresh Activity Browser env ships pandas but no
+# pyarrow; the importer must say so up front instead of a pandas traceback)
+# --------------------------------------------------------------------------- #
+
+
+def test_main_returns_2_with_pyarrow_hint_when_no_parquet_engine(tmp_path, monkeypatch, capsys):
+    monkeypatch.setitem(sys.modules, "pyarrow", None)
+    monkeypatch.setitem(sys.modules, "fastparquet", None)
+    # Empty bundle dir on purpose: the engine check must run BEFORE any file access.
+    rc = imp.main(["--bundle-dir", str(tmp_path), "--no-verify"])
+    assert rc == 2
+    err = capsys.readouterr().err
+    assert "pyarrow" in err
+    assert "conda install pyarrow" in err
+    assert "Traceback" not in err
+
+
+def test_ensure_parquet_engine_accepts_installed_pyarrow():
+    imp._ensure_parquet_engine()  # pyarrow is a test dependency; must not raise
