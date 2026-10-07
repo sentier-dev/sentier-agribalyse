@@ -1,9 +1,9 @@
-# Optional GitHub Actions checks
+# Documentation and contribution CI
 
-The executable checks run locally with `python3 scripts/community.py check` and `python3 -m unittest discover -s community/tests`.
+The [Documentation workflow](../../.github/workflows/pages.yml) validates contribution records, runs the synthetic community tests and build-audit checks, then builds and checks the public documentation site. Pull requests never deploy. Updates to `main` publish only the generated `_site/` artifact through GitHub Pages, once a repository administrator has enabled **Settings → Pages → Source: GitHub Actions**.
 
-The supplied github-actions.yml is a template, not an enabled workflow. A maintainer with workflow write permissions can copy it to .github/workflows/community.yml to run the same checks on pushes and pull requests. The setup token lacks that GitHub scope; existing workflows remain unchanged.
+Run the same contribution checks locally with `python3 scripts/community.py check`, `python3 -m unittest discover -s community/tests` and `python3 scripts/build_checks.py community/templates/build-audit.json`. Site maintenance and hosting links are documented in [site/README.md](../../site/README.md) and the main README.
 
-The repository also contains a portable `.gitlab-ci.yml`: it validates coordination records, runs the synthetic build-audit regressions, builds the site from the explicit public file list and checks generated links before Pages publication. It becomes active only in a GitLab mirror; it is not an enabled GitHub workflow.
+The supplied `github-actions.yml` remains a standalone contribution-check template; the Documentation workflow already runs those checks. The portable `.gitlab-ci.yml` provides equivalent validation and Pages publication for a GitLab mirror.
 
-The existing pytest CI now also collects the community record and build-audit regressions through `tests/unit/test_community_records.py`. This connects the contracts to the already enabled CI without requiring a new workflow.
+The existing pytest CI also collects the community record and build-audit regressions through `tests/unit/test_community_records.py`. This keeps the collaboration checks connected to the adapter suite.
