@@ -1,6 +1,6 @@
 # Public documentation site
 
-The site uses Sentier's existing green wordmark and a shared, responsive layout with the AGRIBALYSE workspace. Logo source: [sentier-dev/Branding](https://github.com/sentier-dev/Branding). Content comes only from the explicit Markdown file list in `site/config.json` and contribution metadata. Inventory directories, licensed backgrounds, private evidence, scoring caches and binary exports are never build inputs.
+The shared design follows [Départ de Sentier's website](https://www.d-d-s.ch/): the unmodified green Départ de Sentier logo, Nunito typography, dark green (`#3C5343`), beige (`#F0EEE1`) and sage (`#84AE99`), an airy header, rounded buttons and a light footer. The logo comes from [Depart-de-Sentier/dds-logo](https://github.com/Depart-de-Sentier/dds-logo), by Sylvain Prevost, under CC BY 4.0 (attribution is waived for unmodified use; the footer credits it nevertheless). Nunito is hosted locally from [Google Fonts](https://github.com/google/fonts/tree/main/ofl/nunito), under the included `site/assets/OFL.txt`. Both sites share the same renderer, CSS and branding assets. Content comes only from the explicit Markdown file list in `site/config.json` and contribution metadata. Inventory directories, licensed backgrounds, private evidence, scoring caches and binary exports are never build inputs.
 
 ```sh
 uv run --no-project --with markdown==3.7 scripts/build_site.py
