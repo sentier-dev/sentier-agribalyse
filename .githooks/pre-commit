@@ -1,27 +1,29 @@
 #!/usr/bin/env bash
-# ecoinvent EULA guard — refuse to commit proprietary Licensed Data.
+# ecoinvent EULA guard — refuse to commit licensed ecoinvent data.
 #
-# Blocks the §3.1 paths from the EULA-clean-repo design even if they were
-# force-staged (`git add -f`) past .gitignore. See BOOTSTRAP.md and
-# docs/superpowers/specs/2026-06-03-ecoinvent-eula-clean-repo-design.md.
+# Blocks exchange amounts (Data Points), CFs attached through ecoinvent's LCIA
+# implementation, ecoinvent's dataset list and built packages, even if
+# force-staged (`git add -f`) past .gitignore. The elementary-flow snapshot is
+# not blocked: ecoinvent publishes that master data under the ODbL in its Data
+# Glossary. See BOOTSTRAP.md.
 #
 # Activate once per clone:  git config core.hooksPath .githooks
 set -euo pipefail
 
 # Extended-regex of forbidden staged paths.
-forbidden='^(source/ecoinvent-3\.9\.1-cutoff-exchanges\.parquet|source/ecoinvent-3\.9\.1-cutoff-activities\.json|source/ecoinvent-3\.9\.1-biosphere-flows\.json|source/ef-v31-methods\.json|registry/method_cfs/ecoinvent-3\.9\.1__|bw_package/)'
+forbidden='^(source/ecoinvent-3\.9\.1-cutoff-exchanges\.parquet|source/ecoinvent-3\.9\.1-cutoff-activities\.json|source/ef-v31-methods\.json|registry/method_cfs/ecoinvent-3\.9\.1__|bw_package/)'
 
 staged="$(git diff --cached --name-only --diff-filter=AM)"
 
 blocked="$(printf '%s\n' "$staged" | grep -E "$forbidden" || true)"
 
 if [ -n "$blocked" ]; then
-  echo "✖ ecoinvent EULA guard: refusing to commit proprietary ecoinvent data:" >&2
+  echo "✖ ecoinvent EULA guard: refusing to commit licensed ecoinvent data:" >&2
   printf '    %s\n' "$blocked" >&2
   echo >&2
-  echo "These are licensed ecoinvent Data Points / nomenclature. They must stay" >&2
-  echo "local. Unstage them (git restore --staged <path>) — do not force past" >&2
-  echo "this guard. See BOOTSTRAP.md." >&2
+  echo "These are licensed ecoinvent amounts or CFs, or ecoinvent's dataset list." >&2
+  echo "They must stay local. Unstage them (git restore --staged <path>) — do not" >&2
+  echo "force past this guard. See BOOTSTRAP.md." >&2
   exit 1
 fi
 

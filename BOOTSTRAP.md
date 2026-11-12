@@ -1,26 +1,33 @@
 # BOOTSTRAP.md — regenerating the ecoinvent-derived working data
 
-This repository **does not ship any proprietary ecoinvent data**. To keep it
-publishable under the ecoinvent EULA (v3, 2022-04-01), the following derived
-artifacts are gitignored and must be regenerated locally by a **licensed
-ecoinvent user** from their own credentials:
+This repository **does not ship any licensed ecoinvent data**: no exchange
+amounts (Data Points), no characterisation factors from ecoinvent's LCIA
+implementation, and no build that embeds them, so it stays publishable under the
+ecoinvent EULA (v3, 2022-04-01).
 
-| Path | Content |
-|---|---|
-| `source/ecoinvent-3.9.1-cutoff-exchanges.parquet` | LCI exchange amounts (Data Points) |
-| `source/ecoinvent-3.9.1-cutoff-activities.json` | activity nomenclature (name / location / reference product / code) |
-| `source/ecoinvent-3.9.1-biosphere-flows.json` | ecoinvent elementary-flow nomenclature |
-| `source/ef-v31-methods.json` | EF v3.1 methods with CFs inherited against the ecoinvent biosphere |
-| `registry/method_cfs/ecoinvent-3.9.1__*/` | per-method CF parquets keyed by ecoinvent biosphere UUID (rebuilt by `dds-build-registry`) |
+Names are a different matter. ecoinvent publishes the metadata used in its
+datasets (activity names, products, elementary flows, geographies, units,
+compartments) in its Data Glossary under the Open Database License (ODbL), with
+individual entries under the Database Contents License
+([archived copy](https://web.archive.org/web/20260911185012/https://glossary.ecoinvent.org/); the glossary host no longer resolves). A single name
+can be cited freely; a substantial extract, such as a whole snapshot below, may
+only be published under the ODbL with its notice.
 
-> **⚠️ These regenerated files ARE licensed ecoinvent data. NEVER commit them.**
+The following artifacts are regenerated locally by a **licensed ecoinvent
+user** from their own credentials:
+
+| Path | Content | In git? |
+|---|---|---|
+| `source/ecoinvent-3.9.1-cutoff-exchanges.parquet` | LCI exchange amounts (Data Points) | **licensed: never commit** |
+| `source/ef-v31-methods.json` | EF v3.1 methods with CFs attached to the ecoinvent biosphere through ecoinvent's LCIA implementation | **licensed: never commit** |
+| `registry/method_cfs/ecoinvent-3.9.1__*/` | per-method CF parquets keyed by ecoinvent biosphere UUID (rebuilt by `dds-build-registry`) | **licensed: never commit** |
+| `source/ecoinvent-3.9.1-cutoff-activities.json` | dataset list (name / location / unit / reference product) plus bw2io's `code` (MD5 of ecoinvent's activity and product UUIDs), no amounts | **keep local**: the names are ODbL glossary data, but this list and `code` are not confirmed as published |
+| `source/ecoinvent-3.9.1-biosphere-flows.json` | elementary flows (UUID / name / compartment / unit / CAS / synonyms), no amounts | **ODbL, not EULA data**: ecoinvent Data Glossary content; the tracked `source/biosphere3-flows.json` holds the 3.9 version of this list; ignored only because it is regenerated |
+
+> **⚠️ The files marked "licensed" or "keep local", and any built `bw_package/`, must NEVER be committed.**
 > `.gitignore` and the pre-commit guard (`.githooks/`, see step 6) block them,
 > but the responsibility is yours. Publishing more than five (5) ecoinvent Data
-> Points, or any ecoinvent nomenclature, breaches the EULA (§6.1 / §7 / §9,
-> CHF 100,000 confidentiality penalty).
-
-The rationale and full data classification live in
-[`docs/superpowers/specs/2026-06-03-ecoinvent-eula-clean-repo-design.md`](docs/superpowers/specs/2026-06-03-ecoinvent-eula-clean-repo-design.md).
+> Points breaches the EULA (§6.1 / §7 / §9, CHF 100,000 confidentiality penalty).
 
 ---
 
@@ -120,7 +127,7 @@ Reader: [`src/matching/ecoinvent_catalog.py`](src/matching/ecoinvent_catalog.py)
   "db_name": "ecoinvent-3.9.1-cutoff",
   "activities": [
     {
-      "code": "<activity uuid>",
+      "code": "<bw2io code: MD5 of activity UUID + product UUID>",
       "name": "<activity name>",
       "unit": "<reference unit>",
       "location": "<RoW | GLO | FR | ...>",
@@ -210,10 +217,12 @@ including the Brightway export `bw_package/` written by
 `dds-build-bw-package` after the pipeline has run (it embeds ecoinvent
 LCI amounts).
 
-The repo blocks these paths in two places:
+The repo keeps these paths out of git in two places:
 
-1. `.gitignore` — the `ecoinvent EULA` block.
-2. A pre-commit guard at `.githooks/pre-commit`, wired into the existing
+1. `.gitignore` — the `ecoinvent EULA` block (all five files) and the
+   `bw_package/` entry.
+2. A pre-commit guard at `.githooks/pre-commit`, which refuses the licensed
+   files, the activities snapshot and `bw_package/`, wired into the existing
    `pre-commit` framework as the `ecoinvent-eula-guard` hook. Activate once per
    clone (this also installs the ruff hooks):
 
@@ -226,5 +235,5 @@ The repo blocks these paths in two places:
    instead: `git config core.hooksPath .githooks`. (Don't do both — `core.hooksPath`
    overrides `.git/hooks`, so `pre-commit install` would be bypassed.)
 
-If `git add` ever stages one of the gitignored ecoinvent paths (e.g. via
-`git add -f`), the guard aborts the commit. Do not override it.
+If `git add -f` stages one of the licensed files, the activities snapshot or
+anything under `bw_package/`, the guard aborts the commit. Do not override it.
