@@ -18,7 +18,7 @@ cd sentier-agribalyse
 uv sync --extra test
 ```
 
-Obtain the source export and licensed background inputs locally; follow [BOOTSTRAP.md](BOOTSTRAP.md) and [IMPORT.md](IMPORT.md). Source snapshots, background-derived CF tables, scoring caches and Brightway exports remain gitignored and guarded. The code licence does not relicense those artifacts.
+Obtain the source export and licensed background inputs locally; follow [BOOTSTRAP.md](BOOTSTRAP.md) and [IMPORT.md](IMPORT.md). Source snapshots, background-derived CF tables, scoring caches and Brightway exports remain gitignored; the pre-commit guard also refuses the ones holding ecoinvent amounts, CFs or the dataset list. The code licence does not relicense those artifacts.
 
 ## Bring evidence, then test the claim
 

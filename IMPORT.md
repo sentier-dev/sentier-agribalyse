@@ -21,9 +21,9 @@ Public, ecoinvent-EULA-clean adapter that brings Agribalyse 3.2 into Brightway 2
 - Backtests every score against ADEME reference values in a static React dashboard.
 - Exports the linked system as Brightway datapackages plus a standalone importer.
 
-No proprietary ecoinvent data ships in git. The ecoinvent-derived files under `source/` and
-`registry/method_cfs/` are gitignored and blocked by a pre-commit guard. Licensed users
-regenerate them locally: see [BOOTSTRAP.md](BOOTSTRAP.md).
+No licensed ecoinvent data ships in git. The ecoinvent-derived files under `source/` and
+`registry/method_cfs/` are gitignored, and the pre-commit guard refuses those holding amounts,
+CFs or the dataset list. Licensed users regenerate them locally: see [BOOTSTRAP.md](BOOTSTRAP.md).
 
 Deep dives (mapping tiers, registry contract, link sequence, solver notes) live in the DdS wiki
 page `sentier-agribalyse`.
@@ -157,5 +157,8 @@ BOOTSTRAP.md   how a licensed user regenerates the gitignored source/ files
 
 ## Licence
 
-Code: MIT (`pyproject.toml`). ecoinvent data is licensed separately and never ships in this
-repo; regenerated files stay local under the ecoinvent EULA.
+Code: MIT (`pyproject.toml`). `source/biosphere3-flows.json` holds ecoinvent's elementary-flow
+list from the ecoinvent Data Glossary, available under the
+[Open Database License 1.0](https://opendatacommons.org/licenses/odbl/1-0/). All other ecoinvent
+data is licensed under the ecoinvent EULA and never ships in this repo; regenerated files stay
+local.
