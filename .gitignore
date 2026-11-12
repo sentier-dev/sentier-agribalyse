@@ -26,14 +26,17 @@ venv/
 # the snapshotted state instead.
 .bw_projects/
 
-# ── ecoinvent EULA: proprietary Licensed Data — NEVER COMMIT ──
-# Licensed local working copies only. Regenerate from your own ecoinvent
-# credentials per BOOTSTRAP.md. See
-# docs/superpowers/specs/2026-06-03-ecoinvent-eula-clean-repo-design.md.
+# ── ecoinvent EULA: licensed data — NEVER COMMIT ──
+# Exchange amounts, CFs attached through ecoinvent's LCIA implementation, and
+# ecoinvent's dataset list (kept local: not confirmed as published).
+# Regenerate from your own ecoinvent credentials per BOOTSTRAP.md.
 source/ecoinvent-3.9.1-cutoff-exchanges.parquet
 source/ecoinvent-3.9.1-cutoff-activities.json
-source/ecoinvent-3.9.1-biosphere-flows.json
 source/ef-v31-methods.json
+# ecoinvent elementary flows: names, units, compartments (no amounts).
+# ecoinvent publishes these under the ODbL (Data Glossary), so the guard does
+# not block them; ignored because BOOTSTRAP.md regenerates them.
+source/ecoinvent-3.9.1-biosphere-flows.json
 # Entire per-method CF tree is ecoinvent-3.9.1-keyed + rebuilt by
 # `dds-build-registry` (subdirs hold CF rows keyed by ecoinvent biosphere
 # UUID; _index.json is their manifest). None of it ships.
@@ -54,9 +57,10 @@ registry/*.parquet
 # Directory tracked via .gitkeep; contents ignored unless explicitly checked in.
 #
 # The dashboard's generated data (cf_comparison.csv, product_reasons.json) is
-# NOT shipped: those files embed ecoinvent elementary-flow nomenclature
-# (name/compartment of registry flows) and are regenerated locally by a
-# licensed user via `dds-compare-cfs` / `dds-build-cf-comparison-csv` /
+# NOT shipped: those files carry numbers from the licensed build (CF rows joined
+# through ecoinvent's LCIA implementation, per-flow contributions of
+# ecoinvent-linked products) and are regenerated locally by a licensed user
+# via `dds-compare-cfs` / `dds-build-cf-comparison-csv` /
 # `dds-build-product-reasons`. Only the static UI shell + vendored JS ship.
 dashboard/*
 !dashboard/.gitkeep
