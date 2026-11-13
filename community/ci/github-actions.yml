@@ -12,5 +12,5 @@ jobs:
       - run: python3 -m unittest discover -s community/tests
       - run: python3 scripts/build_checks.py community/templates/build-audit.json
       - uses: astral-sh/setup-uv@v6
-      - run: uv run --with markdown==3.7 scripts/build_site.py
+      - run: uv run --no-project --with markdown==3.7 scripts/build_site.py
       - run: python3 scripts/check_site.py _site
