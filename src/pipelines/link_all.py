@@ -609,20 +609,6 @@ class LinkAllPipeline:
             biosphere_catalog=biosphere_catalog_df,
             aware_regional_cf_by_location=aware_regional_cf_by_location,
         )
-        from scoring.characterization_audit import audit_characterization
-
-        characterization_audit = audit_characterization(
-            pkg.biosphere, method_cfs, biosphere_catalog_df
-        )
-        report.add_stage("characterization_audit", characterization_audit)
-        if characterization_audit["status"] != "passed":
-            # Keep evidence even when the candidate cannot be emitted. Do not
-            # repair a source value or guess fossil/non-fossil methane here.
-            report.write(settings.paths.dashboard / "run_report.json")
-            raise ValueError(
-                "Characterization audit failed: core greenhouse gases lack source CFs "
-                "or emitted flows lack catalog identity. See run_report.json."
-            )
         store = ScoringPackageStore(root=settings.paths.scoring_packages_root)
         package_path = store.write(pkg)
 

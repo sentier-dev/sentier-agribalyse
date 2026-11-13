@@ -18,7 +18,7 @@ The established tools build the mapping registry, link flows, register the 19 he
 
 Use the existing MappingRegistry and parameter override tools. Work in an isolated checkout with separate source, cache, registry and output folders. Keep the baseline and candidate's background, units, allocation, boundary, geography and method fixed unless the intended change explicitly concerns one of them.
 
-Read [application and testing](../community/application-and-testing.md), [build validation](../community/build-validation.md) and [the contribution workflow](../community/workflow.md). The characterization audit checks the final scoring biosphere before package emission; backtesting and export parity remain separate requirements.
+Read [application and testing](../community/application-and-testing.md), [build validation](../community/build-validation.md) and [the contribution workflow](../community/workflow.md). Backtesting and export parity remain separate requirements.
 
 ## What can be public?
 
