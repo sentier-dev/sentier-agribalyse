@@ -633,18 +633,24 @@ class LinkAllPipeline:
             biosphere_catalog=biosphere_catalog_df,
             aware_regional_cf_by_location=aware_regional_cf_by_location,
         )
-        characterization_audit = CharacterizationAuditor().audit(
-            pkg.biosphere, method_cfs, biosphere_catalog_df
+        auditor = CharacterizationAuditor()
+        characterization_audit = auditor.audit(pkg.biosphere, method_cfs, biosphere_catalog_df)
+        # The receipt has its own file. run_report.json is the pointer every consumer
+        # follows to the last emitted package (``ScoringPackageLocator``); a candidate
+        # that is withheld here must leave it exactly as the last good run wrote it.
+        receipt_path = auditor.write_receipt(
+            characterization_audit,
+            pkg.content_hash,
+            settings.paths.dashboard_characterization_audit,
         )
-        report.add_stage("characterization_audit", characterization_audit)
         if characterization_audit["status"] != "passed":
-            # Keep evidence even when the candidate cannot be emitted. Do not
-            # repair a source value or guess fossil/non-fossil methane here.
-            report.write(settings.paths.dashboard / "run_report.json")
+            # Do not repair a source value or guess fossil/non-fossil methane here.
             raise ValueError(
                 "Characterization audit failed: core greenhouse gases lack source CFs "
-                "or emitted flows lack catalog identity. See run_report.json."
+                f"or emitted flows lack catalog identity. No package was emitted; "
+                f"run_report.json is unchanged. See {receipt_path}."
             )
+        report.add_stage("characterization_audit", characterization_audit)
         store = ScoringPackageStore(root=settings.paths.scoring_packages_root)
         package_path = store.write(pkg)
 

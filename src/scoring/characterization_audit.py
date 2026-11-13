@@ -14,8 +14,11 @@ and only while the method's CF table carries those explicit zero rows.
 
 from __future__ import annotations
 
+import json
+import os
 from collections.abc import Iterable, Mapping
 from dataclasses import dataclass
+from pathlib import Path
 from types import MappingProxyType
 from typing import Any, ClassVar
 
@@ -139,6 +142,22 @@ class CharacterizationAuditor:
             "failed_methods": failures,
             "methods": methods,
         }
+
+    def write_receipt(self, audit: Mapping[str, Any], candidate_hash: str, path: Path) -> Path:
+        """Write the audit of one scoring-package candidate to its own file, atomically.
+
+        Written whether the audit passed or failed, so the file always describes the
+        last candidate; ``candidate_content_hash`` says which one.
+        """
+        path.parent.mkdir(parents=True, exist_ok=True)
+        partial = path.with_suffix(path.suffix + ".partial")
+        partial.write_text(
+            json.dumps(
+                {"candidate_content_hash": candidate_hash, **audit}, indent=2, ensure_ascii=False
+            )
+        )
+        os.replace(partial, path)
+        return path
 
     def _method_defines_zero(
         self,
