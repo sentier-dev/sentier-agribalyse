@@ -14,7 +14,7 @@ validate-community:
 publish-pages:
   stage: deploy
   script:
-    - uv run --no-project --with markdown==3.7 scripts/build_site.py --out public
+    - uv run --no-project --with markdown==3.7 scripts/build_site.py --out public --site-url "$CI_PAGES_URL"
     - python3 scripts/check_site.py public
   pages:
     publish: public

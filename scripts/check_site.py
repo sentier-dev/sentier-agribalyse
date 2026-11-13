@@ -1,6 +1,7 @@
 """Check generated public pages for local links, assets and inventory leakage."""
 
 import argparse
+import json
 from html.parser import HTMLParser
 from pathlib import Path
 from urllib.parse import unquote, urlsplit
@@ -42,6 +43,10 @@ def check(root):
             pages[path.resolve()] = parser
     if not pages or not (root / "index.html").is_file():
         errors.append("Site lacks index.html or pages")
+    status = root / "status.json"
+    base_path = json.loads(status.read_text()).get("base_path") if status.is_file() else None
+    base_path = unquote(base_path) if base_path else None  # links are compared unquoted
+    not_found = (root / "404.html").resolve()
     for path, parser in pages.items():
         for link in parser.links:
             url = urlsplit(link)
@@ -49,7 +54,19 @@ def check(root):
                 if url.scheme not in {"https", "mailto"}:
                     errors.append(f"{path.name}: unsupported external link {link}")
                 continue
-            target = (path.parent / unquote(url.path)).resolve() if url.path else path
+            local = unquote(url.path)
+            if local.startswith("/"):
+                # An absolute link is only checkable against the path the site is served under.
+                if not base_path or not local.startswith(base_path):
+                    errors.append(f"{path.name}: absolute link outside the site base path {link}")
+                    continue
+                target = (root / local[len(base_path) :]).resolve()
+            elif local and path == not_found:
+                # Served for any missing path, also nested ones: a relative link resolves there.
+                errors.append(f"{path.name}: relative link on the not-found page {link}")
+                continue
+            else:
+                target = (path.parent / local).resolve() if local else path
             if not target.is_relative_to(root.resolve()) or not target.is_file():
                 errors.append(f"{path.name}: missing local target {link}")
             elif (

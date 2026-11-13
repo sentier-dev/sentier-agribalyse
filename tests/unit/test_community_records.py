@@ -16,3 +16,6 @@ def load(name, filename):
 TestContributionRecords = load("community_record_tests", "test_records.py").ContributionTests
 TestBuildAudit = load("community_build_tests", "test_build_checks.py").BuildChecks
 TestCiConfig = load("community_ci_tests", "test_ci_config.py").CiConfigTests
+_site_tests = load("community_site_tests", "test_site.py")
+TestNotFoundPage = _site_tests.NotFoundPageTests
+TestSiteCheck = _site_tests.SiteCheckTests
