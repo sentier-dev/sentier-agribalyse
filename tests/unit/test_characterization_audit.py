@@ -6,6 +6,9 @@ import pandas as pd
 import pytest
 from scipy import sparse
 
+from config import Settings
+from ef.cf_registry import MethodCfRegistryLoader
+from pipelines.link_all import LinkAllPipeline
 from scoring import CharacterizationAuditor
 from scoring.exchange_frame_builder import ExchangeFrameBuilder
 from scoring.matrix_builder import BuiltMatrix
@@ -78,6 +81,172 @@ def test_nonfinite_and_duplicate_factors_fail():
     cfs[key] = pd.concat([cfs[key], cfs[key].iloc[:1]])
     with pytest.raises(ValueError, match="Duplicate"):
         audit_characterization(b, cfs, catalog)
+
+
+CLIMATE = ("test", "climate change")
+EF_AIR = ("Emissions", "Emissions to air")
+
+
+def zero_by_definition_fixture():
+    """Fossil and non-fossil CO2 are emitted. Only fossil CO2 has a factor on its own flow.
+    The method's table lists biogenic CO2 under its own flow ids (``ef``), all zero."""
+    catalog = pd.DataFrame(
+        [
+            ("bio", "fossil", "Carbon dioxide, fossil", ("air", "urban air close to ground")),
+            ("bio", "nonfossil", "Carbon dioxide, non-fossil", ("air",)),
+            ("ef", "b1", "carbon dioxide (biogenic)", (*EF_AIR, "Emissions to air, unspecified")),
+            ("ef", "b2", "carbon dioxide (biogenic)", (*EF_AIR, "Emissions to air, indoor")),
+            ("ef", "f1", "carbon dioxide (fossil)", (*EF_AIR, "Emissions to air, unspecified")),
+        ],
+        columns=["database", "code", "name", "categories"],
+    )
+    ids = {
+        code: ExchangeFrameBuilder.flow_id_for((database, code))
+        for database, code in zip(catalog.database, catalog.code, strict=True)
+    }
+    biosphere = BuiltMatrix(
+        matrix=sparse.csr_matrix([[1.0], [1.0]]),
+        row_id_to_idx={ids["fossil"]: 0, ids["nonfossil"]: 1},
+        col_id_to_idx={1: 0},
+    )
+    factors = {"fossil": 1.0, "b1": 0.0, "b2": 0.0, "f1": 1.0}
+    return biosphere, catalog, ids, factors
+
+
+def climate_cfs(ids, factors):
+    return {
+        CLIMATE: pd.DataFrame(
+            {"flow_id": [ids[code] for code in factors], "cf": list(factors.values())}
+        )
+    }
+
+
+def test_method_defined_zero_passes_and_is_reported_apart_from_missing():
+    biosphere, catalog, ids, factors = zero_by_definition_fixture()
+    audit = audit_characterization(biosphere, climate_cfs(ids, factors), catalog)
+    assert audit["status"] == "passed"
+    method = audit["methods"][0]
+    assert [g["name"] for g in method["zero_by_method_definition"]] == [
+        "Carbon dioxide, non-fossil"
+    ]
+    assert method["missing_core_gases"] == []
+
+
+def test_zero_is_not_assumed_without_the_method_tables_own_zero_rows():
+    biosphere, catalog, ids, factors = zero_by_definition_fixture()
+    for change in (
+        lambda f: (f.pop("b1"), f.pop("b2")),  # the method table does not list the species
+        lambda f: f.pop("b2"),  # it lists the species incompletely
+        lambda f: f.update(b2=1.0),  # it gives the species a factor
+    ):
+        changed = dict(factors)
+        change(changed)
+        audit = audit_characterization(biosphere, climate_cfs(ids, changed), catalog)
+        assert audit["status"] == "failed", changed
+        method = audit["methods"][0]
+        assert [g["name"] for g in method["missing_core_gases"]] == ["Carbon dioxide, non-fossil"]
+        assert method["zero_by_method_definition"] == []
+
+
+def test_a_gas_the_policy_does_not_name_is_never_excused():
+    biosphere, catalog, ids, _ = zero_by_definition_fixture()
+    # Fossil CO2 loses its factor; even an all-zero method row for it must not excuse that.
+    changed = {"b1": 0.0, "b2": 0.0, "f1": 0.0}
+    audit = audit_characterization(biosphere, climate_cfs(ids, changed), catalog)
+    assert audit["status"] == "failed"
+    assert [g["name"] for g in audit["methods"][0]["missing_core_gases"]] == [
+        "Carbon dioxide, fossil"
+    ]
+
+
+def test_ef31_source_table_gives_every_policy_species_a_zero_factor_to_air():
+    """The policy names species; the public JRC table in ``source/`` is its evidence."""
+    table = pd.read_parquet(Settings().paths.ef_cf_parquet)
+    species = set(CharacterizationAuditor.ZERO_BY_METHOD_DEFINITION.values())
+    rows = table[
+        (table["LCIAMethod_name"] == "Climate change")
+        & table["FLOW_name"].str.casefold().isin(species)
+        & (table["FLOW_class1"] == "Emissions to air")
+    ]
+    assert set(rows["FLOW_name"].str.casefold()) == species
+    assert rows["CF EF3.1"].eq(0).all()
+
+
+class TestRealRegistry:
+    """Against the built, licensed registry (``registry/``). Skipped where it is absent."""
+
+    @staticmethod
+    def _load():
+        paths = Settings().paths
+        if not (
+            paths.registry_method_cfs_index.exists() and paths.registry_biosphere_catalog.exists()
+        ):
+            pytest.skip("Built registry not present (licensed; see BOOTSTRAP.md)")
+        catalog = pd.read_parquet(paths.registry_biosphere_catalog)
+        method_cfs = {
+            key: LinkAllPipeline._project_method_cfs(frame)
+            for key, frame in MethodCfRegistryLoader(paths.registry_method_cfs_dir)
+            .load_all()
+            .items()
+        }
+        # Treat every flow of the inventory's biosphere database as emitted: a superset of
+        # what a link run can emit from it, so a pass here holds for any such run.
+        emitted = catalog[catalog["database"] == Settings().biosphere_db_name]
+        ids = [
+            ExchangeFrameBuilder.flow_id_for((database, code))
+            for database, code in zip(emitted["database"], emitted["code"], strict=True)
+        ]
+        biosphere = BuiltMatrix(
+            matrix=sparse.csr_matrix(np.ones((len(ids), 1))),
+            row_id_to_idx={flow_id: row for row, flow_id in enumerate(ids)},
+            col_id_to_idx={1: 0},
+        )
+        return biosphere, method_cfs, catalog
+
+    @staticmethod
+    def _headline(audit):
+        (method,) = [m for m in audit["methods"] if "climate change" in m["method"]]
+        return method
+
+    def test_registry_passes_and_biogenic_co2_is_the_only_method_defined_zero(self):
+        biosphere, method_cfs, catalog = self._load()
+        audit = audit_characterization(biosphere, method_cfs, catalog)
+        assert audit["status"] == "passed"
+        headline = self._headline(audit)
+        assert headline["missing_core_gases"] == []
+        assert {g["name"] for g in headline["zero_by_method_definition"]} == {
+            "Carbon dioxide, non-fossil"
+        }
+
+    def test_registry_without_its_fossil_co2_factors_fails(self):
+        biosphere, method_cfs, catalog = self._load()
+        fossil = {
+            ExchangeFrameBuilder.flow_id_for((row.database, row.code))
+            for row in catalog.itertuples(index=False)
+            if row.name == "Carbon dioxide, fossil"
+        }
+        key = next(k for k in method_cfs if "climate change" in k)
+        method_cfs[key] = method_cfs[key][~method_cfs[key]["flow_id"].isin(fossil)]
+        audit = audit_characterization(biosphere, method_cfs, catalog)
+        assert audit["status"] == "failed"
+        assert {g["name"] for g in self._headline(audit)["missing_core_gases"]} == {
+            "Carbon dioxide, fossil"
+        }
+
+    def test_registry_without_the_methods_zero_rows_fails(self):
+        biosphere, method_cfs, catalog = self._load()
+        biogenic = {
+            ExchangeFrameBuilder.flow_id_for((row.database, row.code))
+            for row in catalog.itertuples(index=False)
+            if row.name == "carbon dioxide (biogenic)"
+        }
+        key = next(k for k in method_cfs if "climate change" in k)
+        method_cfs[key] = method_cfs[key][~method_cfs[key]["flow_id"].isin(biogenic)]
+        audit = audit_characterization(biosphere, method_cfs, catalog)
+        assert audit["status"] == "failed"
+        assert {g["name"] for g in self._headline(audit)["missing_core_gases"]} == {
+            "Carbon dioxide, non-fossil"
+        }
 
 
 def test_audit_follows_the_source_conventions():
