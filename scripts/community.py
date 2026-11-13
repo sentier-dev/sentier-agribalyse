@@ -4,6 +4,7 @@ import argparse
 import hashlib
 import json
 import math
+import re
 import sys
 from pathlib import Path
 
@@ -36,6 +37,13 @@ def validate(record):
     }
     if required - record.keys():
         return ["missing fields: " + ", ".join(sorted(required - record.keys()))]
+    # The id titles the card and names the record file the site links to, in every state.
+    if not isinstance(record["id"], str) or not record["id"].strip():
+        errors.append("id must be a non-empty string")
+    elif not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._-]*", record["id"]):
+        errors.append("id may contain only letters, digits, '.', '-' and '_'")
+    if not isinstance(record["title"], str) or not record["title"].strip():
+        errors.append("title must be a non-empty string")
     if record["status"] not in STATES:
         errors.append("invalid status")
     for key in (
@@ -137,6 +145,8 @@ def check(root):
     for path in sorted((root / "community/contributions").glob("*.json")):
         record = read(path)
         errors += [f"{path.name}: {e}" for e in validate(record)]
+        if record.get("id") != path.stem:
+            errors.append(f"{path.name}: id must equal the file name without .json")
         if record.get("id") in records:
             errors.append(f"duplicate contribution {record.get('id')}")
         records[record.get("id")] = record

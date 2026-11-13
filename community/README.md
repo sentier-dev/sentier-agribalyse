@@ -8,7 +8,7 @@ The working sequence is: canonical import → contributor layers → application
 
 Keep the canonical source and its import reproducible. Store each proposed correction, mapping, parameter scenario or process model as a separate contribution with a source release, pinned implementation revision, evidence and validation plan. Apply it in an isolated candidate build; retain the baseline and comparison outputs. A local experiment does not change the provider's official dataset.
 
-Start with [the contribution template](templates/contribution.json), [the intake template](templates/intake.md), [application and testing](application-and-testing.md), [build validation](build-validation.md), and [the workflow](workflow.md). Evidence, proposals, runs and provider responses belong here together; this is more than a collection of feedback notes.
+Start with [the contribution template](templates/contribution.json), [the intake template](templates/intake.md), [application and testing](application-and-testing.md), [build validation](build-validation.md), and [the workflow](workflow.md). A record lives in `community/contributions/<id>.json`: the file is named after its `id` (letters, digits, `.`, `-`, `_`), and every record needs an id and a title, because the site titles and links each card with them. Evidence, proposals, runs and provider responses belong here together; this is more than a collection of feedback notes.
 
 ```sh
 python3 scripts/community.py check

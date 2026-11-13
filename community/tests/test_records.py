@@ -1,5 +1,7 @@
+import contextlib
 import copy
 import importlib.util
+import io
 import json
 import tempfile
 import unittest
@@ -78,6 +80,48 @@ class ContributionTests(unittest.TestCase):
         self.record["runs"][0]["layer_revision"] = ""
         self.record["approvals"][0]["layer_revision"] = ""
         self.assertTrue(records.validate(self.record))
+
+    def test_every_status_needs_a_nonempty_string_id(self):
+        # The id is the card title and the record link on the site, whatever the status.
+        for status in sorted(records.STATES):
+            for bad in ("", "   ", None, 7):
+                record = copy.deepcopy(self.record)
+                record.update(status=status, id=bad)
+                self.assertIn(
+                    "id must be a non-empty string", records.validate(record), (status, bad)
+                )
+
+    def test_id_must_be_usable_in_a_file_name_and_a_link(self):
+        for bad in ("C#2", "C 3", "C%2F4?x", "a/b", "../C001", ".hidden", "C001 "):
+            record = dict(copy.deepcopy(self.record), id=bad)
+            self.assertTrue(any("id may contain only" in e for e in records.validate(record)), bad)
+        for good in ("C001", "C006-rice-methane", "c_1.2"):
+            record = dict(copy.deepcopy(self.record), id=good)
+            self.assertFalse(records.validate(record), good)
+
+    def test_title_must_be_a_nonempty_string(self):
+        for bad in ("", "   ", None):
+            record = dict(copy.deepcopy(self.record), status="proposed", title=bad)
+            self.assertIn("title must be a non-empty string", records.validate(record), bad)
+
+    def test_check_rejects_an_empty_id_and_an_id_that_is_not_the_file_name(self):
+        proposed = records.read(ROOT / "community/contributions/C001.json")
+        cases = [
+            ({"C001.json": "C001"}, 0),
+            ({"C001.json": ""}, 1),
+            ({"C001.json": "C002"}, 1),
+        ]
+        for files, expected in cases:
+            with tempfile.TemporaryDirectory() as directory:
+                root = Path(directory)
+                (root / "community/contributions").mkdir(parents=True)
+                (root / "community/recommendations").mkdir(parents=True)
+                (root / "community/recommendations/tracker.json").write_text("[]")
+                for name, identifier in files.items():
+                    record = dict(copy.deepcopy(proposed), id=identifier)
+                    (root / "community/contributions" / name).write_text(json.dumps(record))
+                with contextlib.redirect_stdout(io.StringIO()):
+                    self.assertEqual(records.check(root), expected, files)
 
     def test_comparison_checks_scope_metrics_units_and_finiteness(self):
         baseline = records.read(ROOT / "community/templates/run-summary.json")
