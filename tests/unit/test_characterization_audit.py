@@ -1,4 +1,5 @@
 import ast
+import json
 from pathlib import Path
 
 import numpy as np
@@ -48,7 +49,7 @@ def test_explicit_zero_is_characterized_and_ammonia_not_required():
     audit = audit_characterization(b, cfs, catalog)
     assert audit["status"] == "passed"
     assert audit["methods"][0]["explicit_zero_flows"] == 1
-    assert len(audit["methods"][0]["missing_flow_ids"]) == 1
+    assert audit["methods"][0]["uncharacterized_flows"] == 1
 
 
 def test_unqualified_methane_missing_cf_fails_without_guessing():
@@ -81,6 +82,45 @@ def test_nonfinite_and_duplicate_factors_fail():
     cfs[key] = pd.concat([cfs[key], cfs[key].iloc[:1]])
     with pytest.raises(ValueError, match="Duplicate"):
         audit_characterization(b, cfs, catalog)
+
+
+def many_flows_fixture(n=400):
+    catalog = pd.DataFrame(
+        [("bio", f"s{i}", f"Substance {i}", ("air",)) for i in range(n)],
+        columns=["database", "code", "name", "categories"],
+    )
+    ids = [ExchangeFrameBuilder.flow_id_for(("bio", code)) for code in catalog.code]
+    biosphere = BuiltMatrix(
+        matrix=sparse.csr_matrix(np.ones((n, 1))),
+        row_id_to_idx=dict(zip(ids, range(n), strict=True)),
+        col_id_to_idx={1: 0},
+    )
+    cfs = {("test", "acidification"): pd.DataFrame({"flow_id": ids[:1], "cf": [1.0]})}
+    return biosphere, cfs, catalog
+
+
+def test_receipt_records_counts_and_does_not_grow_with_the_inventory():
+    """Most flows have no factor in most methods; the run report must not list them."""
+    sizes = {}
+    for n in (40, 400):
+        biosphere, cfs, catalog = many_flows_fixture(n)
+        audit = audit_characterization(biosphere, cfs, catalog)
+        method = audit["methods"][0]
+        assert audit["emitted_flows"] == n
+        assert method["characterized_flows"] == 1
+        assert method["uncharacterized_flows"] == n - 1
+        assert "missing_flow_ids" not in method
+        sizes[n] = len(json.dumps(audit))
+    assert sizes[400] - sizes[40] < 10  # a few more digits, not 360 more ids
+
+
+def test_unlabelled_flows_are_counted_and_only_a_bounded_sample_is_listed():
+    biosphere, cfs, catalog = many_flows_fixture(400)
+    audit = audit_characterization(biosphere, cfs, catalog.iloc[:0])
+    assert audit["unlabelled_emitted_flows"] == 400
+    sample = audit["unlabelled_emitted_flow_id_sample"]
+    assert len(sample) == CharacterizationAuditor.SAMPLE_SIZE
+    assert set(sample) <= set(biosphere.row_id_to_idx)
 
 
 CLIMATE = ("test", "climate change")

@@ -1,8 +1,12 @@
 """``CharacterizationAuditor`` — audit the final biosphere against the method CF rows.
 
 This checks coverage, not factor correctness. It never invents a factor or resolves
-unqualified methane. The core-gas policy covers CO2, CH4 and N2O emitted to air;
-all other missing rows remain visible for method-specific review.
+unqualified methane. The core-gas policy covers CO2, CH4 and N2O emitted to air; for
+every other flow the receipt gives each method's counts, for method-specific review.
+The receipt holds counts and the named core gases, never the list of flow ids: most
+emitted flows have no factor in most methods (about 4,150 of 4,260 per method on the
+AGRIBALYSE 3.2 build), and that list can be rebuilt from the package's ``ids.json``
+and characterization matrices.
 
 A core gas without a factor row fails the audit, with one exception that the method
 itself must prove: a species the method defines as exactly zero. EF 3.1 lists biogenic
@@ -61,6 +65,10 @@ class CharacterizationAuditor:
         }
     )
 
+    #: Flow ids listed for emitted flows that have no catalog row. Expected to be none;
+    #: the count is always exact, the sample is for finding the first of them.
+    SAMPLE_SIZE: ClassVar[int] = 20
+
     def audit(
         self,
         biosphere: BuiltMatrix,
@@ -104,7 +112,6 @@ class CharacterizationAuditor:
                 for key, value in zip(factors["flow_id"], values, strict=True)
             }
             covered = set(cf_by_flow)
-            missing = sorted(used - covered)
             climate = any(str(part).casefold() == "climate change" for part in method)
             without_factor = sorted((used & required) - covered) if climate else []
             zero_by_definition = [
@@ -116,19 +123,18 @@ class CharacterizationAuditor:
             # Unlabelled rows could hide core gases; a climate audit cannot certify them.
             if climate and (missing_required or missing_labels):
                 failures.append(list(method))
-            methods.append(
-                {
-                    "method": list(method),
-                    "emitted_flows": len(used),
-                    "characterized_flows": len(used & covered),
-                    "explicit_zero_flows": int(
-                        factors.loc[factors.flow_id.isin(used), "cf"].eq(0).sum()
-                    ),
-                    "missing_flow_ids": missing,
-                    "zero_by_method_definition": [labels[key] for key in zero_by_definition],
-                    "missing_core_gases": [labels[key] for key in missing_required],
-                }
-            )
+            entry: dict[str, Any] = {
+                "method": list(method),
+                "characterized_flows": len(used & covered),
+                "explicit_zero_flows": sum(cf_by_flow[key] == 0.0 for key in used & covered),
+                "uncharacterized_flows": len(used - covered),
+            }
+            if climate:
+                # Bounded by the core-gas rows of the catalog, and named: these two lists
+                # are the evidence a reviewer needs.
+                entry["zero_by_method_definition"] = [labels[key] for key in zero_by_definition]
+                entry["missing_core_gases"] = [labels[key] for key in missing_required]
+            methods.append(entry)
         return {
             "status": "failed" if failures else "passed",
             "policy": (
@@ -138,7 +144,9 @@ class CharacterizationAuditor:
                 "explicit zero factors."
             ),
             "scope": "Coverage only; other gases and non-climate omissions require method-specific review.",
-            "unlabelled_emitted_flow_ids": missing_labels,
+            "emitted_flows": len(used),
+            "unlabelled_emitted_flows": len(missing_labels),
+            "unlabelled_emitted_flow_id_sample": missing_labels[: self.SAMPLE_SIZE],
             "failed_methods": failures,
             "methods": methods,
         }
