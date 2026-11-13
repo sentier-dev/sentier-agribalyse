@@ -37,14 +37,14 @@ class DanglingEdgePruner:
 
     def prune(self, frame: ExchangeFrame) -> tuple[ExchangeFrame, dict[str, int]]:
         df = frame.df
-        # Drop technosphere self-loops first — an activity that has both a
-        # ``production`` row and a ``technosphere`` row for the same
-        # ``input_id`` (i.e. consumes its own product) would zero its
-        # diagonal in matrix A (production +X, tech -X). The pre-refactor
-        # bw2data flow never emitted these because ``Database.process``
-        # treated waste-treatment self-substitutions as ``substitution``
-        # edges; after the refactor they survive as plain technosphere
-        # rows. Dropping them keeps the production diagonal intact.
+        # Drop the self-loops that cancel their own production first — an
+        # activity whose ``technosphere`` row consumes as much of its product
+        # as its ``production`` row makes would zero its diagonal in matrix A
+        # (production +X, tech -X). The pre-refactor bw2data flow never
+        # emitted these because ``Database.process`` treated waste-treatment
+        # self-substitutions as ``substitution`` edges; after the refactor
+        # they survive as plain technosphere rows. Partial self-consumption
+        # (ecoinvent's own use and losses) is kept: see ``_drop_self_loops``.
         df, n_self_loops = self._drop_self_loops(df)
         prod_mask = df["edge_type"].isin(_PRODUCTION_TYPES)
         tech_mask = df["edge_type"].isin(_TECHNOSPHERE_TYPES)
@@ -118,45 +118,45 @@ class DanglingEdgePruner:
 
     @staticmethod
     def _drop_self_loops(df: pd.DataFrame) -> tuple[pd.DataFrame, int]:
-        """Drop technosphere rows where ``input_id`` equals the producer's
-        own production input.
+        """Drop the self-loops that would break the production diagonal.
 
-        Returns ``(filtered_df, n_dropped)``. The pair
-        ``(output_id, input_id)`` identifies a self-loop iff the same
-        activity owns a production row with that exact ``input_id``.
+        A self-loop is a technosphere-side row whose ``(output_id,
+        input_id)`` pair also carries a production row: the activity
+        consumes a product it produces. Two cases:
+
+        * **Cancelling** — the consumed amount reaches the produced amount
+          (or the row is a ``substitution``, the shape waste-treatment
+          self-substitutions take after the refactor). Summed into A it
+          zeroes or flips the diagonal, so the row is dropped.
+        * **Partial** — the activity consumes a share of its own output
+          (own use and losses: ecoinvent's electricity markets, pipelines,
+          seed kept for the next crop). This is real consumption. The row
+          is kept and A nets it on the diagonal (``1 - share``).
+
+        Returns ``(filtered_df, n_dropped)``.
         """
         prod_mask = df["edge_type"].isin(_PRODUCTION_TYPES)
         tech_mask = df["edge_type"].isin(_TECHNOSPHERE_TYPES)
-
-        # Set of (output_id, input_id) pairs from production rows.
-        prod_pairs = set(
-            zip(
-                df.loc[prod_mask, "output_id"].astype("int64"),
-                df.loc[prod_mask, "input_id"].astype("int64"),
-                strict=False,
-            )
-        )
-        if not prod_pairs:
+        if not prod_mask.any() or not tech_mask.any():
             return df, 0
 
-        tech_owner_input = list(
-            zip(
-                df.loc[tech_mask, "output_id"].astype("int64"),
-                df.loc[tech_mask, "input_id"].astype("int64"),
-                strict=False,
-            )
+        produced = (
+            df.loc[prod_mask]
+            .groupby(["output_id", "input_id"], sort=False)["amount"]
+            .sum()
+            .rename("produced")
         )
-        # Mask of *technosphere* rows that match a production pair —
-        # i.e. activity X consumes a product X also produces.
-        loop_flags = pd.Series(False, index=df.index)
-        tech_indices = df.index[tech_mask]
-        for idx, pair in zip(tech_indices, tech_owner_input, strict=False):
-            if pair in prod_pairs:
-                loop_flags.loc[idx] = True
-        if not loop_flags.any():
+        tech = df.loc[tech_mask, ["output_id", "input_id", "amount", "edge_type"]].join(
+            produced, on=["output_id", "input_id"]
+        )
+        is_loop = tech["produced"].notna()
+        cancels = (tech["edge_type"] == "substitution") | (
+            tech["amount"].abs() >= tech["produced"].abs()
+        )
+        drop_index = tech.index[(is_loop & cancels).to_numpy()]
+        if len(drop_index) == 0:
             return df, 0
-        n = int(loop_flags.sum())
-        return df.loc[~loop_flags].reset_index(drop=True), n
+        return df.drop(index=drop_index).reset_index(drop=True), len(drop_index)
 
     @staticmethod
     def _sample_first(rows: pd.DataFrame) -> dict[str, Any]:
