@@ -66,6 +66,7 @@ from scoring import (
     ActivityLocationOverrides,
     ActivityLocationParser,
     Allocator,
+    CharacterizationAuditor,
     DanglingEdgeAuditor,
     DanglingEdgePruner,
     EcoinventExchangesIngester,
@@ -632,9 +633,7 @@ class LinkAllPipeline:
             biosphere_catalog=biosphere_catalog_df,
             aware_regional_cf_by_location=aware_regional_cf_by_location,
         )
-        from scoring.characterization_audit import audit_characterization
-
-        characterization_audit = audit_characterization(
+        characterization_audit = CharacterizationAuditor().audit(
             pkg.biosphere, method_cfs, biosphere_catalog_df
         )
         report.add_stage("characterization_audit", characterization_audit)
