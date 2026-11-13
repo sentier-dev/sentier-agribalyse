@@ -12,6 +12,7 @@ from dataclasses import dataclass
 
 from config import Settings
 from core.logging import Logging, StepTimer
+from transforms.agribalyse_csv_source import AgribalyseCsvSource
 from transforms.sp_csv_parser import ParsedSimaProCsv, SimaProCsvParser
 
 
@@ -47,7 +48,7 @@ class SimaProImporter:
                     )
                     return sp
 
-        csv = self.settings.paths.agribalyse_csv
+        csv = AgribalyseCsvSource(settings=self.settings).path()
         with StepTimer(
             self._log, "csv.load.parse", path=csv.name, size_mb=round(csv.stat().st_size / 1e6, 1)
         ):

@@ -1,6 +1,6 @@
 [project]
 name = "sentier_agribalyse"
-version = "0.3.0"
+version = "0.4.0"
 description = "Sentier-native adapter bringing Agribalyse 3.2 into Brightway 2.5 via a unified MappingRegistry and the EF v3.1 consensus-flow architecture."
 requires-python = ">=3.11"
 license = { text = "MIT" }
@@ -33,6 +33,8 @@ dependencies = [
 ]
 
 [project.scripts]
+dds-strip-ecoinvent     = "cli.strip_ecoinvent:main"
+dds-fetch-harmonised-flows = "cli.fetch_harmonised_flows:main"
 dds-build-registry      = "cli.build_registry:main"
 dds-build-ef-flows-registry = "cli.build_ef_flows_registry:main"
 dds-build-method-cfs-registry = "cli.build_method_cfs_registry:main"
