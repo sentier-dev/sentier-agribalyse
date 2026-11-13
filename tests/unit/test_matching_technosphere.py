@@ -312,3 +312,63 @@ class TestTechnosphereMatcherElectricity:
         assert exc["amount"] == pytest.approx(1.0)
         # Linked to the kWh-shaped ecoinvent activity.
         assert stats.n_linked == 1
+
+
+class TestTechnosphereMatcherSimaproForm:
+    def _matcher(self, settings, refs):
+        return TechnosphereMatcher(
+            settings=settings,
+            registry=make_registry(settings),
+            catalog=_catalog(refs),
+            drops=DropTallyTracker(),
+        )
+
+    def _sp(self, unit="kilogram"):
+        return FakeSimaProImporter(
+            data=[
+                make_dataset(
+                    "P",
+                    exchanges=[
+                        make_exchange(
+                            type="technosphere",
+                            name=(
+                                "Soybean seed, for sowing {GLO}| market for | Cut-off, U - "
+                                "Copied from Ecoinvent U"
+                            ),
+                            unit=unit,
+                            amount=2.0,
+                        )
+                    ],
+                )
+            ]
+        )
+
+    def test_links_a_copied_reference_with_a_truncated_name(self, settings):
+        sp = self._sp()
+        ref = _ref(
+            code="ei-seed",
+            name="market for soybean seed, for sowing",
+            location="GLO",
+            reference_product="soybean seed, for sowing",
+        )
+
+        stats = self._matcher(settings, [ref]).match(sp)
+
+        exc = sp.data[0]["exchanges"][0]
+        assert exc["input"] == ("ecoinvent-3.9.1-cutoff", "ei-seed")
+        assert exc["name"] == "market for soybean seed, for sowing"
+        assert exc["location"] == "GLO"
+        assert exc["reference product"] == "soybean seed, for sowing"
+        assert exc["amount"] == 2.0
+        assert stats.n_simapro_form_linked == 1
+        assert stats.n_linked == 1
+
+    def test_unit_mismatch_stays_unlinked_and_is_counted(self, settings):
+        sp = self._sp(unit="cubic meter")
+        ref = _ref(code="ei-seed", name="market for soybean seed, for sowing", location="GLO")
+
+        stats = self._matcher(settings, [ref]).match(sp)
+
+        assert "input" not in sp.data[0]["exchanges"][0]
+        assert stats.n_simapro_form_linked == 0
+        assert stats.n_simapro_form_unit_mismatch == 1

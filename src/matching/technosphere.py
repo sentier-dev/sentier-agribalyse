@@ -10,6 +10,10 @@ direct lookups into ``EcoinventCatalog``. The match passes are:
 5. Custom-fixes JSON migration via ``randonneur``, then strict match.
 6. Relaxed 3-field match (drop ``reference product``) — catches stale or
    capitalised refprod fields that the strict pass missed.
+7. SimaPro-form names (``Display {LOC}| activity | Cut-off, U - Copied
+   from Ecoinvent U``) resolved on the catalog by ``SimaproFormResolver``:
+   the references to embedded ecoinvent copies that no datapackage
+   relabels. Same unit required, unique activity required.
 
 Each strict / relaxed match resolves to ``(database, code)`` only when
 the catalog returns exactly one activity for the key — same conservative
@@ -27,6 +31,7 @@ from config import Settings
 from core.logging import Logging
 from matching.audit import DropTallyTracker
 from matching.ecoinvent_catalog import EcoinventCatalog
+from matching.simapro_form_resolver import SimaproFormResolver
 from readers import JsonOrGzJsonReader
 from registry import MappingRegistry
 from transforms.strategies.units import ChangeElectricityUnitMjToKwh, RescaleExchange
@@ -38,6 +43,8 @@ class TechnosphereMatchStats:
     n_linked: int
     n_unit_conversions_applied: int
     custom_fixes_applied: int
+    n_simapro_form_linked: int = 0
+    n_simapro_form_unit_mismatch: int = 0
 
 
 @dataclass
@@ -91,6 +98,9 @@ class TechnosphereMatcher:
         # 6. Relaxed match (drop reference_product) — catches stale labels.
         self._link_relaxed(sp.data, ei_db)
 
+        # 7. SimaPro-form names resolved on the catalog.
+        n_form, n_form_unit = self._link_simapro_form(sp.data, ei_db)
+
         n_total, n_linked = self._counts(sp.data)
         self._log.info(
             "technosphere.matched",
@@ -98,12 +108,16 @@ class TechnosphereMatcher:
             n_linked=n_linked,
             unit_conversions=n_unit,
             custom_fixes=n_custom,
+            simapro_form_linked=n_form,
+            simapro_form_unit_mismatch=n_form_unit,
         )
         return TechnosphereMatchStats(
             n_total=n_total,
             n_linked=n_linked,
             n_unit_conversions_applied=n_unit,
             custom_fixes_applied=n_custom,
+            n_simapro_form_linked=n_form,
+            n_simapro_form_unit_mismatch=n_form_unit,
         )
 
     # ------------------------------------------------------------------
@@ -145,6 +159,28 @@ class TechnosphereMatcher:
                     exc["input"] = (hit.db, hit.code)
                     n += 1
         return n
+
+    def _link_simapro_form(self, sp_data: list[dict], ei_db: str) -> tuple[int, int]:
+        """Link exchanges still named in SimaPro form. Returns ``(linked, unit_mismatch)``."""
+        resolver = SimaproFormResolver(catalog=self.catalog, ei_db=ei_db)
+        n_linked = 0
+        n_unit_mismatch = 0
+        for ds in sp_data:
+            for exc in ds.get("exchanges", []):
+                if not self._is_unlinked_technosphere(exc):
+                    continue
+                hit = resolver.resolve(exc.get("name", ""))
+                if hit is None:
+                    continue
+                if (exc.get("unit") or "").strip().lower() != hit.unit.strip().lower():
+                    n_unit_mismatch += 1
+                    continue
+                exc["input"] = (hit.db, hit.code)
+                exc["name"] = hit.name
+                exc["location"] = hit.location
+                exc["reference product"] = hit.reference_product
+                n_linked += 1
+        return n_linked, n_unit_mismatch
 
     @staticmethod
     def _is_unlinked_technosphere(exc: dict) -> bool:
