@@ -22,7 +22,13 @@ python3 scripts/build_checks.py path/to/build-audit.json
 
 Start with [the synthetic audit example](../community/templates/build-audit.json). It demonstrates the format; its values and hashes are synthetic and certify no dataset build. A failed audit exits nonzero.
 
-An audit of the final biosphere inside the adapter's emit stage is not part of the adapter yet: it continues on a branch of its own and gets its own pull request.
+### Integrated AGRIBALYSE audit
+
+The scoring-package emission path now audits the **final** biosphere rows against the method CF tables and catalog. It records each method's characterized count, explicit-zero count, missing ids and missing core gases in `run_report.json` under `stages.characterization_audit`. For climate-change methods it stops before emitting a package if a used CO2/CH4/N2O air-flow variant in the explicit core-gas policy has no source factor, or a used flow lacks catalog identity. Non-finite and duplicate CF entries also fail.
+
+This is a coverage gate, not a new method derivation: it assigns no factors, changes no source amounts, and leaves all other missing rows visible for method-specific review. It does not cover every possible greenhouse gas or validate CF units and scientific correctness. The current adapter's existing complete input hash already includes CF tables and corrections; retain that exact identity alongside the portable summary.
+
+Regression tests use synthetic CO2, methane and ammonia flows. The test demonstrates that unqualified methane cannot silently become zero and that explicit biogenic CO2 zero remains valid. Licensed inventories were not used to claim a new baseline reproduction.
 
 ## Pin the inputs and the outputs
 

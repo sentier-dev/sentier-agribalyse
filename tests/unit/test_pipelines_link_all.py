@@ -109,22 +109,18 @@ def _seed_empty_ecoinvent_exchanges(settings):
 
 
 def _seed_biosphere_catalog(settings):
-    """Empty biosphere catalog with the schema AwareConsumptionCorrectionBuilder
-    expects (``database``, ``code``, ``name``, ``categories``).
-
-    The AWARE consumption correction reads this parquet to resolve the
-    SimaPro EF v3.1 (adapted) water flow set; an empty file keeps the
-    builder's gate from firing while letting the read succeed.
-    """
+    """Catalog the synthetic emitted CO2 so climate coverage can be certified."""
     path = settings.paths.registry_biosphere_catalog
     path.parent.mkdir(parents=True, exist_ok=True)
     pd.DataFrame(
-        {
-            "database": pd.Series([], dtype="string"),
-            "code": pd.Series([], dtype="string"),
-            "name": pd.Series([], dtype="string"),
-            "categories": pd.Series([], dtype="object"),
-        }
+        [
+            {
+                "database": "bio3",
+                "code": "co2",
+                "name": "Carbon dioxide, fossil",
+                "categories": ["air"],
+            }
+        ]
     ).to_parquet(path, index=False)
 
 
@@ -215,6 +211,25 @@ def _trivial_sp_data():
 class TestEmitScoringPackage:
     """Tests on ``LinkAllPipeline._emit_scoring_package`` — exercises the
     whole tail without booting Brightway / SimaPro."""
+
+    def test_missing_core_gas_preserves_receipt_and_emits_no_package(self, settings):
+        method_key = ("ef", "v3.1", "climate change", "GWP100")
+        _seed_method_cfs_registry(
+            settings,
+            method_key,
+            rows=[{"database": "bio3", "code": "unused", "amount": 1.0}],
+        )
+        _seed_empty_ecoinvent_exchanges(settings)
+        _seed_biosphere_catalog(settings)
+        _seed_empty_ef_cf_parquet(settings)
+        sp = FakeSimaProImporter(_trivial_sp_data())
+        with pytest.raises(ValueError, match="Characterization audit failed"):
+            LinkAllPipeline._emit_scoring_package(sp, settings, RunReport())
+        receipt = json.loads((settings.paths.dashboard / "run_report.json").read_text())
+        audit = receipt["stages"]["characterization_audit"]
+        assert audit["status"] == "failed"
+        assert audit["methods"][0]["missing_core_gases"][0]["code"] == "co2"
+        assert not list(settings.paths.scoring_packages_root.glob("*/technosphere.csr.npz"))
 
     def test_writes_scoring_package_and_records_content_hash(self, settings):
         method_key = ("ef", "v3.1", "climate change", "GWP100")
