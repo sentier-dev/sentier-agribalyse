@@ -71,6 +71,23 @@ class Paths:
         return self.source / "AGB32_final.CSV"
 
     @property
+    def agribalyse_csv_ecoinvent_free_xz(self) -> Path:
+        """The committed export without the ``Copied from Ecoinvent`` blocks.
+        Written by ``dds-strip-ecoinvent``; read when the full CSV is absent."""
+        return self.source / "AGB32_ecoinvent_free.CSV.xz"
+
+    @property
+    def agribalyse_csv_ecoinvent_free_cache(self) -> Path:
+        """Decompressed copy of :pyattr:`agribalyse_csv_ecoinvent_free_xz`."""
+        return self.cache / "AGB32_ecoinvent_free.CSV"
+
+    @property
+    def stripped_processes_json(self) -> Path:
+        """Manifest of the blocks ``dds-strip-ecoinvent`` removed: process
+        identifier, type and block sha256. No names, no amounts."""
+        return self.source / "agribalyse-3.2-stripped-ecoinvent-processes.json"
+
+    @property
     def placeholder_xlsx(self) -> Path:
         return self.source / "placeholder_flow_classification.xlsx"
 

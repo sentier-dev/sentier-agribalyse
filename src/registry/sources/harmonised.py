@@ -1,10 +1,16 @@
-"""``HarmonisedFlowsSource`` — Sentier/Brightway harmonised flow registry → tier 4."""
+"""``HarmonisedFlowsSource`` — Brightway Flows consensus list → tier 4.
+
+The file is the ``harmonised-flows-simple.json.gz`` of a published
+``brightway-labs/brightway-flows`` release, fetched by
+``dds-fetch-harmonised-flows`` (see ``registry.HarmonisedFlowsFetcher``).
+"""
 
 from __future__ import annotations
 
 from dataclasses import dataclass
 from pathlib import Path
 
+from core.logging import Logging
 from domain import Bucket, Mapping, SourceKind, Tier
 from readers import GzJsonReader
 
@@ -31,6 +37,11 @@ class HarmonisedFlowsSource:
 
     def read(self) -> list[Mapping]:
         if not Path(self.path).exists():
+            Logging.get(__name__).warning(
+                "harmonised_flows.missing",
+                path=str(self.path),
+                hint="run dds-fetch-harmonised-flows; tier 4 is empty without it",
+            )
             return []
         data = self.gz.read(self.path)
         flows = [f for f in data.get("flows", []) if f.get("source") == "EF 3.1"]

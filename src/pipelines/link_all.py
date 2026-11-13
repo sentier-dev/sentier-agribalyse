@@ -80,6 +80,7 @@ from scoring import (
 )
 from transforms import (
     AggregateDeleter,
+    AgribalyseCsvSource,
     BiosphereFlowmapApplier,
     BiosphereLabelNormaliser,
     BioStrategyChain,
@@ -157,6 +158,7 @@ class LinkAllPipeline:
         # 4. CSV + transforms
         with StepTimer(log, "link.csv.load"):
             sp = SimaProImporter(s).load()
+        report.add_stage("csv_source", AgribalyseCsvSource(settings=s).describe())
 
         with StepTimer(log, "link.transforms.delete_aggregated"):
             del_stats = AggregateDeleter(registry=registry).apply(sp)
@@ -343,6 +345,8 @@ class LinkAllPipeline:
                 "n_linked": tech_stats.n_linked,
                 "n_unit_conversions_applied": tech_stats.n_unit_conversions_applied,
                 "custom_fixes_applied": tech_stats.custom_fixes_applied,
+                "n_simapro_form_linked": tech_stats.n_simapro_form_linked,
+                "n_simapro_form_unit_mismatch": tech_stats.n_simapro_form_unit_mismatch,
             },
         )
 

@@ -441,3 +441,69 @@ class TestResetCli:
         )
         rc = ResetCli(settings=settings).run([])
         assert rc == 1
+
+
+# ============================================================================
+# Ecoinvent-free CSV + pinned flow list
+
+
+class TestStripEcoinventCli:
+    def test_writes_archive_and_manifest_and_checks_the_deletion_list(self, settings, capsys):
+        import json
+        import lzma
+
+        from cli.strip_ecoinvent import StripEcoinventCli
+
+        kept = (
+            "Process\r\n\r\nProcess identifier\r\nA1\r\n\r\nProducts\r\nWheat;kg\r\n\r\nEnd\r\n\r\n"
+        )
+        copy = (
+            "Process\r\n\r\nProcess identifier\r\nA2\r\n\r\nType\r\nSystem\r\n\r\n"
+            "Products\r\nSteel - Copied from Ecoinvent U;kg\r\n\r\nEnd\r\n\r\n"
+        )
+        settings.paths.agribalyse_csv.write_bytes(("{h}\r\n\r\n" + kept + copy).encode("latin-1"))
+        settings.paths.delete_aggregated_processes_json.write_text(
+            json.dumps({"delete": [{"source": {"identifier": "A2", "name": "steel"}}]})
+        )
+
+        rc = StripEcoinventCli(settings=settings).run([])
+
+        assert rc == 0
+        stripped = lzma.decompress(settings.paths.agribalyse_csv_ecoinvent_free_xz.read_bytes())
+        assert stripped == ("{h}\r\n\r\n" + kept).encode("latin-1")
+        manifest = json.loads(settings.paths.stripped_processes_json.read_text())
+        assert [r["identifier"] for r in manifest["removed"]] == ["A2"]
+        assert "Removed 1 of 2 process blocks" in capsys.readouterr().out
+
+    def test_fails_when_a_listed_process_survives(self, settings):
+        import json
+
+        from cli.strip_ecoinvent import StripEcoinventCli
+
+        kept = (
+            "Process\r\n\r\nProcess identifier\r\nA1\r\n\r\nProducts\r\nWheat;kg\r\n\r\nEnd\r\n\r\n"
+        )
+        settings.paths.agribalyse_csv.write_bytes(kept.encode("latin-1"))
+        settings.paths.delete_aggregated_processes_json.write_text(
+            json.dumps({"delete": [{"source": {"identifier": "A1", "name": "wheat"}}]})
+        )
+
+        assert StripEcoinventCli(settings=settings).run([]) == 1
+        assert not settings.paths.agribalyse_csv_ecoinvent_free_xz.exists()
+
+
+class TestFetchHarmonisedFlowsCli:
+    def test_dispatches_to_the_fetcher_with_force(self, settings, monkeypatch, capsys):
+        from cli import fetch_harmonised_flows as module
+
+        calls = []
+
+        def fake_fetch(self, *, force=False):
+            calls.append(force)
+            return "downloaded"
+
+        monkeypatch.setattr(module.HarmonisedFlowsFetcher, "fetch", fake_fetch)
+
+        assert module.FetchHarmonisedFlowsCli(settings=settings).run(["--force"]) == 0
+        assert calls == [True]
+        assert "Brightway Flows 1.1.0 (downloaded)" in capsys.readouterr().out
