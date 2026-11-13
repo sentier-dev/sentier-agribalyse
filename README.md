@@ -39,7 +39,7 @@ Reuse the existing MappingRegistry, parameter overrides, dangling-edge auditor, 
 The [review ledger](community/findings.md) brings relevant lci-bafu-catalog lessons into AGRIBALYSE:
 
 - Account for source, imported and served exchange counts through named changes.
-- Audit final biosphere characterization separately from successful linking. Missing core greenhouse-gas factors and unlabelled emitted flows stop climate-method package emission; explicit zero factors remain valid. Evidence is retained in `run_report.json`.
+- Audit final biosphere characterization separately from successful linking: a flow that links but has no factor scores zero without an error. `scripts/build_checks.py` checks this on a submitted build audit; a check inside the adapter's emit stage is proposed in a separate pull request.
 - Keep exact input/output hashes alongside a portable aggregate-summary identity. The summary is not a complete inventory fingerprint.
 - Give reconstructed inventories separate identities and evidence. BAFU-specific values, prefixes and factor choices are not copied into AGRIBALYSE.
 
