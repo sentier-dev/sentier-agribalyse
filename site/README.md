@@ -8,7 +8,7 @@ python3 scripts/check_site.py _site
 python3 -m http.server 8765 --bind 127.0.0.1 --directory _site
 ```
 
-The generated `_site/` directory is ignored. Links, counts and contribution status are generated from repository records. The site claims no newly accepted consensus or delivered recommendations. The portable GitLab pipeline runs coordination tests and publishes only the site from the default branch. It does not build or upload inventories.
+The generated `_site/` directory is ignored. Links, counts and contribution status are generated from repository records. Pages serves `404.html` for every missing path, also nested ones, so that page alone links absolutely, under the path of `site_url` in `site/config.json`; a build served elsewhere passes `--site-url` (the GitLab pipeline passes `$CI_PAGES_URL`), and `check_site.py` refuses a relative link on that page. The site claims no newly accepted consensus or delivered recommendations. The portable GitLab pipeline runs coordination tests and publishes only the site from the default branch. It does not build or upload inventories.
 
 GitHub Pages is deployed by [the Documentation workflow](../.github/workflows/pages.yml) after a push to `main`. Pull requests build and check the site without deploying it. A repository administrator enables Pages once with **Settings → Pages → Source: GitHub Actions**. The workflow uploads only `_site/`, and installs the Markdown builder independently of the inventory adapter. The same generated site also works on GitLab Pages through `.gitlab-ci.yml`. Hosting links and any outstanding maintainer step are recorded in the main README.
 

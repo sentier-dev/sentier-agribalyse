@@ -2,6 +2,7 @@
   "dataset": "AGRIBALYSE",
   "provider": "ADEME",
   "repository": "https://github.com/sentier-dev/sentier-agribalyse",
+  "site_url": "https://sentier-dev.github.io/sentier-agribalyse/",
   "source_ref": "main",
   "description": "The public Sentier workspace for AGRIBALYSE imports, partner contributions, application tests, reviewed consensus and recommendations to ADEME.",
   "sibling_name": "BAFU / UVEK",

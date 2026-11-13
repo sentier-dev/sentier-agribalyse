@@ -9,6 +9,7 @@ import json
 import re
 import shutil
 from pathlib import Path
+from urllib.parse import urlsplit
 
 import markdown
 
@@ -19,16 +20,21 @@ def esc(value):
     return html.escape(str(value), quote=True)
 
 
-def build(out, source_repository=None, source_ref=None, preview_url=None):
+def build(out, source_repository=None, source_ref=None, preview_url=None, site_url=None):
     config = json.loads((ROOT / "site/config.json").read_text())
     repo = config["repository"]
+    served_at = urlsplit(site_url or config["site_url"])
+    if served_at.scheme not in ("https", "http") or not served_at.netloc:
+        raise ValueError("site_url must be the full URL the site is served at")
+    # The path the site is served under: "/sentier-agribalyse/" on a project page, "/" on its own host.
+    base_path = "/".join(["", *filter(None, served_at.path.split("/")), ""])
     source_repo = source_repository or config.get("source_repository", repo)
     config["source_ref"] = source_ref or config["source_ref"]
     if preview_url and not preview_url.startswith("https://github.com/"):
         raise ValueError("Preview notice must link to a GitHub pull request")
     preview_notice = (
         '<aside class="preview-notice" aria-label="Review preview"><div class="wrap">'
-        '<strong>Review preview.</strong> These documentation changes are proposed '
+        "<strong>Review preview.</strong> These documentation changes are proposed "
         f'for the shared repository. <a href="{esc(preview_url)}">Review the pull request ↗</a>'
         "</div></aside>"
         if preview_url
@@ -122,11 +128,18 @@ def build(out, source_repository=None, source_ref=None, preview_url=None):
         if doc["page"] == "contribute.html":
             rendered += "<h2>Recorded contributions</h2>" + layer_cards
         (out / doc["page"]).write_text(shell(doc["title"], rendered, doc["page"], True))
+    not_found = shell(
+        "Page not found",
+        '<section class="wrap section"><h1>That path is missing.</h1><p><a href="index.html">Return to the workspace →</a></p></section>',
+        "404.html",
+    )
+    # Pages serves this file for every missing path, also nested ones (/base/foo/bar), where a
+    # relative link would resolve against the missing path. Anchor its local links at the base.
     (out / "404.html").write_text(
-        shell(
-            "Page not found",
-            '<section class="wrap section"><h1>That path is missing.</h1><p><a href="index.html">Return to the workspace →</a></p></section>',
-            "404.html",
+        re.sub(
+            r'\b(href|src)="(?![a-zA-Z][a-zA-Z0-9+.-]*:|#|/)',
+            lambda match: f'{match.group(1)}="{esc(base_path)}',
+            not_found,
         )
     )
     # Public data contains coordination metadata only, never source inventory rows.
@@ -138,6 +151,7 @@ def build(out, source_repository=None, source_ref=None, preview_url=None):
                 "accepted": accepted,
                 "recommendations_sent": delivered,
                 "source_ref": config["source_ref"],
+                "base_path": base_path,
                 "preview": bool(preview_url),
             },
             indent=2,
@@ -153,5 +167,8 @@ if __name__ == "__main__":
     parser.add_argument("--source-repository", help="Repository containing this build's source")
     parser.add_argument("--source-ref", help="Source branch or revision for repository links")
     parser.add_argument("--preview-url", help="Show a review notice linking to this pull request")
+    parser.add_argument(
+        "--site-url", help="Where this build is served, if not the configured site_url"
+    )
     args = parser.parse_args()
-    build(args.out, args.source_repository, args.source_ref, args.preview_url)
+    build(args.out, args.source_repository, args.source_ref, args.preview_url, args.site_url)
