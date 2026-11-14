@@ -131,39 +131,49 @@ After replacing the SimaPro CSV run `uv run dds-reset`, then repeat from step 4.
 
 ADEME's SimaPro export of Agribalyse 3.2 embeds 2,264 ecoinvent datasets as process blocks named `… - Copied from Ecoinvent U`. Those are licensed ecoinvent data, so the export cannot be published as is.
 
-What ships is `source/AGB32_ecoinvent_free.CSV.xz`: the same export with those 2,264 blocks removed, 18,176 processes kept, every other byte untouched. The `… - Adapted from Ecoinvent U` processes are ADEME's own modified datasets and stay, as in the Agribalyse 4.0 "without ecoinvent" export. `source/agribalyse-3.2-stripped-ecoinvent-processes.json` lists each removed block by SimaPro identifier, type and sha256, with no names and no amounts.
+What ships is `source/AGB32_ecoinvent_free.CSV.xz`: the same export with those 2,264 blocks removed, 18,176 processes kept, every other byte untouched. The `… - Adapted from Ecoinvent U` processes are ADEME's own modified datasets and stay, as in the Agribalyse 4.0 "without ecoinvent" export. Two small files describe what was removed, with no amounts:
 
-The pipeline links every input that pointed at a removed copy to the same activity in your own ecoinvent 3.9.1. Three inputs stay unlinked, one exchange each: two ADEME combustion extracts with no ecoinvent counterpart and one rye feed dataset whose name is ambiguous. Eleven `recycling of …` treatments are empty in the cut-off model and are dropped without effect.
+- `source/agribalyse-3.2-stripped-ecoinvent-processes.json`: each removed block by SimaPro identifier, type and sha256.
+- `source/agribalyse-3.2-copied-unit-processes.json`: the SimaPro names of the 125 removed blocks that were unit processes.
+
+The pipeline puts the removed datasets back from your own ecoinvent 3.9.1:
+
+- An input that pointed at an aggregated copy is linked to the same ecoinvent activity.
+- The 125 copied unit processes (market mixes, crops, seeds) are rebuilt from your ecoinvent exchanges. Inside the Agribalyse library they are what connects ADEME's adapted datasets to everything else, so each rebuilt input goes to the adapted dataset when there is one, to another rebuilt process when it was a unit copy, and to ecoinvent otherwise. Two of the 125 are ADEME's combustion extracts (air emissions of a transport dataset per kilogram of fuel) and are rebuilt the same way.
+- SimaPro files several ecoinvent activities under one shortened name. A rebuilt process follows the block the library actually holds under that name.
+
+Every input is linked. Eleven `recycling of …` treatments are empty in the cut-off model and are dropped without effect.
 
 Which file is read:
 
 - `source/AGB32_final.CSV` (ADEME's full export), when you have it. It is gitignored and the guard refuses it.
 - Otherwise the shipped archive, decompressed once into `cache/`.
 
-`dashboard/run_report.json` records the variant under `stages.csv_source`.
+`dashboard/run_report.json` records the variant under `stages.csv_source` and the rebuild under `stages.unit_copy_rebuild`.
 
-Scores with the shipped file are not identical to scores with the full export. SimaPro's embedded copies are pre-aggregated inventories characterised through the Agribalyse-side flow mapping; your ecoinvent download is characterised through ecoinvent's own EF v3.1 implementation. Share of the 2,451 backtested products within ±5% of ADEME's reference, shipped file against full export (the full-export column uses the flow list this project was tuned on, an April 2026 pre-release of Brightway Flows; with release 1.1.0 the three toxicity rows of that column drop as well):
+Share of the 2,451 backtested products within ±5% of ADEME's reference, shipped file against full export:
 
-| Close to the full export | Shipped | Full |
+| | Shipped | Full |
 |---|---|---|
-| Climate change | 99.2% | 99.8% |
-| Climate change, fossil / biogenic / land use change | 98.8% / 99.8% / 100.0% | 99.5% / 99.8% / 100.0% |
-| Ionising radiation | 99.8% | 100.0% |
-| Photochemical ozone formation | 99.3% | 100.0% |
-| Particulate matter | 98.6% | 98.8% |
-| Acidification | 93.0% | 93.6% |
-| Eutrophication, freshwater / marine / terrestrial | 99.8% / 99.3% / 95.6% | 100.0% / 100.0% / 96.2% |
-| Energy resources / material resources | 99.8% / 99.8% | 100.0% / 100.0% |
+| Climate change | 99.8% | 99.8% |
+| Climate change, fossil / biogenic / land use change | 99.5% / 99.8% / 100.0% | 99.5% / 99.8% / 100.0% |
+| Ozone depletion | 100.0% | 100.0% |
+| Ionising radiation | 100.0% | 100.0% |
+| Photochemical ozone formation | 100.0% | 100.0% |
+| Particulate matter | 98.8% | 98.8% |
+| Acidification | 93.6% | 93.6% |
+| Eutrophication, freshwater / marine / terrestrial | 100.0% / 100.0% / 96.2% | 100.0% / 100.0% / 96.2% |
+| Land use | 100.0% | 100.0% |
+| Energy resources / material resources | 100.0% / 100.0% | 100.0% / 100.0% |
+| Human toxicity, non-carcinogenic | 93.8% | 93.2% |
+| Ecotoxicity, freshwater | 95.8% | 52.7% |
+| Human toxicity, carcinogenic | 36.5% | 44.5% |
+| Water use | 22.8% | 29.7% |
+| **All 19 indicators** | **91.4%** | **89.9%** |
 
-| Further from the full export | Shipped | Full |
-|---|---|---|
-| Ozone depletion | 83.1% | 100.0% |
-| Land use | 66.3% | 100.0% |
-| Water use | 21.9% | 29.6% |
-| Human toxicity, non-carcinogenic / carcinogenic | 40.4% / 22.4% | 93.1% / 43.0% |
-| Ecotoxicity, freshwater | 38.6% | 52.4% |
+The two variants differ on four indicators, for one reason: with the shipped file the ecoinvent background keeps its own sub-compartments and locations, where the embedded copies are aggregated blocks. Checked against SimaPro's own factors on the embedded copies, the ecoinvent route is the closer one on freshwater ecotoxicity, carcinogenic toxicity and water use. It moves the product scores toward ADEME's reference on ecotoxicity and away from it on carcinogenic toxicity and water use, two indicators that were already the weakest.
 
-Maintainers holding the full export rebuild the archive with `uv run dds-strip-ecoinvent`. It fails if any process of the aggregated-process deletion list survives, and `tests/integration/test_ecoinvent_free_csv_shipped.py` audits the committed file.
+Maintainers holding the full export rebuild the three files with `uv run dds-strip-ecoinvent`. It fails if any process of the aggregated-process deletion list survives, and `tests/integration/test_ecoinvent_free_csv_shipped.py` audits the committed files.
 
 ## Changing parameters (no SimaPro required)
 
