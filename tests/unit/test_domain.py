@@ -35,7 +35,14 @@ class TestTier:
         assert Tier.CURATED_SYNONYM_FALLBACK in fill_only
         assert Tier.CASE_INSENSITIVE_FALLBACK in fill_only
         assert Tier.CURATED_TARGETED not in fill_only
-        assert Tier.HARMONISED_FLOWS not in fill_only
+        assert Tier.AGRIBALYSE_EI_BIOSPHERE not in fill_only
+
+    def test_flow_list_tier_fills_gaps_but_never_replaces_a_link(self):
+        # Brightway Flows 1.1.0 carries SimaPro's own spellings ("Cadmium II",
+        # "Lead II") as labels. As an override tier it re-pointed ~30 000
+        # exchanges already linked to the ecoinvent flow of the same name,
+        # some into another compartment.
+        assert Tier.HARMONISED_FLOWS.is_fill_only()
 
     def test_llm_gated_tiers_membership(self):
         gated = Tier.llm_gated_tiers()

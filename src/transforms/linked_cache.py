@@ -60,8 +60,18 @@ class LinkedSpCache:
         return self.settings.paths.linked_cache_pkl
 
     def _csv_stamp(self) -> tuple[int, int] | None:
-        csv = self.settings.paths.agribalyse_csv
-        if not csv.exists():
+        paths = self.settings.paths
+        # Stamp the file the run was fed from: the full export when present,
+        # else the committed ecoinvent-free archive (not its cache copy).
+        csv = next(
+            (
+                p
+                for p in (paths.agribalyse_csv, paths.agribalyse_csv_ecoinvent_free_xz)
+                if p.exists()
+            ),
+            None,
+        )
+        if csv is None:
             return None
         stat = csv.stat()
         return (stat.st_size, int(stat.st_mtime))
@@ -105,8 +115,8 @@ class LinkedSpCache:
         if payload.get("csv_stamp") != self._csv_stamp():
             raise LinkedCacheStaleError(
                 f"{self.path} was built from a different source CSV "
-                f"(size/mtime mismatch with "
-                f"{self.settings.paths.agribalyse_csv.name}) — rerun "
+                f"(size/mtime mismatch with the Agribalyse CSV in "
+                f"{self.settings.paths.source.name}/) — rerun "
                 f"dds-link-all to regenerate it."
             )
         return payload["sp"]

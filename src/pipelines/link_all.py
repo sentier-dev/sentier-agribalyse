@@ -80,6 +80,7 @@ from scoring import (
 )
 from transforms import (
     AggregateDeleter,
+    AgribalyseCsvSource,
     BiosphereFlowmapApplier,
     BiosphereLabelNormaliser,
     BioStrategyChain,
@@ -93,6 +94,8 @@ from transforms import (
     RestoreSimaproNamesTransform,
     SimaProImporter,
     StandardLabelNormaliser,
+    UnitCopyRebuild,
+    UnitCopyRebuilder,
     WasteTreatmentDummyFixer,
     WasteTreatmentFunctionalPromoter,
 )
@@ -157,6 +160,7 @@ class LinkAllPipeline:
         # 4. CSV + transforms
         with StepTimer(log, "link.csv.load"):
             sp = SimaProImporter(s).load()
+        report.add_stage("csv_source", AgribalyseCsvSource(settings=s).describe())
 
         with StepTimer(log, "link.transforms.delete_aggregated"):
             del_stats = AggregateDeleter(registry=registry).apply(sp)
@@ -328,6 +332,16 @@ class LinkAllPipeline:
             orphan_stats = OrphanProductRelinker(settings=s, catalog=ei_catalog).apply(sp)
         report.add_stage("orphan_product_relink", orphan_stats)
 
+        # Rebuild the stripped ecoinvent unit copies from the user's snapshot
+        # (ecoinvent-free CSV only: with the full export the copies are there).
+        unit_copies = UnitCopyRebuilder(
+            settings=s, catalog=ei_catalog, unit_converter=registry.unit_converter
+        )
+        rebuild = UnitCopyRebuild()
+        if AgribalyseCsvSource(settings=s).variant == AgribalyseCsvSource.ECOINVENT_FREE:
+            with StepTimer(log, "link.transforms.unit_copy_rebuild"):
+                rebuild = unit_copies.apply(sp)
+
         # 7. Technosphere
         with StepTimer(log, "link.technosphere.match"):
             tech_stats = TechnosphereMatcher(
@@ -335,7 +349,13 @@ class LinkAllPipeline:
                 registry=registry,
                 catalog=ei_catalog,
                 drops=drops,
+                redirects=rebuild.redirects,
+                name_redirects=rebuild.by_name,
             ).match(sp)
+        report.add_stage(
+            "unit_copy_rebuild",
+            {**rebuild.stats, "pruned_unused": unit_copies.prune_unused(sp, rebuild)},
+        )
         report.add_stage(
             "technosphere_matched",
             {
@@ -343,6 +363,8 @@ class LinkAllPipeline:
                 "n_linked": tech_stats.n_linked,
                 "n_unit_conversions_applied": tech_stats.n_unit_conversions_applied,
                 "custom_fixes_applied": tech_stats.custom_fixes_applied,
+                "n_simapro_form_linked": tech_stats.n_simapro_form_linked,
+                "n_simapro_form_unit_mismatch": tech_stats.n_simapro_form_unit_mismatch,
             },
         )
 
@@ -422,6 +444,7 @@ class LinkAllPipeline:
                 ),
                 biosphere_catalog_path=s.paths.registry_biosphere_catalog,
                 flowmap_path=s.paths.biosphere_flowmap_json,
+                synonyms_path=s.paths.simapro_cf_synonyms_json,
             )
         regional_water_cf_builder = RegionalWaterCfRegistryBuilder(
             regional_table=RegionalWaterCfTable(cf_table=cf_table),

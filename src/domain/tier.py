@@ -2,8 +2,9 @@
 
 Mirrors REFACTOR.md §0.3. The matcher walks tiers in ascending order and
 selects the highest-priority row that satisfies type/unit/context
-constraints. Tiers >= ``EF_GENERIC`` are *fill-only*: they may only place
-links onto exchanges that have no prior link.
+constraints. ``HARMONISED_FLOWS`` and tiers >= ``EF_GENERIC`` are
+*fill-only*: they may only place links onto exchanges that have no prior
+link.
 """
 
 from __future__ import annotations
@@ -30,7 +31,10 @@ class Tier(IntEnum):
     SimaPro-9 → ecoinvent-3.10-biosphere mappings (~4 039 rows). UUID-pinned."""
 
     HARMONISED_FLOWS = 5
-    """The brightway-style harmonised flow registry."""
+    """The Brightway Flows consensus list. Fill-only: it names a flow for an
+    exchange nothing else linked, and never replaces a link. Release 1.1.0
+    lists SimaPro's spellings of metal ions as labels; as an override tier it
+    re-pointed exchanges already linked to the ecoinvent flow of that name."""
 
     RANDONNEUR_WATER_M3 = 6
     """``simapro-9-ecoinvent-3-water-slash-m3.gz`` (~39 675 rows). Also the home
@@ -65,6 +69,7 @@ class Tier(IntEnum):
     def fill_only_tiers(cls) -> set[Tier]:
         """Tiers that may only fill empty links — never override."""
         return {
+            cls.HARMONISED_FLOWS,
             cls.EF_GENERIC,
             cls.BIO3_MATCH_DATABASE,
             cls.CASE_INSENSITIVE_FALLBACK,

@@ -71,6 +71,30 @@ class Paths:
         return self.source / "AGB32_final.CSV"
 
     @property
+    def agribalyse_csv_ecoinvent_free_xz(self) -> Path:
+        """The committed export without the ``Copied from Ecoinvent`` blocks.
+        Written by ``dds-strip-ecoinvent``; read when the full CSV is absent."""
+        return self.source / "AGB32_ecoinvent_free.CSV.xz"
+
+    @property
+    def agribalyse_csv_ecoinvent_free_cache(self) -> Path:
+        """Decompressed copy of :pyattr:`agribalyse_csv_ecoinvent_free_xz`."""
+        return self.cache / "AGB32_ecoinvent_free.CSV"
+
+    @property
+    def stripped_processes_json(self) -> Path:
+        """Manifest of the blocks ``dds-strip-ecoinvent`` removed: process
+        identifier, type and block sha256. No names, no amounts."""
+        return self.source / "agribalyse-3.2-stripped-ecoinvent-processes.json"
+
+    @property
+    def copied_unit_processes_json(self) -> Path:
+        """SimaPro names of the stripped ``Copied from Ecoinvent`` **unit**
+        processes. Names only. ``UnitCopyRebuilder`` rebuilds them from the
+        user's ecoinvent snapshot."""
+        return self.source / "agribalyse-3.2-copied-unit-processes.json"
+
+    @property
     def placeholder_xlsx(self) -> Path:
         return self.source / "placeholder_flow_classification.xlsx"
 
@@ -92,6 +116,12 @@ class Paths:
     @property
     def simapro_ef31_cache(self) -> Path:
         return self.cache / "simapro-EF31-adapted-cfs.parquet"
+
+    @property
+    def simapro_cf_synonyms_json(self) -> Path:
+        """Curated elementary-flow name pairs (ecoinvent → SimaPro) consumed by
+        ``SimaProCfFilter`` on top of the biosphere flowmap."""
+        return self.source / "simapro-ef31-flow-synonyms.json"
 
     @property
     def biosphere_flowmap_json(self) -> Path:

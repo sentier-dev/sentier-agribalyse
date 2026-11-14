@@ -39,8 +39,15 @@ source/ef-v31-methods.json
 # UUID; _index.json is their manifest). None of it ships.
 registry/method_cfs/
 
-# Source-of-truth data — large files tracked locally only.
+# ADEME's full SimaPro export embeds ecoinvent inventories — NEVER COMMIT
+# (also blocked by the pre-commit guard). The export that ships is
+# source/AGB32_ecoinvent_free.CSV.xz, written by `dds-strip-ecoinvent`.
 source/AGB32_final.CSV
+source/*.CSV
+source/*.csv
+
+# Brightway Flows consensus list (46 MB, over the file-size guard). Fetched
+# and sha256-checked by `dds-fetch-harmonised-flows`.
 source/harmonised-flows-simple.json.gz
 
 # Local what-if parameter overrides (dds-set-parameter); cleared by dds-reset.
