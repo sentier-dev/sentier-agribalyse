@@ -43,6 +43,7 @@ class StripEcoinventCli(BaseCli):
             full_csv=args.full_csv or paths.agribalyse_csv,
             stripped_xz=paths.agribalyse_csv_ecoinvent_free_xz,
             manifest_json=paths.stripped_processes_json,
+            unit_processes_json=paths.copied_unit_processes_json,
         )
         print(
             f"Removed {len(result.removed)} of {result.processes_total} process blocks; "
@@ -50,6 +51,10 @@ class StripEcoinventCli(BaseCli):
         )
         print(f"Wrote {paths.agribalyse_csv_ecoinvent_free_xz}")
         print(f"Wrote {paths.stripped_processes_json}")
+        print(
+            f"Wrote {paths.copied_unit_processes_json} "
+            f"({len(result.unit_process_names)} unit-process names)"
+        )
 
     def _deletion_list(self) -> frozenset[str]:
         """Process identifiers of the aggregated ecoinvent copies (cross-check)."""

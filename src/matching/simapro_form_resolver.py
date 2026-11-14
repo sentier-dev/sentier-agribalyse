@@ -37,6 +37,8 @@ class SimaproFormResolver:
     # "Display {LOC}| activity | Cut-off, …" → (display, loc, activity)
     _NAME: ClassVar[re.Pattern[str]] = re.compile(r"^(.+?)\s*\{([^}]+)\}\s*\|\s*(.*?)\s*\|\s*")
 
+    _WORD: ClassVar[re.Pattern[str]] = re.compile(r"\w+")
+
     # Tried after the name's own location, in ecoinvent's substitution order.
     _LOCATION_FALLBACK: ClassVar[tuple[str, ...]] = (
         "RER",
@@ -55,7 +57,7 @@ class SimaproFormResolver:
             hit = self._unique(candidate, location, display)
             if hit is not None:
                 return hit
-        return None
+        return self._by_product(display, location, activity)
 
     @cached_property
     def _by_name_location(self) -> dict[tuple[str, str], tuple[EcoinventActivityRef, ...]]:
@@ -64,6 +66,51 @@ class SimaproFormResolver:
             if activity.db == self.ei_db:
                 index[(activity.name.lower(), activity.location)].append(activity)
         return {key: tuple(refs) for key, refs in index.items()}
+
+    @cached_property
+    def _by_product_location(self) -> dict[tuple[str, str], tuple[EcoinventActivityRef, ...]]:
+        index: dict[tuple[str, str], list[EcoinventActivityRef]] = defaultdict(list)
+        for activity in self.catalog.activities:
+            if activity.db == self.ei_db:
+                index[(activity.reference_product.lower(), activity.location)].append(activity)
+        return {key: tuple(refs) for key, refs in index.items()}
+
+    def _by_product(
+        self, display: str, location: str, activity: str
+    ) -> EcoinventActivityRef | None:
+        """Last resort for labels SimaPro cut inside the activity name.
+
+        ``Barley seed, for sowing {GLO}| production`` is ecoinvent's
+        ``barley seed production, for sowing``: no concatenation rebuilds
+        it. The display name is the reference product, so look among the
+        activities making that product at that location and keep the one
+        whose name carries every word of the label. A market is only a
+        candidate when the label says ``market``. One match required; no
+        location fallback here.
+        """
+        words = self._WORD.findall(activity)
+        if not words:
+            return None
+        wants_market = "market" in words
+        makers = [
+            ref
+            for ref in self._by_product_location.get((display, location), ())
+            if wants_market or not ref.name.lower().startswith("market ")
+        ]
+        hits = [
+            ref
+            for ref in makers
+            if all(word in self._WORD.findall(ref.name.lower()) for word in words)
+        ]
+        if len(hits) == 1:
+            return hits[0]
+        # SimaPro sometimes writes a generic verb where ecoinvent names the
+        # activity after its product ("processing" for "transport, freight,
+        # inland waterways, barge"). With a single producer of that product
+        # at that location there is nothing to choose between.
+        if not hits and not wants_market and len(makers) == 1:
+            return makers[0]
+        return None
 
     @staticmethod
     def _candidates(display: str, activity: str) -> tuple[str, ...]:

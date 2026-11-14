@@ -118,3 +118,76 @@ class TestNoGuessing:
         resolver = _resolver(_ref("x", "carrot production", "RoW", db="other-db"))
 
         assert resolver.resolve("Carrot {RoW}| carrot production | Cut-off, U") is None
+
+
+class TestByProduct:
+    def test_label_cut_inside_the_activity_name(self):
+        resolver = _resolver(
+            _ref(
+                "seed",
+                "barley seed production, for sowing",
+                "GLO",
+                product="barley seed, for sowing",
+            ),
+            _ref(
+                "mkt",
+                "market for barley seed, for sowing",
+                "GLO",
+                product="barley seed, for sowing",
+            ),
+        )
+
+        hit = resolver.resolve("Barley seed, for sowing {GLO}| production | Cut-off, U")
+
+        assert hit.code == "seed"
+
+    def test_a_market_is_not_a_candidate_for_a_production_label(self):
+        product = "rye grain, feed, swiss integrated production"
+        resolver = _resolver(
+            _ref(
+                "prod",
+                "rye grain, feed production, Swiss integrated production",
+                "CH",
+                product=product,
+            ),
+            _ref("mkt", f"market for {product}", "CH", product=product),
+        )
+
+        hit = resolver.resolve(
+            "Rye grain, feed, Swiss integrated production {CH}| production | Cut-off, U"
+        )
+
+        assert hit.code == "prod"
+
+    def test_generic_verb_resolves_to_the_only_producer(self):
+        product = "transport, freight, inland waterways, barge"
+        resolver = _resolver(
+            _ref("barge", product, "RER", product=product),
+            _ref("mkt", f"market for {product}", "RER", product=product),
+        )
+
+        hit = resolver.resolve(
+            "Transport, freight, inland waterways, barge {RER}| processing | Cut-off, U"
+        )
+
+        assert hit.code == "barge"
+
+    def test_two_producers_and_no_matching_word_stay_unlinked(self):
+        resolver = _resolver(
+            _ref("a", "soybean production, organic", "CH", product="soybean, organic"),
+            _ref("b", "soybean cultivation, organic, extensive", "CH", product="soybean, organic"),
+        )
+
+        assert resolver.resolve("Soybean, organic {CH}| processing | Cut-off, U") is None
+
+    def test_no_location_fallback(self):
+        resolver = _resolver(
+            _ref(
+                "glo",
+                "barley seed production, for sowing",
+                "GLO",
+                product="barley seed, for sowing",
+            )
+        )
+
+        assert resolver.resolve("Barley seed, for sowing {CH}| production | Cut-off, U") is None

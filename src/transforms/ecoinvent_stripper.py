@@ -46,6 +46,8 @@ class StripResult:
     stripped: bytes
     removed: tuple[StrippedProcess, ...]
     processes_total: int
+    unit_process_names: tuple[str, ...] = ()
+    """Product names of the removed blocks of type ``Unit process``."""
 
     @property
     def processes_kept(self) -> int:
@@ -66,6 +68,7 @@ class EcoinventStripper:
     required_identifiers: frozenset[str] = frozenset()
 
     XZ_PRESET: ClassVar[int] = 6
+    UNIT_PROCESS: ClassVar[str] = "Unit process"
 
     # A block runs from a ``Process`` line to the next ``End`` line. The
     # blank lines that follow belong to it, so removing a block leaves the
@@ -91,6 +94,7 @@ class EcoinventStripper:
     def strip(self, raw: bytes) -> StripResult:
         kept: list[bytes] = []
         removed: list[StrippedProcess] = []
+        unit_names: list[str] = []
         total = 0
         cursor = 0
         for match in self._BLOCK.finditer(raw):
@@ -100,17 +104,25 @@ class EcoinventStripper:
                 continue
             kept.append(raw[cursor : match.start()])
             cursor = match.end()
+            process_type = self._field(self._TYPE, block)
             removed.append(
                 StrippedProcess(
                     identifier=self._field(self._IDENTIFIER, block),
-                    process_type=self._field(self._TYPE, block),
+                    process_type=process_type,
                     sha256=hashlib.sha256(self._body(block)).hexdigest(),
                 )
             )
+            if process_type == self.UNIT_PROCESS:
+                unit_names += self._product_names(block)
         kept.append(raw[cursor:])
         stripped = b"".join(kept)
         self._check(stripped)
-        return StripResult(stripped=stripped, removed=tuple(removed), processes_total=total)
+        return StripResult(
+            stripped=stripped,
+            removed=tuple(removed),
+            processes_total=total,
+            unit_process_names=tuple(sorted(set(unit_names))),
+        )
 
     def leftovers(self, raw: bytes) -> tuple[str, ...]:
         """Identifiers of the marked blocks still present in ``raw``."""
@@ -120,9 +132,22 @@ class EcoinventStripper:
             if self._is_marked(m.group(0))
         )
 
-    def write(self, *, full_csv: Path, stripped_xz: Path, manifest_json: Path) -> StripResult:
+    def write(
+        self,
+        *,
+        full_csv: Path,
+        stripped_xz: Path,
+        manifest_json: Path,
+        unit_processes_json: Path | None = None,
+    ) -> StripResult:
         raw = Path(full_csv).read_bytes()
         result = self.strip(raw)
+        if unit_processes_json is not None:
+            unit_processes_json.parent.mkdir(parents=True, exist_ok=True)
+            unit_processes_json.write_text(
+                json.dumps(self._unit_processes(result), indent=1, ensure_ascii=False) + "\n",
+                encoding="utf-8",
+            )
         stripped_xz.parent.mkdir(parents=True, exist_ok=True)
         manifest_json.parent.mkdir(parents=True, exist_ok=True)
         stripped_xz.write_bytes(
@@ -144,14 +169,28 @@ class EcoinventStripper:
     # ── internals ────────────────────────────────────────────────────────
 
     def _is_marked(self, block: bytes) -> bool:
+        needle = self.marker.lower()
+        return any(needle in name.lower() for name in self._product_names(block))
+
+    def _product_names(self, block: bytes) -> list[str]:
         products = self._PRODUCTS.search(block)
         if products is None:
-            return False
-        needle = self.marker.lower()
-        for line in products.group(1).decode(self.encoding).splitlines():
-            if needle in line.split(";", 1)[0].lower():
-                return True
-        return False
+            return []
+        lines = products.group(1).decode(self.encoding).splitlines()
+        return [line.split(";", 1)[0] for line in lines]
+
+    def _unit_processes(self, result: StripResult) -> dict[str, Any]:
+        return {
+            "name": "agribalyse-3.2-copied-unit-processes",
+            "description": (
+                "SimaPro names of the 'Copied from Ecoinvent' blocks of type 'Unit process' "
+                "removed from the ADEME export. Names only, no exchange and no amount. "
+                "Inside the Agribalyse library these unit processes draw ADEME's 'Adapted "
+                "from Ecoinvent' datasets; the pipeline rebuilds them from the user's own "
+                "ecoinvent snapshot so the adaptations stay connected."
+            ),
+            "names": list(result.unit_process_names),
+        }
 
     def _check(self, stripped: bytes) -> None:
         left = self.leftovers(stripped)

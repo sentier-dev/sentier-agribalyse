@@ -66,6 +66,11 @@ class SimaProCfFilter:
     simapro_table: SimaProEFCfTable
     biosphere_catalog_path: Path
     flowmap_path: Path
+    synonyms_path: Path | None = None
+    """Curated ``ecoinvent flow name -> SimaPro flow name`` pairs the flowmap
+    does not carry, because no Agribalyse foreground process emits the flow
+    (``source/simapro-ef31-flow-synonyms.json``). They only matter once the
+    background comes from the user's ecoinvent instead of SimaPro's copies."""
 
     # SimaPro stores the resource ``Raw`` compartment under that label
     # while biosphere3 uses ``natural resource``. Bridge them so a
@@ -274,6 +279,22 @@ class SimaProCfFilter:
                 key = (row["_name_l"], row["_top"])
                 out.setdefault(key, set()).add(src_name)
                 break
+        for key, simapro_name in self._curated_synonyms():
+            out.setdefault(key, set()).add(simapro_name)
+        return out
+
+    def _curated_synonyms(self) -> list[tuple[tuple[str, str], str]]:
+        """``((flow_name_lower, top_lower), simapro_name_lower)`` from ``synonyms_path``."""
+        if self.synonyms_path is None or not self.synonyms_path.exists():
+            return []
+        data = json.loads(self.synonyms_path.read_text(encoding="utf-8"))
+        out: list[tuple[tuple[str, str], str]] = []
+        for entry in data.get("synonyms", ()) or ():
+            flow = str(entry.get("flow") or "").strip().lower()
+            top = str(entry.get("compartment") or "").strip().lower()
+            simapro = str(entry.get("simapro") or "").strip().lower()
+            if flow and top and simapro:
+                out.append(((flow, top), simapro))
         return out
 
     @staticmethod

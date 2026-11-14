@@ -30,6 +30,7 @@ from transforms.parameter_reevaluator import GLOBAL_SCOPE, ParameterReevaluator
 from transforms.production_reclassifier import ProductionReclassifier
 from transforms.regional_source_name_snapshotter import RegionalSourceNameSnapshotter
 from transforms.sp_csv_parser import ParsedSimaProCsv, SimaProCsvParser
+from transforms.unit_copy_rebuilder import UnitCopyRebuild, UnitCopyRebuilder
 from transforms.waste_treatment_dummy_fixer import WasteTreatmentDummyFixer
 from transforms.waste_treatment_functional_promoter import WasteTreatmentFunctionalPromoter
 
@@ -61,6 +62,8 @@ __all__ = [
     "StandardLabelNormaliser",
     "StripResult",
     "StrippedProcess",
+    "UnitCopyRebuild",
+    "UnitCopyRebuilder",
     "WasteTreatmentDummyFixer",
     "WasteTreatmentFunctionalPromoter",
 ]

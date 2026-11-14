@@ -75,3 +75,18 @@ class TestShippedArchive:
 
     def test_fits_the_file_size_guard(self):
         assert PATHS.agribalyse_csv_ecoinvent_free_xz.stat().st_size < 11_000_000
+
+
+class TestShippedUnitProcessNames:
+    def test_one_name_per_removed_unit_process(self, manifest):
+        payload = json.loads(PATHS.copied_unit_processes_json.read_text(encoding="utf-8"))
+        removed_units = [r for r in manifest["removed"] if r["type"] == "Unit process"]
+
+        assert len(payload["names"]) == len(removed_units)
+        assert all("copied from ecoinvent" in name.lower() for name in payload["names"])
+
+    def test_carries_names_only(self):
+        payload = json.loads(PATHS.copied_unit_processes_json.read_text(encoding="utf-8"))
+
+        assert set(payload) == {"name", "description", "names"}
+        assert all(isinstance(name, str) and ";" not in name for name in payload["names"])
