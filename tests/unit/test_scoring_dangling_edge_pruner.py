@@ -118,6 +118,56 @@ class TestDanglingEdgePruner:
         assert (out.df["edge_type"] == "production").sum() == 1
         assert (out.df["edge_type"] == "technosphere").sum() == 0
 
+    def test_partial_self_consumption_is_kept(self):
+        # ecoinvent models own use and losses this way: "market for
+        # electricity" produces 1 kWh and consumes 0.035 kWh of itself.
+        # The matrix nets it to 0.965 on the diagonal; dropping the row
+        # would under-score the whole chain by that share.
+        frame = _frame(
+            [
+                (1, 10, 1.0, "production", False),
+                (1, 10, 0.035, "technosphere", False),
+            ]
+        )
+        out, stats = DanglingEdgePruner().prune(frame)
+        assert out is frame
+        assert stats["self_loops"] == 0
+
+    def test_self_consumption_above_production_is_dropped(self):
+        frame = _frame(
+            [
+                (1, 10, 1.0, "production", False),
+                (1, 10, 1.2, "technosphere", False),
+            ]
+        )
+        _out, stats = DanglingEdgePruner().prune(frame)
+        assert stats["self_loops"] == 1
+
+    def test_self_substitution_is_dropped_whatever_its_amount(self):
+        frame = _frame(
+            [
+                (1, 10, 1.0, "production", False),
+                (1, 10, 0.2, "substitution", False),
+            ]
+        )
+        out, stats = DanglingEdgePruner().prune(frame)
+        assert stats["self_loops"] == 1
+        assert (out.df["edge_type"] == "substitution").sum() == 0
+
+    def test_partial_and_cancelling_self_loops_are_told_apart(self):
+        frame = _frame(
+            [
+                (1, 10, 1.0, "production", False),
+                (1, 10, 0.1, "technosphere", False),
+                (2, 20, 2.0, "production", False),
+                (2, 20, 2.0, "technosphere", False),
+            ]
+        )
+        out, stats = DanglingEdgePruner().prune(frame)
+        assert stats["self_loops"] == 1
+        kept = out.df[out.df["edge_type"] == "technosphere"]
+        assert kept[["output_id", "input_id", "amount"]].values.tolist() == [[1, 10, 0.1]]
+
     def test_zero_amount_producer_treated_as_no_producer(self):
         # Activity 99 'produces' product 999 with amount=0 — pypardiso
         # would pivot through this and amplify, so the scoring path

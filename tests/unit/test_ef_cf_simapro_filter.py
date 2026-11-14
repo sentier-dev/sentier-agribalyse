@@ -392,3 +392,119 @@ def test_filter_rows_drops_excluded_flow_and_counts_it(tmp_path: Path):
     )
     assert n_dropped == 1
     assert [r["code"] for r in kept] == ["copper-uuid"]
+
+
+# ----------------------------------------------------------------------
+# Curated synonyms (flows no Agribalyse foreground process emits)
+
+
+def _land_use_fixture(tmp_path: Path):
+    sp = _write_simapro_table(
+        tmp_path,
+        [
+            {
+                "simapro_method": "Land use",
+                "simapro_method_unit": "Pt",
+                "compartment": "Raw",
+                "sub_compartment": "(unspecified)",
+                "name": "Transformation, from annual crop",
+                "cas": "",
+                "cf": -501.91,
+                "flow_unit": "m2",
+                "cf_unit": "Pt/m2",
+            },
+        ],
+    )
+    bio = _write_biosphere_catalog(
+        tmp_path,
+        [
+            {
+                "database": "ecoinvent-3.9.1-biosphere",
+                "code": "from-arable",
+                "name": "Transformation, from arable land, unspecified use",
+                "categories": ["natural resource", "land"],
+                "unit": "square meter",
+                "cas": "",
+                "synonyms": [],
+            },
+        ],
+    )
+    return sp, bio, _write_empty_flowmap(tmp_path)
+
+
+def _keep_from_arable(flt: SimaProCfFilter) -> bool:
+    return flt.keep(
+        our_category="land use",
+        our_indicator="soil quality index",
+        db="ecoinvent-3.9.1-biosphere",
+        code="from-arable",
+    )
+
+
+def test_flow_without_a_simapro_namesake_is_dropped_without_synonyms(tmp_path: Path):
+    sp, bio, fm = _land_use_fixture(tmp_path)
+
+    flt = SimaProCfFilter(simapro_table=sp, biosphere_catalog_path=bio, flowmap_path=fm)
+
+    assert _keep_from_arable(flt) is False
+
+
+def test_curated_synonym_keeps_the_inherited_factor(tmp_path: Path):
+    sp, bio, fm = _land_use_fixture(tmp_path)
+    synonyms = tmp_path / "synonyms.json"
+    synonyms.write_text(
+        json.dumps(
+            {
+                "synonyms": [
+                    {
+                        "flow": "Transformation, from arable land, unspecified use",
+                        "compartment": "natural resource",
+                        "simapro": "Transformation, from annual crop",
+                    }
+                ]
+            }
+        )
+    )
+
+    flt = SimaProCfFilter(
+        simapro_table=sp, biosphere_catalog_path=bio, flowmap_path=fm, synonyms_path=synonyms
+    )
+
+    assert _keep_from_arable(flt) is True
+
+
+def test_curated_synonym_in_another_compartment_does_not_apply(tmp_path: Path):
+    sp, bio, fm = _land_use_fixture(tmp_path)
+    synonyms = tmp_path / "synonyms.json"
+    synonyms.write_text(
+        json.dumps(
+            {
+                "synonyms": [
+                    {
+                        "flow": "Transformation, from arable land, unspecified use",
+                        "compartment": "air",
+                        "simapro": "Transformation, from annual crop",
+                    }
+                ]
+            }
+        )
+    )
+
+    flt = SimaProCfFilter(
+        simapro_table=sp, biosphere_catalog_path=bio, flowmap_path=fm, synonyms_path=synonyms
+    )
+
+    assert _keep_from_arable(flt) is False
+
+
+def test_missing_synonyms_file_is_ignored(tmp_path: Path):
+    sp, bio, fm = _land_use_fixture(tmp_path)
+
+    flt = SimaProCfFilter(
+        simapro_table=sp,
+        biosphere_catalog_path=bio,
+        flowmap_path=fm,
+        synonyms_path=tmp_path / "ghost.json",
+    )
+
+    assert _keep_from_arable(flt) is False

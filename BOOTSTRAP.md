@@ -186,13 +186,32 @@ this snapshot only carries the inherited biosphere-keyed CFs.
 
 ---
 
-## 5. Rebuild the registry
+## 5. Fetch the flow list and rebuild the registry
 
-With the four `source/` files in place, rebuild every registry parquet —
-including `registry/method_cfs/ecoinvent-3.9.1__EF*/`:
+One more input is not in git, because it is larger than the repository's
+file-size guard: the Brightway Flows consensus elementary flow list
+(`source/harmonised-flows-simple.json.gz`, 46 MB, ODbL,
+[doi:10.5281/zenodo.23554066](https://doi.org/10.5281/zenodo.23554066)).
+It needs no licence. Download the pinned release once; the command checks
+its sha256:
+
+```bash
+dds-fetch-harmonised-flows
+```
+
+The Agribalyse inventories themselves need no step: they ship in git as
+`source/AGB32_ecoinvent_free.CSV.xz` and are decompressed into `cache/` on
+first use.
+
+With the four ecoinvent `source/` files and the flow list in place, rebuild
+every registry parquet — including `registry/method_cfs/ecoinvent-3.9.1__EF*/`:
 
 ```bash
 dds-build-registry
+dds-build-ef-flows-registry
+dds-build-biosphere-catalog
+dds-build-method-cfs-registry
+dds-build-ecoinvent-catalog
 ```
 
 Then run the pipeline as usual (pardiso solver — see `CLAUDE.md`):
@@ -204,6 +223,11 @@ dds-run-end-to-end --solver pardiso     # link + register LCIA + score a sample
 ---
 
 ## 6. Never re-commit the regenerated data
+
+It applies to ADEME's full SimaPro export too, if you hold one:
+`source/AGB32_final.CSV` embeds ecoinvent inventories (the
+`… - Copied from Ecoinvent U` processes). It is gitignored, and the guard
+refuses any uncompressed `.CSV` under `source/`.
 
 This applies equally to everything *derived* from the regenerated data —
 including the Brightway export `bw_package/` written by
