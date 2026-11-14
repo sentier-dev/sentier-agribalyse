@@ -8,7 +8,13 @@ import pandas as pd
 import pytest
 
 from matching.ecoinvent_catalog import EcoinventActivityRef, EcoinventCatalog
-from tests.fixtures.builders import FakeSimaProImporter, make_registry, make_unit_aliases_df
+from scoring.rebuilt_recipe import RebuiltRecipe
+from tests.fixtures.builders import (
+    FakeSimaProImporter,
+    make_registry,
+    make_unit_aliases_df,
+    make_unit_conversions_df,
+)
 from transforms import UnitCopyRebuilder
 
 EI = "ecoinvent-3.9.1-cutoff"
@@ -47,6 +53,7 @@ CATALOG = EcoinventCatalog(
         ),
         _ref("barge", "transport, barge", "RER", "transport, barge", "ton kilometer"),
         _ref("diesel", "market for diesel", "RER", "diesel"),
+        _ref("lube", "market for lubricating oil", "RER", "lubricating oil"),
         _ref("port", "market for port facilities", "GLO", "port facilities", "unit"),
     ),
 )
@@ -68,6 +75,7 @@ def _exchanges() -> pd.DataFrame:
         # barge: diesel, infrastructure, air and water emissions
         ("barge", EI, "barge", 1.0, "production"),
         ("barge", EI, "diesel", 0.00939, "technosphere"),
+        ("barge", EI, "lube", 0.0002, "technosphere"),
         ("barge", EI, "port", 1e-9, "technosphere"),
         ("barge", BIO, "co2-air", 0.03, "biosphere"),
         ("barge", BIO, "nox-air", 0.0005, "biosphere"),
@@ -301,3 +309,107 @@ class TestPruneUnused:
 
         assert rebuilder.prune_unused(sp, rebuild) == 3
         assert set(_by_code(sp)) == {"AGB-SOY-GO", "agb-soy-go-product"}
+
+
+def _sources(ds: dict) -> dict[tuple[str, tuple[str, str]], tuple]:
+    """``(type, input) → (output_code, input_database, input_code, type, multiplier)``."""
+    out = {}
+    for exc in ds["exchanges"]:
+        src = exc[RebuiltRecipe.ATTRIBUTE]
+        out[(exc["type"], tuple(exc["input"]))] = (
+            src["output_code"],
+            src["input_database"],
+            src["input_code"],
+            src["type"],
+            src["multiplier"],
+        )
+    return out
+
+
+@pytest.fixture
+def rebuilder_in_tons(rebuilder, settings):
+    """The same rebuilder, with a registry that converts kilogram to ton."""
+    registry = make_registry(
+        settings,
+        unit_aliases=make_unit_aliases_df([{"alias": "kg", "canonical": "kilogram"}]),
+        unit_conversions=make_unit_conversions_df(
+            [{"source_unit": "kilogram", "target_unit": "ton", "multiplier": 0.001}]
+        ),
+    )
+    return UnitCopyRebuilder(
+        settings=settings, catalog=CATALOG, unit_converter=registry.unit_converter
+    )
+
+
+class TestEcoinventSource:
+    """Every exchange of a rebuilt process names the ecoinvent exchange its
+    amount came from. The skeleton zeroes the rebuilt columns; the recipe built
+    from these names is how a licensed user refills them from their own
+    snapshot, so the name must be the exchange the amount was read from, not
+    the dataset the exchange now points to."""
+
+    def test_each_exchange_of_a_unit_copy_names_its_source(self, rebuilder):
+        sp = FakeSimaProImporter(data=_adapted_dataset())
+
+        rebuilder.apply(sp)
+
+        twin = (AGB, "ecoinvent-unit-copy-product-mkt-glo")
+        assert _sources(_by_code(sp)["ecoinvent-unit-copy-mkt-glo"]) == {
+            ("production", twin): ("mkt-glo", EI, "mkt-glo", "production", 1.0),
+            ("technosphere", (AGB, "ecoinvent-unit-copy-product-mkt-br")): (
+                "mkt-glo",
+                EI,
+                "mkt-br",
+                "technosphere",
+                1.0,
+            ),
+            ("technosphere", (EI, "soy-us")): ("mkt-glo", EI, "soy-us", "technosphere", 1.0),
+            ("technosphere", (EI, "lorry")): ("mkt-glo", EI, "lorry", "technosphere", 1.0),
+            ("technosphere", twin): ("mkt-glo", EI, "mkt-glo", "technosphere", 1.0),
+            ("biosphere", (BIO, "co2-air")): ("mkt-glo", BIO, "co2-air", "biosphere", 1.0),
+        }
+
+    def test_an_input_moved_to_another_dataset_names_the_exchange_it_was_read_from(
+        self, rebuilder_in_tons
+    ):
+        sp = FakeSimaProImporter(data=_adapted_dataset(unit="ton"))
+
+        rebuilder_in_tons.apply(sp)
+
+        market_br = _by_code(sp)["ecoinvent-unit-copy-mkt-br"]
+        sources = _sources(market_br)
+        # Goias soybean, in kilograms in ecoinvent, goes to ADEME's dataset in tons.
+        assert sources[("technosphere", (AGB, "agb-soy-go-product"))] == (
+            "mkt-br",
+            EI,
+            "soy-go",
+            "technosphere",
+            0.001,
+        )
+        assert _inputs(market_br)[(AGB, "agb-soy-go-product")] == pytest.approx(0.001)
+        # The pesticide market's amount goes to the block the library holds under its name.
+        assert sources[("technosphere", (EI, "pest-dcp"))] == (
+            "mkt-br",
+            EI,
+            "pest-mkt",
+            "technosphere",
+            1.0,
+        )
+
+    def test_a_combustion_extract_names_its_largest_fuel_input_and_its_emissions(self, rebuilder):
+        sp = FakeSimaProImporter(data=[])
+
+        rebuild = rebuilder.apply(sp)
+
+        process = _by_code(sp)["ecoinvent-combustion-extract-barge"]
+        assert _sources(process) == {
+            ("production", rebuild.by_name[EXTRACT]): (
+                "barge",
+                EI,
+                "diesel",
+                "technosphere",
+                1.0,
+            ),
+            ("biosphere", (BIO, "co2-air")): ("barge", BIO, "co2-air", "biosphere", 1.0),
+            ("biosphere", (BIO, "nox-air")): ("barge", BIO, "nox-air", "biosphere", 1.0),
+        }

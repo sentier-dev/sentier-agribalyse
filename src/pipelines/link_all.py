@@ -74,6 +74,7 @@ from scoring import (
     PerennialLifecycleFilter,
     ProductCatalogBuilder,
     ProductDeduplicator,
+    RebuiltRecipe,
     ScoringPackage,
     ScoringPackageBuilder,
     ScoringPackageStore,
@@ -524,8 +525,12 @@ class LinkAllPipeline:
            the technosphere/biosphere/CF CSR matrices in memory.
         8. ``ScoringPackageStore(...).write(pkg)`` lays out the package
            directory atomically.
-        9. ``ProductCatalogBuilder().build(sp.data, ...)`` emits
-           ``registry/product_catalog.parquet`` for L4's product mapping.
+        9. ``RebuiltRecipe`` writes ``rebuilt_recipe.parquet`` beside it:
+           for each exchange of a process rebuilt from ecoinvent that reached
+           the final frame, the ecoinvent exchange it came from. It is
+           written on every emit, also when the package directory existed.
+        10. ``ProductCatalogBuilder().build(sp.data, ...)`` emits
+            ``registry/product_catalog.parquet`` for L4's product mapping.
         """
         n_before = sum(len(p.get("exchanges", [])) for p in sp.data)
         sp.drop_unlinked(i_am_reckless=True)
@@ -634,6 +639,9 @@ class LinkAllPipeline:
         )
         store = ScoringPackageStore(root=settings.paths.scoring_packages_root)
         package_path = store.write(pkg)
+        recipe = RebuiltRecipe.from_sp_data(sp.data, frame)
+        recipe.write(package_path)
+        report.add_stage("rebuilt_recipe", {"rows": len(recipe.frame)})
 
         catalog_path = settings.paths.registry_product_catalog
         # product_catalog stays agribalyse-only (backtest product mapping).

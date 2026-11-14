@@ -3,8 +3,10 @@
 Wraps :class:`SkeletonExtractor`. Reads an existing scoring package
 from ``cache/scoring_packages/<hash>/``, writes the skeleton (with
 ecoinvent columns and the processes rebuilt from ecoinvent zeroed, and
-``ecoinvent_slot_index.parquet`` and ``rebuilt_slot_index.parquet`` emitted)
-to ``<bundle-root>/skeleton/<hash>/``.
+``ecoinvent_slot_index.parquet``, ``ecoinvent_slot_cols.json``,
+``rebuilt_slot_index.parquet`` and the checked, amount-free
+``rebuilt_recipe.parquet`` emitted) to ``<bundle-root>/skeleton/<hash>/``.
+The recipe is checked against the licensed snapshot in ``source/``.
 
 Run AFTER ``dds-link-all`` produced a verified scoring package.
 """
@@ -71,6 +73,7 @@ class BuildSkeletonCli(BaseCli):
             ecoinvent_catalog_path=paths.registry_ecoinvent_catalog,
             agribalyse_database=self.settings.resolved_agribalyse_db_name,
             stripped_processes_path=paths.stripped_processes_json,
+            ecoinvent_exchanges_path=paths.ecoinvent_exchanges_parquet,
         )
         extractor.extract(source_dir=source, output_dir=output)
         log.info("skeleton.cli.done", source=str(source), output=str(output))
