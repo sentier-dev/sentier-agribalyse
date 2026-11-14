@@ -54,7 +54,7 @@ Read [build validation](community/build-validation.md) for the checks' precise s
 
 ## Documentation site
 
-**[Open the AGRIBALYSE review preview](https://mklarmann.github.io/sentier-agribalyse/).** The responsive site shares Sentier's visual identity with [the BAFU / UVEK site](https://sentier-dev.github.io/sentier-bafu/). Its public pages cover import, findings, application tests and consensus. The preview displays a review notice and links to the proposed source in [PR #6](https://github.com/sentier-dev/sentier-agribalyse/pull/6).
+The responsive site shares Sentier's visual identity with [the BAFU / UVEK site](https://sentier-dev.github.io/sentier-bafu/). Its public pages cover import, findings, application tests and consensus. To see the site of [PR #6](https://github.com/sentier-dev/sentier-agribalyse/pull/6), build it from its branch with the command below. The address that carried its review preview, `https://mklarmann.github.io/sentier-agribalyse/`, now shows a later state of the workspace, in which the site is built from records; that work follows this pull request and is not part of it.
 
 The [Documentation workflow](.github/workflows/pages.yml) checks pull requests and is ready to publish from `main` at `https://sentier-dev.github.io/sentier-agribalyse/`. The canonical site becomes available after a maintainer merges this PR and enables **Settings → Pages → Source: GitHub Actions**. Build locally with `uv run --no-project --with markdown==3.7 scripts/build_site.py`; see [site maintenance](site/README.md). Generated pages contain coordination material only, with no licensed inventory downloads.
 
