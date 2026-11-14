@@ -372,3 +372,51 @@ class TestTechnosphereMatcherSimaproForm:
         assert "input" not in sp.data[0]["exchanges"][0]
         assert stats.n_simapro_form_linked == 0
         assert stats.n_simapro_form_unit_mismatch == 1
+
+
+class TestTechnosphereMatcherRedirects:
+    def _sp(self, name):
+        return FakeSimaProImporter(
+            data=[
+                make_dataset(
+                    "P",
+                    exchanges=[
+                        make_exchange(type="technosphere", name=name, unit="kilogram", amount=2.0)
+                    ],
+                )
+            ]
+        )
+
+    def test_reference_to_a_rebuilt_unit_copy_points_to_the_rebuilt_product(self, settings):
+        sp = self._sp("Soybean {GLO}| market for soybean | Cut-off, U - Copied from Ecoinvent U")
+        ref = _ref(
+            code="mkt", name="market for soybean", location="GLO", reference_product="soybean"
+        )
+        matcher = TechnosphereMatcher(
+            settings=settings,
+            registry=make_registry(settings),
+            catalog=_catalog([ref]),
+            drops=DropTallyTracker(),
+            redirects={("ecoinvent-3.9.1-cutoff", "mkt"): ("agribalyse-3.2", "rebuilt-mkt")},
+        )
+
+        stats = matcher.match(sp)
+
+        assert sp.data[0]["exchanges"][0]["input"] == ("agribalyse-3.2", "rebuilt-mkt")
+        assert stats.n_simapro_form_linked == 1
+
+    def test_named_redirect_links_a_block_that_is_not_an_ecoinvent_activity(self, settings):
+        name = "Combustion diesel (from data :Transport, barge {RER}| processing | Cut-off, U) U"
+        sp = self._sp(name)
+        matcher = TechnosphereMatcher(
+            settings=settings,
+            registry=make_registry(settings),
+            catalog=_catalog([]),
+            drops=DropTallyTracker(),
+            name_redirects={name: ("agribalyse-3.2", "extract")},
+        )
+
+        stats = matcher.match(sp)
+
+        assert sp.data[0]["exchanges"][0]["input"] == ("agribalyse-3.2", "extract")
+        assert stats.n_simapro_form_linked == 1

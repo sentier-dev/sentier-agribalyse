@@ -473,6 +473,8 @@ class TestStripEcoinventCli:
         assert stripped == ("{h}\r\n\r\n" + kept).encode("latin-1")
         manifest = json.loads(settings.paths.stripped_processes_json.read_text())
         assert [r["identifier"] for r in manifest["removed"]] == ["A2"]
+        names = json.loads(settings.paths.copied_unit_processes_json.read_text())
+        assert names["names"] == []  # the only removed block is a System process
         assert "Removed 1 of 2 process blocks" in capsys.readouterr().out
 
     def test_fails_when_a_listed_process_survives(self, settings):

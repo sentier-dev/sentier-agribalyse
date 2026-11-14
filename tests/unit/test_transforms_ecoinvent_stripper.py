@@ -158,3 +158,38 @@ class TestWrite:
 
         assert a.read_bytes() == b.read_bytes()
         assert (tmp_path / "a.json").read_text() == (tmp_path / "b.json").read_text()
+
+
+class TestUnitProcessNames:
+    def test_strip_reports_the_names_of_removed_unit_processes_only(self):
+        result = EcoinventStripper().strip(_full())
+
+        assert result.unit_process_names == (
+            "Lorry {GLO}| market | Cut-off, U - Copied from Ecoinvent U",
+        )
+
+    def test_write_lists_them_without_any_amount(self, tmp_path):
+        full = tmp_path / "full.CSV"
+        full.write_bytes(_full())
+        names_path = tmp_path / "unit-processes.json"
+
+        EcoinventStripper().write(
+            full_csv=full,
+            stripped_xz=tmp_path / "free.CSV.xz",
+            manifest_json=tmp_path / "manifest.json",
+            unit_processes_json=names_path,
+        )
+
+        payload = json.loads(names_path.read_text())
+        assert payload["names"] == ["Lorry {GLO}| market | Cut-off, U - Copied from Ecoinvent U"]
+        assert set(payload) == {"name", "description", "names"}
+
+    def test_write_without_a_path_writes_no_name_list(self, tmp_path):
+        full = tmp_path / "full.CSV"
+        full.write_bytes(_full())
+
+        EcoinventStripper().write(
+            full_csv=full, stripped_xz=tmp_path / "f.xz", manifest_json=tmp_path / "m.json"
+        )
+
+        assert sorted(p.name for p in tmp_path.iterdir()) == ["f.xz", "full.CSV", "m.json"]

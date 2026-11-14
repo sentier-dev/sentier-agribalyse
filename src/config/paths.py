@@ -88,6 +88,13 @@ class Paths:
         return self.source / "agribalyse-3.2-stripped-ecoinvent-processes.json"
 
     @property
+    def copied_unit_processes_json(self) -> Path:
+        """SimaPro names of the stripped ``Copied from Ecoinvent`` **unit**
+        processes. Names only. ``UnitCopyRebuilder`` rebuilds them from the
+        user's ecoinvent snapshot."""
+        return self.source / "agribalyse-3.2-copied-unit-processes.json"
+
+    @property
     def placeholder_xlsx(self) -> Path:
         return self.source / "placeholder_flow_classification.xlsx"
 
@@ -109,6 +116,12 @@ class Paths:
     @property
     def simapro_ef31_cache(self) -> Path:
         return self.cache / "simapro-EF31-adapted-cfs.parquet"
+
+    @property
+    def simapro_cf_synonyms_json(self) -> Path:
+        """Curated elementary-flow name pairs (ecoinvent → SimaPro) consumed by
+        ``SimaProCfFilter`` on top of the biosphere flowmap."""
+        return self.source / "simapro-ef31-flow-synonyms.json"
 
     @property
     def biosphere_flowmap_json(self) -> Path:

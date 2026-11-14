@@ -23,7 +23,7 @@ unlinked.
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 import randonneur as rn
 
@@ -54,6 +54,12 @@ class TechnosphereMatcher:
     catalog: EcoinventCatalog
     drops: DropTallyTracker
     json: JsonOrGzJsonReader = None  # type: ignore[assignment]
+    redirects: dict[tuple[str, str], tuple[str, str]] = field(default_factory=dict)
+    """ecoinvent activity → rebuilt unit copy (``UnitCopyRebuilder``). Applies to
+    SimaPro-form references only: those are the inputs that named the copy."""
+    name_redirects: dict[str, tuple[str, str]] = field(default_factory=dict)
+    """SimaPro name → rebuilt dataset, for stripped blocks that are not a whole
+    ecoinvent activity (ADEME's combustion extracts)."""
 
     def __post_init__(self) -> None:
         if self.json is None:
@@ -169,13 +175,18 @@ class TechnosphereMatcher:
             for exc in ds.get("exchanges", []):
                 if not self._is_unlinked_technosphere(exc):
                     continue
+                named = self.name_redirects.get(exc.get("name", ""))
+                if named is not None:
+                    exc["input"] = named
+                    n_linked += 1
+                    continue
                 hit = resolver.resolve(exc.get("name", ""))
                 if hit is None:
                     continue
                 if (exc.get("unit") or "").strip().lower() != hit.unit.strip().lower():
                     n_unit_mismatch += 1
                     continue
-                exc["input"] = (hit.db, hit.code)
+                exc["input"] = self.redirects.get((hit.db, hit.code), (hit.db, hit.code))
                 exc["name"] = hit.name
                 exc["location"] = hit.location
                 exc["reference product"] = hit.reference_product
