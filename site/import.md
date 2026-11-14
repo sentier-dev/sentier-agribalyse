@@ -10,7 +10,7 @@ cd sentier-agribalyse
 uv sync --extra test
 ```
 
-Licensed users obtain the source export and regenerate background snapshots locally as described in [BOOTSTRAP.md](../BOOTSTRAP.md). The repository does not supply those inputs. For scoring and Brightway export use the extras and platform-specific solver setup documented in [the repository README](../README.md).
+The repository ships ADEME's export without its embedded ecoinvent datasets. Licensed users regenerate the background snapshots locally as described in [BOOTSTRAP.md](../BOOTSTRAP.md); the repository does not supply those. For scoring and Brightway export use the extras and platform-specific solver setup documented in [the repository README](../README.md).
 
 The established tools build the mapping registry, link flows, register the 19 headline EF 3.1 methods, backtest against ADEME references and export a parity-checked Brightway package. Follow the version-specific README sequence; retain source hashes, method sources, mappings and parameter overrides as part of the baseline.
 

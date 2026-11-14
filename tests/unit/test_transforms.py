@@ -1177,3 +1177,22 @@ class TestSimaProImporter:
         # Cache rewritten in the new shape — next load hits it.
         SimaProImporter(settings=settings).load()
         assert len(_PARSE_CALLS) == 1
+
+
+class TestSimaProImporterCsvVariant:
+    def test_parses_the_ecoinvent_free_copy_when_the_full_csv_is_absent(
+        self, settings, monkeypatch
+    ):
+        import lzma
+
+        from transforms import sp_csv_parser
+
+        settings.paths.agribalyse_csv_ecoinvent_free_xz.write_bytes(lzma.compress(b"stripped"))
+
+        _PARSE_CALLS.clear()
+        monkeypatch.setattr(sp_csv_parser.SimaProCsvParser, "parse", _fake_parse)
+
+        SimaProImporter(settings=settings).load()
+
+        assert _PARSE_CALLS[0]["csv_path"] == settings.paths.agribalyse_csv_ecoinvent_free_cache
+        assert _PARSE_CALLS[0]["csv_path"].read_bytes() == b"stripped"

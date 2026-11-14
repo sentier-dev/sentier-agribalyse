@@ -18,7 +18,7 @@ cd sentier-agribalyse
 uv sync --extra test
 ```
 
-Obtain the source export and licensed background inputs locally; follow [BOOTSTRAP.md](BOOTSTRAP.md) and [IMPORT.md](IMPORT.md). Source snapshots, background-derived CF tables, scoring caches and Brightway exports remain gitignored; the pre-commit guard also refuses the ones holding ecoinvent amounts, CFs or the dataset list. The code licence does not relicense those artifacts.
+ADEME's export ships in the repository without its embedded ecoinvent datasets. Obtain the licensed background inputs locally; follow [BOOTSTRAP.md](BOOTSTRAP.md) and [IMPORT.md](IMPORT.md). Source snapshots, background-derived CF tables, scoring caches and Brightway exports remain gitignored; the pre-commit guard also refuses the ones holding ecoinvent amounts, CFs or the dataset list. The code licence does not relicense those artifacts.
 
 ## Bring evidence, then test the claim
 
@@ -39,7 +39,7 @@ Reuse the existing MappingRegistry, parameter overrides, dangling-edge auditor, 
 The [review ledger](community/findings.md) brings relevant lci-bafu-catalog lessons into AGRIBALYSE:
 
 - Account for source, imported and served exchange counts through named changes.
-- Audit final biosphere characterization separately from successful linking: a flow that links but has no factor scores zero without an error. `scripts/build_checks.py` checks this on a submitted build audit; a check inside the adapter's emit stage is proposed in a separate pull request.
+- Audit final biosphere characterization separately from successful linking: a flow that links but has no factor scores zero without an error. `scripts/build_checks.py` checks this on a submitted build audit; a check inside the adapter's emit stage continues on a branch of its own, and a pull request for it follows this one.
 - Keep exact input/output hashes alongside a portable aggregate-summary identity. The summary is not a complete inventory fingerprint.
 - Give reconstructed inventories separate identities and evidence. BAFU-specific values, prefixes and factor choices are not copied into AGRIBALYSE.
 

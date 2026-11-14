@@ -1,0 +1,18 @@
+{
+ "name": "simapro-ef31-flow-synonyms",
+ "description": "Elementary-flow name pairs between ecoinvent 3.9.1 and SimaPro's EF 3.1 (adapted) method, for flows no Agribalyse foreground process emits and the biosphere flowmap therefore does not list. SimaProCfFilter keeps an inherited ecoinvent factor when the SimaPro method characterises the paired name in the same compartment. Names only, no factor.",
+ "synonyms": [
+  {
+   "flow": "Transformation, from arable land, unspecified use",
+   "compartment": "natural resource",
+   "simapro": "Transformation, from annual crop",
+   "comment": "SimaPro files ecoinvent's arable-land transformations under annual crop. The flowmap pairs the 'to' flow only; without its 'from' twin the two no longer cancel."
+  },
+  {
+   "flow": "Occupation, arable land, unspecified use",
+   "compartment": "natural resource",
+   "simapro": "Occupation, annual crop",
+   "comment": "Same land class as above."
+  }
+ ]
+}

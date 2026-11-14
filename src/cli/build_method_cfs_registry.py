@@ -41,6 +41,7 @@ class BuildMethodCfsRegistryCli(BaseCli):
                 ),
                 biosphere_catalog_path=s.paths.registry_biosphere_catalog,
                 flowmap_path=s.paths.biosphere_flowmap_json,
+                synonyms_path=s.paths.simapro_cf_synonyms_json,
             )
         # ``WaterResourceCfAugmenter`` is intentionally NOT wired here.
         # Two scopes of :class:`BiosphereResourcePurger` were tested
