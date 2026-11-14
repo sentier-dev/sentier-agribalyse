@@ -1,161 +1,63 @@
-# sentier-agribalyse
+<p><img src="site/assets/sentier.svg" alt="sentier.dev" width="160"></p>
 
-```mermaid
-flowchart LR
-    ADEME["ADEME: Agribalyse 3.2 SimaPro CSV + reference scores"] -- read --> REPO["sentier-agribalyse"]
-    EI["ecoinvent 3.9.1 (licensed)"] -- "snapshot (BOOTSTRAP.md)" --> REPO
-    EF["JRC EF v3.1 CF parquet"] -- read --> REPO
-    RD["randonneur_data registry"] -- read --> REPO
-    REPO -- write --> DASH["dashboard/ (static backtest UI)"]
-    REPO -- export --> BW["bw_package/ (Brightway, Activity Browser)"]
-    REPO -- author --> RP["source/randonneur_packages/"]
+# AGRIBALYSE · a shared dataset workspace
+
+**Reproduce the import. Bring contributions into application and testing. Build reviewed consensus and return actionable recommendations to ADEME.**
+
+This public Sentier project combines the existing AGRIBALYSE adapter with a central space for partner evidence, hackathon contributions, candidate improvements and source-dataset discussions. The project spans releases; its current documented adapter imports **AGRIBALYSE 3.2** with **ecoinvent 3.9.1** and **EF 3.1**. Public participation requires no private or unreleased adapter.
+
+[Import & use](IMPORT.md) · [Findings & shared lessons](community/findings.md) · [Evidence & testing](community/build-validation.md) · [Contribute](community/README.md) · [Consensus](community/workflow.md)
+
+## Start with the existing adapter
+
+The adapter imports ADEME's SimaPro CSV, links through a tiered MappingRegistry, registers the 19 headline EF 3.1 methods, backtests against ADEME reference results and exports a parity-checked Brightway package. The detailed commands, prerequisites, solver setup, parameter tools and architecture remain in [the import and application reference](IMPORT.md).
+
+```sh
+git clone https://github.com/sentier-dev/sentier-agribalyse.git
+cd sentier-agribalyse
+uv sync --extra test
 ```
 
-Public, ecoinvent-EULA-clean adapter that brings Agribalyse 3.2 into Brightway 2.5.
+Obtain the source export and licensed background inputs locally; follow [BOOTSTRAP.md](BOOTSTRAP.md) and [IMPORT.md](IMPORT.md). Source snapshots, background-derived CF tables, scoring caches and Brightway exports remain gitignored; the pre-commit guard also refuses the ones holding ecoinvent amounts, CFs or the dataset list. The code licence does not relicense those artifacts.
 
-## What it is
+## Bring evidence, then test the claim
 
-- Imports the ADEME Agribalyse 3.2 SimaPro CSV.
-- Links it to ecoinvent 3.9.1 through a tiered `MappingRegistry`. Tiers are data, not code.
-- Registers the 19 headline EF v3.1 LCIA methods and scores every product.
-- Backtests every score against ADEME reference values in a static React dashboard.
-- Exports the linked system as Brightway datapackages plus a standalone importer.
-
-No proprietary ecoinvent data ships in git. The ecoinvent-derived files under `source/` and
-`registry/method_cfs/` are gitignored and blocked by a pre-commit guard. Licensed users
-regenerate them locally: see [BOOTSTRAP.md](BOOTSTRAP.md).
-
-Deep dives (mapping tiers, registry contract, link sequence, solver notes) live in the DdS wiki
-page `sentier-agribalyse`.
-
-```mermaid
-flowchart LR
-    SNAP["dds-snapshot-ecoinvent-exchanges (bootstrap)"] -.-> REG[dds-build-registry]
-    PK[dds-build-packages] -. "writes source/" .-> REG
-    REG --> EFF[dds-build-ef-flows-registry] --> BIO[dds-build-biosphere-catalog] --> MCF[dds-build-method-cfs-registry] --> LINK[dds-link-all]
-    EIC[dds-build-ecoinvent-catalog] --> LINK
-    REG --> E2E[dds-run-end-to-end]
-    RESET[dds-reset] -.-> LINK
-    LINK --> BT[dds-backtest] --> FD[dds-build-flow-decomp] --> PR[dds-build-product-reasons]
-    MCF --> CFS[dds-compare-cfs] --> CFC[dds-build-cf-comparison-csv]
-    LINK --> DS[dds-decompose-score]
-    LINK --> BWP[dds-build-bw-package]
-    LINK --> SK[dds-build-skeleton]
-    LINK --> MC[dds-mappings-comparison]
-    LINK --> LLM[dds-llm-suggest-mappings] -.-> REG
-    BP[dds-build-parameters] -.-> LP[dds-list-parameters]
-    SP[dds-set-parameter] --> LINK
-    CP[dds-clear-parameters] -.-> LINK
-```
-
-## Prerequisites
-
-- Python 3.11+ and [uv](https://docs.astral.sh/uv/).
-- `source/AGB32_final.CSV` (ADEME SimaPro export) and `source/harmonised-flows-simple.json.gz`. Both are local-only, not in git.
-- An ecoinvent 3.9.1 licence to regenerate the gitignored `source/` files. Credentials go in `.env` as `ECOINVENT_USERNAME` and `ECOINVENT_PASSWORD`. Bootstrap only: see [BOOTSTRAP.md](BOOTSTRAP.md).
-- The `pardiso` extra for scoring. scipy rejects the matrix's zero-diagonal placeholder activities as "exactly singular".
-
-## Install
-
-```bash
-uv sync --extra pardiso
-```
-
-Add `--extra bw` for the Brightway export, `--extra test` for pytest, `--extra bootstrap` to snapshot ecoinvent, `--extra llm-api` for `--use-api`. pip works too: `pip install -e ".[pardiso]"`.
-
-Activate the EULA guard once per clone:
-
-```bash
-pre-commit install
-```
-
-## Use
-
-Run every script as `uv run <script>`.
-
-| Command | What it does |
+| Step | What belongs here |
 |---|---|
-| `dds-snapshot-ecoinvent-exchanges` | Bootstrap only. Dump ecoinvent exchanges from a bw2data SQLite into `source/`. |
-| `dds-build-registry` | Build `registry/*.parquet` from every `source/` artifact. Run first. |
-| `dds-build-ef-flows-registry` | Write `registry/ef_flows.parquet`, the EF flow universe. |
-| `dds-build-biosphere-catalog` | Write `registry/biosphere_catalog.parquet` from the biosphere snapshots. |
-| `dds-build-method-cfs-registry` | Write `registry/method_cfs/`, per-method CF parquets plus index. |
-| `dds-build-ecoinvent-catalog` | Write `registry/ecoinvent_catalog.parquet` from the activity snapshot. |
-| `dds-build-parameters` | Write `registry/parameters.parquet` and `registry/exchange_formulas.parquet` from the CSV. |
-| `dds-build-packages` | Author the randonneur datapackages in `source/randonneur_packages/` and the residuals review xlsx. |
-| `dds-link-all` | Full link pipeline. Writes the scoring package and `dashboard/run_report.json`. |
-| `dds-run-end-to-end` | Smoke test: link, register LCIA, score a small sample. |
-| `dds-backtest` | Score every mapped product against ADEME. Writes `dashboard/backtest/` and `dashboard/backtest_pass1.csv`. |
-| `dds-compare-cfs` | SimaPro-vs-registry per-flow CF comparison. Writes `dashboard/cf_comparison.csv`. |
-| `dds-build-cf-comparison-csv` | Re-flatten `registry/cf_comparison_join.parquet` into `dashboard/cf_comparison.csv`. |
-| `dds-build-flow-decomp` | Per-product flow-decomposition JSONs in `dashboard/decomp/`. |
-| `dds-build-product-reasons` | LLM outlier notes in `dashboard/product_reasons.json`. Needs the `claude` binary or `--use-api`. |
-| `dds-decompose-score` | Explain one `(product, method)` score: top biosphere-flow contributions. |
-| `dds-build-bw-package` | Export `bw_package/`: bw_processing datapackages plus a standalone Brightway importer. Needs the `bw` extra. |
-| `dds-build-skeleton` | Strip ecoinvent amounts from a scoring package into an AGB-only skeleton. |
-| `dds-mappings-comparison` | Regenerate `to_review/mappings_comparison.xlsx` from the cached link. |
-| `dds-llm-suggest-mappings` | LLM picks for residual unlinked flows. Appends accepted rows to the reviewed xlsx. |
-| `dds-set-parameter` | Override a SimaPro input parameter, then relink and rescore. `--fast`, `--no-rescore`. |
-| `dds-list-parameters` | Browse SimaPro parameter names, ranges, and active overrides. `--name-like`. |
-| `dds-clear-parameters` | Remove overrides: all, `--name`, or `--product`. |
-| `dds-reset` | Delete caches and overrides so the next link re-parses the CSV. `--keep-overrides`. |
+| Canonical import | Source release, hashes, background version and reproducible adapter path |
+| Partner contributions | Findings, curated mappings, parameter scenarios and process models |
+| Application & testing | Isolated candidates, named exchange changes, coverage and equivalent-scope comparisons |
+| Reviewed consensus | Actual reviewer decisions, objections and their disposition |
+| Recommendations to ADEME | Agreed findings, delivery evidence and provider responses |
 
-Flags worth knowing:
+A **source finding** needs reproduction against the named AGRIBALYSE release. An **adapter defect** needs evidence of the transformation that introduced it. A **scenario** needs assumptions and application tests; it is not automatically a correction of ADEME's data. [Open a finding or discussion](https://github.com/sentier-dev/sentier-agribalyse/issues/new/choose), or start with [a contribution record](community/templates/contribution.json).
 
-- `--solver pardiso` on `dds-backtest`, `dds-run-end-to-end`, `dds-decompose-score`. Already the default on `dds-build-flow-decomp` and `dds-set-parameter`.
-- `--skip-ecoinvent` on `dds-link-all` and `dds-run-end-to-end`; `--skip-linking` on `dds-run-end-to-end`.
-- `--no-llm` on `dds-link-all` disables LLM overrides and the curated synonym fallback.
+Reuse the existing MappingRegistry, parameter overrides, dangling-edge auditor, backtests and export parity verifier. The [application guide](community/application-and-testing.md) explains how to retain separate baseline and candidate builds.
 
-## Typical workflow
+## Shared lessons from the BAFU workspace
 
-1. Licensed users, once: regenerate the ecoinvent-derived `source/` files per [BOOTSTRAP.md](BOOTSTRAP.md).
-2. Build the registry: `uv run dds-build-registry`, then `dds-build-ef-flows-registry`, `dds-build-biosphere-catalog`, `dds-build-method-cfs-registry`, `dds-build-ecoinvent-catalog`.
-3. Link: `uv run dds-link-all`.
-4. Score: `uv run dds-backtest --solver pardiso`.
-5. Dashboard data: `uv run dds-compare-cfs`, then `uv run dds-build-flow-decomp`.
-6. Optional tooltips: `uv run dds-build-product-reasons`.
-7. View: `python -m http.server 8000 --directory dashboard`, then open `http://localhost:8000/backtest_dashboard.html`.
-8. Optional export: `uv run dds-build-bw-package` (needs the `bw` extra). `bw_package/` embeds ecoinvent data; it is gitignored and blocked by the guard.
+The [review ledger](community/findings.md) brings relevant lci-bafu-catalog lessons into AGRIBALYSE:
 
-After replacing the SimaPro CSV run `uv run dds-reset`, then repeat from step 3.
+- Account for source, imported and served exchange counts through named changes.
+- Audit final biosphere characterization separately from successful linking: a flow that links but has no factor scores zero without an error. `scripts/build_checks.py` checks this on a submitted build audit; a check inside the adapter's emit stage is proposed in a separate pull request.
+- Keep exact input/output hashes alongside a portable aggregate-summary identity. The summary is not a complete inventory fingerprint.
+- Give reconstructed inventories separate identities and evidence. BAFU-specific values, prefixes and factor choices are not copied into AGRIBALYSE.
 
-## Changing parameters (no SimaPro required)
-
-AGB 3.2's SimaPro process-level parameters (577 names across 13,725 processes, packaging stage included) are editable from the command line. Only input parameters accept overrides; calculated parameters are formula-derived and refuse with their formula.
-
-```bash
-uv run dds-list-parameters --name-like packaging                          # names, counts, value ranges, active overrides
-uv run dds-set-parameter Packaging_Weight 0.03 --product EI3CQUNI000025017101234
-uv run dds-set-parameter Packaging_Weight 0.03 --all-products             # every process that defines it
-uv run dds-clear-parameters                                               # back to the baseline
+```sh
+python3 scripts/community.py check
+python3 -m unittest discover -s community/tests
+python3 scripts/build_checks.py path/to/build-audit.json
+uv run pytest -q
 ```
 
-`dds-set-parameter` writes the override to `source/parameter_overrides.csv` (gitignored; a process-specific row beats a `*` row), prints the changed exchange amounts, then reruns `dds-link-all` and `dds-backtest` so the dashboard shows the scenario. `--no-rescore` skips the rerun. `--fast` replays only the scoring-package stage against the cached linked graph (`cache/linked_cache.pkl`) and ratio-patches the amounts; exchanges whose baseline evaluates to 0 are reported and need the full path. Baseline and what-if scoring packages coexist in `cache/scoring_packages/` because the content hash covers the amounts. `dds-reset` deletes the overrides file unless you pass `--keep-overrides`.
+Read [build validation](community/build-validation.md) for the checks' precise scope and limitations. These additions are reviewed through [PR #6](https://github.com/sentier-dev/sentier-agribalyse/pull/6); synthetic tests do not establish a newly reproduced licensed baseline or new partner consensus.
 
-Rebuilds are deterministic: after `dds-clear-parameters` the next run reproduces the original scores exactly. This is verified on the full 2,451-product backtest.
+## Documentation site
 
-### Changing parameters in SimaPro instead
+The responsive site shares Sentier's visual identity with [the BAFU / UVEK site](https://sentier-dev.github.io/sentier-bafu/). Its public pages cover import, findings, application tests and consensus. To see the site of [PR #6](https://github.com/sentier-dev/sentier-agribalyse/pull/6), build it from its branch with the command below. The address that carried its review preview, `https://mklarmann.github.io/sentier-agribalyse/`, now shows a later state of the workspace, in which the site is built from records; that work follows this pull request and is not part of it.
 
-For structural edits (new parameters, changed formulas), edit in SimaPro, re-export with the original settings, replace `source/AGB32_final.CSV`, then run `uv run dds-reset`, `uv run dds-link-all`, `uv run dds-backtest`. `dds-reset` is required because the CSV parse cache does not hash the source file.
+The [Documentation workflow](.github/workflows/pages.yml) checks pull requests and is ready to publish from `main` at `https://sentier-dev.github.io/sentier-agribalyse/`. The canonical site becomes available after a maintainer merges this PR and enables **Settings → Pages → Source: GitHub Actions**. Build locally with `uv run --no-project --with markdown==3.7 scripts/build_site.py`; see [site maintenance](site/README.md). Generated pages contain coordination material only, with no licensed inventory downloads.
 
-## Layout
+## Data, credit and participation
 
-```
-source/        inputs + the randonneur packages we publish (ecoinvent-derived files gitignored)
-registry/      built mapping parquets, single source of mapping truth (gitignored, regenerable)
-cache/         parquet caches, importer pickle, scoring packages (gitignored)
-dashboard/     static React UI + backtest_pass1.csv (committed); other generated data gitignored
-to_review/     human-review artifacts
-unlinked/      residual unlinked exports
-bw_package/    Brightway export (gitignored, EULA-guarded)
-src/           the package, flat layout: cli/, registry/, matching/, transforms/, ef/, scoring/,
-               reporting/, pipelines/, bw_export/, bw_import/, exports/, llm/
-tests/         pytest suite: unit/, integration/, fixtures/
-.githooks/     pre-commit ecoinvent EULA guard
-BOOTSTRAP.md   how a licensed user regenerates the gitignored source/ files
-```
-
-## Licence
-
-Code: MIT (`pyproject.toml`). ecoinvent data is licensed separately and never ships in this
-repo; regenerated files stay local under the ecoinvent EULA.
+Code: MIT. ADEME source material and ecoinvent backgrounds retain their applicable terms; [data and attribution](community/data-and-attribution.md) explains the artifact distinctions. Licensed inputs and confidential evidence stay local. Reviewer agreement and provider responses require evidence in [the workflow](community/workflow.md) and [recommendation tracker](community/recommendations/tracker.json).

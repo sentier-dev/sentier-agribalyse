@@ -1,0 +1,22 @@
+# Portable GitLab Pages deployment if this project is mirrored to GitLab.
+# GitHub remains the canonical source repository.
+image: ghcr.io/astral-sh/uv:python3.12-bookworm-slim
+
+stages: [test, deploy]
+
+validate-community:
+  stage: test
+  script:
+    - python3 scripts/community.py check
+    - python3 -m unittest discover -s community/tests
+    - python3 scripts/build_checks.py community/templates/build-audit.json
+
+publish-pages:
+  stage: deploy
+  script:
+    - uv run --no-project --with markdown==3.7 scripts/build_site.py --out public --site-url "$CI_PAGES_URL"
+    - python3 scripts/check_site.py public
+  pages:
+    publish: public
+  rules:
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH

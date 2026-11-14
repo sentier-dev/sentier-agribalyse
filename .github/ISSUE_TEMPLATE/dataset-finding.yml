@@ -1,0 +1,41 @@
+name: AGRIBALYSE source finding
+description: A reproducible observation about a named AGRIBALYSE source release.
+title: "[Finding] "
+body:
+  - type: markdown
+    attributes:
+      value: "Separate source observations from adapter defects and scenarios. Share permitted evidence; keep licensed inventory exports and confidential discussions local."
+  - type: input
+    id: identity
+    attributes:
+      label: Dataset and release
+      description: Dataset code, reference product, unit, geography and source release.
+    validations:
+      required: true
+  - type: dropdown
+    id: origin
+    attributes:
+      label: Where was it observed?
+      options:
+        - Provider source files
+        - Imported representation
+        - Served or scored build
+    validations:
+      required: true
+  - type: textarea
+    id: observation
+    attributes:
+      label: Observation and reproduction
+      description: What you measured, expected behaviour, steps and permitted evidence links.
+    validations:
+      required: true
+  - type: textarea
+    id: exposure
+    attributes:
+      label: Exposure and remaining uncertainty
+      description: Affected consumers, measured effect, competing explanations and what still needs testing.
+  - type: textarea
+    id: upstream
+    attributes:
+      label: Related discussions or provider response
+      description: Link existing findings, contribution records or actual ADEME correspondence where shareable.

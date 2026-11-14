@@ -1,0 +1,16 @@
+name: Validate community contribution records
+on: [push, pull_request]
+jobs:
+  records:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python3 scripts/community.py check
+      - run: python3 -m unittest discover -s community/tests
+      - run: python3 scripts/build_checks.py community/templates/build-audit.json
+      - uses: astral-sh/setup-uv@v6
+      - run: uv run --no-project --with markdown==3.7 scripts/build_site.py
+      - run: python3 scripts/check_site.py _site

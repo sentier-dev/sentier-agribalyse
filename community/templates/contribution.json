@@ -1,0 +1,25 @@
+{
+  "id": "C000",
+  "title": "",
+  "status": "proposed",
+  "baseline": {
+    "dataset": "",
+    "release": "",
+    "import_repository": "",
+    "import_revision": "",
+    "input_hashes": {}
+  },
+  "layer": {
+    "kind": "",
+    "implementation_url": "",
+    "implementation_revision": "",
+    "payloads": []
+  },
+  "evidence": [],
+  "required_checks": [],
+  "runs": [],
+  "required_reviewers": [],
+  "approvals": [],
+  "objections": [],
+  "upstream_project": ""
+}
