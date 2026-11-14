@@ -2,7 +2,8 @@
 
 Wraps :class:`SkeletonExtractor`. Reads an existing scoring package
 from ``cache/scoring_packages/<hash>/``, writes the skeleton (with
-ecoinvent columns zeroed and ``ecoinvent_slot_index.parquet`` emitted)
+ecoinvent columns and the processes rebuilt from ecoinvent zeroed, and
+``ecoinvent_slot_index.parquet`` and ``rebuilt_slot_index.parquet`` emitted)
 to ``<bundle-root>/skeleton/<hash>/``.
 
 Run AFTER ``dds-link-all`` produced a verified scoring package.
@@ -66,7 +67,11 @@ class BuildSkeletonCli(BaseCli):
         output = bundle_root / "skeleton" / args.content_hash
         output.parent.mkdir(parents=True, exist_ok=True)
 
-        extractor = SkeletonExtractor(ecoinvent_catalog_path=paths.registry_ecoinvent_catalog)
+        extractor = SkeletonExtractor(
+            ecoinvent_catalog_path=paths.registry_ecoinvent_catalog,
+            agribalyse_database=self.settings.resolved_agribalyse_db_name,
+            stripped_processes_path=paths.stripped_processes_json,
+        )
         extractor.extract(source_dir=source, output_dir=output)
         log.info("skeleton.cli.done", source=str(source), output=str(output))
 
