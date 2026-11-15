@@ -39,7 +39,8 @@ source/ef-v31-methods.json
 source/ecoinvent-3.9.1-biosphere-flows.json
 # Entire per-method CF tree is ecoinvent-3.9.1-keyed + rebuilt by
 # `dds-build-registry` (subdirs hold CF rows keyed by ecoinvent biosphere
-# UUID; _index.json is their manifest). None of it ships.
+# UUID; _index.json is their manifest). None of it ships; the pre-commit
+# guard refuses every subdir.
 registry/method_cfs/
 
 # ADEME's full SimaPro export embeds ecoinvent inventories — NEVER COMMIT
@@ -57,18 +58,22 @@ source/harmonised-flows-simple.json.gz
 source/parameter_overrides.csv
 
 # Built registry — regeneratable from source/ via `dds-build-registry`.
-# Bit-identical re-builds, so we keep parquets out of git.
+# Bit-identical re-builds, so we keep parquets out of git. Three of them are
+# also refused by the pre-commit guard: cf_comparison_join.parquet (registry
+# CF per flow) and ecoinvent_catalog / activity_catalog (the dataset list).
 registry/*.parquet
 
 # Run-time artifacts under dashboard/, to_review/, unlinked/.
 # Directory tracked via .gitkeep; contents ignored unless explicitly checked in.
 #
-# The dashboard's generated data (cf_comparison.csv, product_reasons.json) is
-# NOT shipped: those files carry numbers from the licensed build (CF rows joined
-# through ecoinvent's LCIA implementation, per-flow contributions of
-# ecoinvent-linked products) and are regenerated locally by a licensed user
-# via `dds-compare-cfs` / `dds-build-cf-comparison-csv` /
-# `dds-build-product-reasons`. Only the static UI shell + vendored JS ship.
+# The dashboard's generated data (cf_comparison.csv, decomp/,
+# product_reasons.json) is NOT shipped: those files carry numbers from the
+# licensed build (CF rows joined through ecoinvent's LCIA implementation,
+# per-flow contributions of ecoinvent-linked products) and are regenerated
+# locally by a licensed user via `dds-compare-cfs` /
+# `dds-build-cf-comparison-csv` / `dds-build-flow-decomp` /
+# `dds-build-product-reasons`; the pre-commit guard refuses them, as it does
+# to_review/cf_comparison/. Only the static UI shell + vendored JS ship.
 dashboard/*
 !dashboard/.gitkeep
 !dashboard/backtest_dashboard.html
@@ -83,11 +88,16 @@ to_review/*
 unlinked/*
 !unlinked/.gitkeep
 
-# Parquet caches of upstream xlsx (rebuilt from source)
+# Caches rebuilt by the pipeline: parquet copies of upstream xlsx, the SimaPro
+# CSV parse and linked-graph pickles, and the scoring packages. The pickles and
+# the scoring packages carry licensed ecoinvent amounts and CFs; the pre-commit
+# guard refuses everything under cache/.
 cache/
 
 # Brightway export (dds-build-bw-package) — contains licensed ecoinvent
-# amounts; never commit or redistribute (also blocked by the pre-commit guard)
+# amounts; never commit or redistribute. The pre-commit guard refuses a
+# bw_package/ directory at any depth, bw_package.* archives, and the export's
+# matrix files under any --out name.
 bw_package/
 
 # OS

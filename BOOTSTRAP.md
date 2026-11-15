@@ -24,7 +24,7 @@ user** from their own credentials:
 | `source/ecoinvent-3.9.1-cutoff-activities.json` | dataset list (name / location / unit / reference product) plus bw2io's `code` (MD5 of ecoinvent's activity and product UUIDs), no amounts | **keep local**: the names are ODbL glossary data, but this list and `code` are not confirmed as published |
 | `source/ecoinvent-3.9.1-biosphere-flows.json` | elementary flows (UUID / name / compartment / unit / CAS / synonyms), no amounts | **ODbL, not EULA data**: ecoinvent Data Glossary content; the tracked `source/biosphere3-flows.json` holds the 3.9 version of this list; ignored only because it is regenerated |
 
-> **⚠️ The files marked "licensed" or "keep local", and any built `bw_package/`, must NEVER be committed.**
+> **⚠️ The files marked "licensed" or "keep local", the outputs built from them (step 6) and any built `bw_package/` must NEVER be committed.**
 > `.gitignore` and the pre-commit guard (`.githooks/`, see step 6) block them,
 > but the responsibility is yours. Publishing more than five (5) ecoinvent Data
 > Points breaches the EULA (§6.1 / §7 / §9, CHF 100,000 confidentiality penalty).
@@ -236,20 +236,31 @@ It applies to ADEME's full SimaPro export too, if you hold one:
 `… - Copied from Ecoinvent U` processes). It is gitignored, and the guard
 refuses any uncompressed `.CSV` under `source/`.
 
-This applies equally to everything *derived* from the regenerated data —
-including the Brightway export `bw_package/` written by
-`dds-build-bw-package` after the pipeline has run (it embeds ecoinvent
-LCI amounts).
+This applies equally to everything *derived* from the regenerated data. Once
+the pipeline has run, these outputs carry licensed numbers too:
+
+| Path | Written by | Licensed content |
+|---|---|---|
+| `cache/scoring_packages/<hash>/` | `dds-link-all` | ecoinvent exchange amounts and the registry CFs, as CSR matrices |
+| `cache/importer_cache.pkl`, `cache/linked_cache.pkl` | `dds-link-all` | the parsed and linked SimaPro CSV: the linked one holds the unit processes rebuilt from the ecoinvent snapshot, with their amounts, and both hold ADEME's copied ecoinvent processes when the full export was read |
+| `registry/method_cfs/<slug>/` | `dds-build-method-cfs-registry` | per-method CFs, including those inherited from `source/ef-v31-methods.json` |
+| `registry/cf_comparison_join.parquet`, `dashboard/cf_comparison.csv` | `dds-compare-cfs`, `dds-build-cf-comparison-csv` | the registry CF of each flow (`cf_registry`) |
+| `to_review/cf_comparison/` | `CfComparisonExporter` | the mean registry CF of each flow |
+| `dashboard/decomp/` | `dds-build-flow-decomp` | per-flow inventory and registry CF for each product |
+| `dashboard/product_reasons.json` | `dds-build-product-reasons` | notes written from the decomposition's flow shares and CF differences |
+| `registry/ecoinvent_catalog.parquet`, `registry/activity_catalog.parquet` | `dds-build-ecoinvent-catalog`, `dds-link-all` | the dataset list with bw2io's `code`, as in the activities snapshot |
+| `bw_package/` | `dds-build-bw-package` | ecoinvent LCI amounts and the registry CFs |
 
 The repo keeps these paths out of git in two places:
 
-1. `.gitignore` — the `ecoinvent EULA` block (all five files) and the
-   `bw_package/` entry.
+1. `.gitignore` — the `ecoinvent EULA` block (all five files) and the entries
+   `registry/method_cfs/`, `registry/*.parquet`, `cache/`, `dashboard/*`,
+   `to_review/*` and `bw_package/`.
 2. A pre-commit guard at `.githooks/pre-commit`, which refuses the licensed
-   files, the activities snapshot, `bw_package/` and any uncompressed `.CSV`
-   under `source/`, wired into the existing
-   `pre-commit` framework as the `ecoinvent-eula-guard` hook. Activate once per
-   clone (this also installs the ruff hooks):
+   files, the activities snapshot, every path in the table above and any
+   uncompressed `.CSV` under `source/`, wired into the existing `pre-commit`
+   framework as the `ecoinvent-eula-guard` hook. Activate once per clone (this
+   also installs the ruff hooks):
 
    ```bash
    pip install pre-commit   # if not already present
@@ -260,5 +271,15 @@ The repo keeps these paths out of git in two places:
    instead: `git config core.hooksPath .githooks`. (Don't do both — `core.hooksPath`
    overrides `.git/hooks`, so `pre-commit install` would be bypassed.)
 
-If `git add -f` stages one of the licensed files, the activities snapshot or
-anything under `bw_package/`, the guard aborts the commit. Do not override it.
+The guard also refuses a `bw_package` directory anywhere in a path, an archive
+named `bw_package.*`, and the matrix files of a scoring package or a Brightway
+export under any directory name (`*.csr.npz`; `technosphere.*.npy`,
+`biosphere.*.npy`, `characterization.*.npy`), so an export written with
+`--out` is caught as well. It refuses suffixed copies of the licensed files
+(`…-exchanges.parquet.bak`) on purpose: they hold the same data. It checks
+renamed and non-ASCII paths. It allows the elementary-flow snapshot (ODbL),
+`registry/method_cfs/_index.json`, `registry/cf_comparison_by_code.parquet`
+(SimaPro CFs only) and the product scores under `dashboard/backtest/`.
+
+If `git add -f` stages any of these paths, the guard aborts the commit. Do not
+override it.

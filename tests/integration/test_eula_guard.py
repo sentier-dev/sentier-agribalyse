@@ -1,7 +1,16 @@
-"""The pre-commit guard and .gitignore around the two Agribalyse CSV variants."""
+"""The ecoinvent EULA pre-commit guard (``.githooks/pre-commit``) and ``.gitignore``.
+
+Each test builds a throwaway git repository, stages paths, runs the hook and
+checks that it refuses or allows the commit. Covers every path class the hook
+names, the paths it must leave alone (the ODbL elementary-flow snapshot, the
+stripped Agribalyse archive, code whose file name contains ``bw_package``),
+renames, non-ASCII names, deletions and the first commit of a repository.
+The last class checks ``.gitignore`` around the two Agribalyse CSV variants.
+"""
 
 from __future__ import annotations
 
+import os
 import shutil
 import subprocess
 from pathlib import Path
@@ -9,59 +18,215 @@ from pathlib import Path
 import pytest
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
+HOOK = REPO_ROOT / ".githooks" / "pre-commit"
 
-pytestmark = pytest.mark.skipif(shutil.which("git") is None, reason="git not available")
+pytestmark = [
+    pytest.mark.integration,
+    pytest.mark.skipif(
+        shutil.which("git") is None or shutil.which("bash") is None,
+        reason="the guard test needs git and bash",
+    ),
+]
+
+# Git with no user or system config, so core.quotePath and friends are at
+# their defaults whatever the machine running the tests has set.
+_ENV = {
+    **os.environ,
+    "GIT_CONFIG_GLOBAL": os.devnull,
+    "GIT_CONFIG_NOSYSTEM": "1",
+    "GIT_AUTHOR_NAME": "guard-test",
+    "GIT_AUTHOR_EMAIL": "guard-test@example.invalid",
+    "GIT_COMMITTER_NAME": "guard-test",
+    "GIT_COMMITTER_EMAIL": "guard-test@example.invalid",
+}
+
+REFUSED = [
+    # Licensed snapshots. A suffixed copy holds the same data.
+    "source/ecoinvent-3.9.1-cutoff-exchanges.parquet",
+    "source/ecoinvent-3.9.1-cutoff-exchanges.parquet.bak",
+    "source/ecoinvent-3.9.1-cutoff-activities.json",
+    "source/ef-v31-methods.json",
+    # An uncompressed SimaPro export: ADEME's full one embeds ecoinvent inventories.
+    "source/AGB32_final.CSV",
+    "source/another_export.CSV",
+    "source/export.csv",
+    # Registry outputs with CFs or the dataset list.
+    "registry/method_cfs/ecoinvent-3.9.1__EF%20v3.1__acidification__x/cfs.parquet",
+    "registry/method_cfs/another-slug/regional_cfs.parquet",
+    "registry/cf_comparison_join.parquet",
+    "registry/ecoinvent_catalog.parquet",
+    "registry/activity_catalog.parquet",
+    # Caches.
+    "cache/scoring_packages/abc123/technosphere.csr.npz",
+    "cache/linked_cache.pkl",
+    "cache/importer_cache.pkl",
+    # Dashboard and review outputs with registry CFs.
+    "dashboard/cf_comparison.csv",
+    "dashboard/decomp/1000.json",
+    "dashboard/product_reasons.json",
+    "to_review/cf_comparison/acidification.parquet",
+    # Brightway export and scoring-package matrices, wherever they land.
+    "bw_package/inventory/datapackage.json",
+    "export/bw_package/inventory/datapackage.json",
+    "bw_package.zip",
+    "agb-export/inventory/technosphere.data.npy",
+    "agb-export/inventory/biosphere.indices.npy",
+    "agb-export/methods/x/characterization.data.npy",
+    "elsewhere/abc123/biosphere.csr.npz",
+    # Non-ASCII names, which git quotes in its default output.
+    "bw_package/métadonnées.json",
+    "cache/résultats.pkl",
+]
+
+ALLOWED = [
+    # Elementary-flow lists: ODbL Data Glossary content.
+    "source/ecoinvent-3.9.1-biosphere-flows.json",
+    "source/biosphere3-flows.json",
+    # The Agribalyse export that ships: the stripped archive and its manifest.
+    "source/AGB32_ecoinvent_free.CSV.xz",
+    "source/agribalyse-3.2-stripped-ecoinvent-processes.json",
+    # Registry files without ecoinvent amounts or ecoinvent-LCIA CFs.
+    "registry/method_cfs/_index.json",
+    "registry/cf_comparison_by_code.parquet",
+    "registry/mappings_biosphere.parquet",
+    "registry/registry.meta.json",
+    # Tracked dashboard files and product-level backtest results.
+    "dashboard/backtest_pass1.csv",
+    "dashboard/backtest_dashboard.html",
+    "dashboard/outlier_reasons.json",
+    "dashboard/backtest/scores.parquet",
+    # Code whose name contains bw_package.
+    "src/cli/build_bw_package.py",
+    "tests/unit/bw_export/test_build_bw_package_cli.py",
+    "README.md",
+    "notes/données.md",
+]
+
+
+def _git(repo: Path, *args: str) -> subprocess.CompletedProcess[str]:
+    return subprocess.run(
+        ["git", *args], cwd=repo, env=_ENV, check=True, capture_output=True, text=True
+    )
+
+
+def _stage(repo: Path, rel: str, *, force: bool = True) -> None:
+    path = repo / rel
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(f"placeholder for {rel}\n", encoding="utf-8")
+    _git(repo, "add", *(["-f"] if force else []), "--", rel)
+
+
+def _run_hook(repo: Path) -> subprocess.CompletedProcess[str]:
+    return subprocess.run(
+        ["bash", str(HOOK)],
+        cwd=repo,
+        env=_ENV,
+        capture_output=True,
+        encoding="utf-8",
+        errors="replace",
+    )
 
 
 @pytest.fixture
 def repo(tmp_path: Path) -> Path:
-    for args in (
-        ["init", "-q"],
-        ["config", "user.email", "t@example.org"],
-        ["config", "user.name", "t"],
-    ):
-        subprocess.run(["git", *args], cwd=tmp_path, check=True)
-    shutil.copytree(REPO_ROOT / ".githooks", tmp_path / ".githooks")
-    shutil.copy(REPO_ROOT / ".gitignore", tmp_path / ".gitignore")
-    (tmp_path / "source").mkdir()
+    _git(tmp_path, "init", "-q")
+    _git(tmp_path, "commit", "-q", "--allow-empty", "-m", "init")
     return tmp_path
 
 
-def _guard(repo: Path) -> subprocess.CompletedProcess:
-    return subprocess.run(
-        ["bash", str(repo / ".githooks" / "pre-commit")], cwd=repo, capture_output=True, text=True
+@pytest.fixture
+def ignoring_repo(repo: Path) -> Path:
+    """A repository that carries this repository's ``.gitignore``."""
+    shutil.copy(REPO_ROOT / ".gitignore", repo / ".gitignore")
+    return repo
+
+
+@pytest.mark.parametrize("path", REFUSED)
+def test_refuses_licensed_path(repo: Path, path: str) -> None:
+    _stage(repo, path)
+    result = _run_hook(repo)
+    assert result.returncode == 1, result.stderr
+    assert path in result.stderr
+
+
+@pytest.mark.parametrize("path", ALLOWED)
+def test_allows_path(repo: Path, path: str) -> None:
+    _stage(repo, path)
+    result = _run_hook(repo)
+    assert result.returncode == 0, result.stderr
+
+
+def test_refuses_a_rename_onto_a_licensed_path(repo: Path) -> None:
+    _stage(repo, "notes/methods.json")
+    _git(repo, "commit", "-q", "--no-verify", "-m", "add notes")
+    (repo / "source").mkdir()
+    _git(repo, "mv", "notes/methods.json", "source/ef-v31-methods.json")
+    # Make sure git reports a rename, not an add, so this exercises R.
+    status = _git(repo, "diff", "--cached", "--name-status").stdout
+    assert status.startswith("R"), status
+    result = _run_hook(repo)
+    assert result.returncode == 1, result.stderr
+    assert "source/ef-v31-methods.json" in result.stderr
+
+
+def test_allows_deleting_a_licensed_file(repo: Path) -> None:
+    _stage(repo, "bw_package/inventory/datapackage.json")
+    _git(repo, "commit", "-q", "--no-verify", "-m", "slipped through")
+    _git(repo, "rm", "-q", "bw_package/inventory/datapackage.json")
+    result = _run_hook(repo)
+    assert result.returncode == 0, result.stderr
+
+
+def test_allows_an_empty_index(repo: Path) -> None:
+    result = _run_hook(repo)
+    assert result.returncode == 0, result.stderr
+
+
+def test_refuses_on_the_first_commit(tmp_path: Path) -> None:
+    _git(tmp_path, "init", "-q")
+    _stage(tmp_path, "cache/linked_cache.pkl")
+    result = _run_hook(tmp_path)
+    assert result.returncode == 1, result.stderr
+
+
+def test_lists_only_the_licensed_paths(repo: Path) -> None:
+    _stage(repo, "README.md")
+    _stage(repo, "dashboard/cf_comparison.csv")
+    result = _run_hook(repo)
+    assert result.returncode == 1, result.stderr
+    assert "dashboard/cf_comparison.csv" in result.stderr
+    assert "README.md" not in result.stderr
+
+
+def test_git_commit_runs_the_guard(repo: Path) -> None:
+    _stage(repo, "export/bw_package/inventory/datapackage.json")
+    result = subprocess.run(
+        ["git", "-c", f"core.hooksPath={HOOK.parent}", "commit", "-q", "-m", "export"],
+        cwd=repo,
+        env=_ENV,
+        capture_output=True,
+        encoding="utf-8",
+        errors="replace",
     )
+    assert result.returncode != 0, result.stderr
+    assert "ecoinvent EULA guard" in result.stderr
 
 
-def _stage(repo: Path, relative: str, *, force: bool = False) -> None:
-    path = repo / relative
-    path.write_bytes(b"x")
-    subprocess.run(["git", "add", *(["-f"] if force else []), relative], cwd=repo, check=True)
-
-
-class TestGuard:
-    @pytest.mark.parametrize("name", ["AGB32_final.CSV", "another_export.CSV", "export.csv"])
-    def test_blocks_a_force_staged_simapro_export(self, repo, name):
-        _stage(repo, f"source/{name}", force=True)
-
-        result = _guard(repo)
-
-        assert result.returncode == 1
-        assert name in result.stderr
-
-    def test_allows_the_stripped_archive_and_its_manifest(self, repo):
-        _stage(repo, "source/AGB32_ecoinvent_free.CSV.xz")
-        _stage(repo, "source/agribalyse-3.2-stripped-ecoinvent-processes.json")
-
-        assert _guard(repo).returncode == 0
+def test_the_stripped_archive_and_its_manifest_need_no_force(ignoring_repo: Path) -> None:
+    _stage(ignoring_repo, "source/AGB32_ecoinvent_free.CSV.xz", force=False)
+    _stage(ignoring_repo, "source/agribalyse-3.2-stripped-ecoinvent-processes.json", force=False)
+    result = _run_hook(ignoring_repo)
+    assert result.returncode == 0, result.stderr
 
 
 class TestGitignore:
     @pytest.mark.parametrize(
         "name", ["AGB32_final.CSV", "another_export.CSV", "harmonised-flows-simple.json.gz"]
     )
-    def test_local_only_inputs_are_ignored(self, repo, name):
-        result = subprocess.run(["git", "check-ignore", "-q", f"source/{name}"], cwd=repo)
+    def test_local_only_inputs_are_ignored(self, ignoring_repo: Path, name: str) -> None:
+        result = subprocess.run(
+            ["git", "check-ignore", "-q", f"source/{name}"], cwd=ignoring_repo, env=_ENV
+        )
 
         assert result.returncode == 0
 
@@ -69,7 +234,9 @@ class TestGitignore:
         "name",
         ["AGB32_ecoinvent_free.CSV.xz", "agribalyse-3.2-stripped-ecoinvent-processes.json"],
     )
-    def test_shipped_files_are_not_ignored(self, repo, name):
-        result = subprocess.run(["git", "check-ignore", "-q", f"source/{name}"], cwd=repo)
+    def test_shipped_files_are_not_ignored(self, ignoring_repo: Path, name: str) -> None:
+        result = subprocess.run(
+            ["git", "check-ignore", "-q", f"source/{name}"], cwd=ignoring_repo, env=_ENV
+        )
 
         assert result.returncode == 1
