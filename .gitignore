@@ -49,6 +49,11 @@ registry/method_cfs/
 source/AGB32_final.CSV
 source/*.CSV
 source/*.csv
+# Compressed or suffixed copies hold the same data; only the stripped archive
+# is in git.
+source/*.CSV.*
+source/*.csv.*
+!source/AGB32_ecoinvent_free.CSV.xz
 
 # Brightway Flows consensus list (46 MB, over the file-size guard). Fetched
 # and sha256-checked by `dds-fetch-harmonised-flows`.

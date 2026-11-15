@@ -233,8 +233,10 @@ dds-run-end-to-end --solver pardiso     # link + register LCIA + score a sample
 
 It applies to ADEME's full SimaPro export too, if you hold one:
 `source/AGB32_final.CSV` embeds ecoinvent inventories (the
-`… - Copied from Ecoinvent U` processes). It is gitignored, and the guard
-refuses any uncompressed `.CSV` under `source/`.
+`… - Copied from Ecoinvent U` processes). It is gitignored. The guard refuses
+any `.CSV` under `source/`, also compressed or with another suffix, and a file
+named `AGB32_final.*` anywhere. The one exception is the stripped archive
+`source/AGB32_ecoinvent_free.CSV.xz`.
 
 This applies equally to everything *derived* from the regenerated data. Once
 the pipeline has run, these outputs carry licensed numbers too:
@@ -258,7 +260,7 @@ The repo keeps these paths out of git in two places:
    `dashboard/*`, `to_review/*` and `bw_package/`.
 2. A pre-commit guard at `.githooks/pre-commit`, which refuses the licensed
    files, the activities snapshot, every path in the table above and any
-   uncompressed `.CSV` under `source/`, wired into the existing `pre-commit`
+   SimaPro export but the stripped archive, wired into the existing `pre-commit`
    framework as the `ecoinvent-eula-guard` hook. Activate once per clone (this
    also installs the ruff hooks):
 
@@ -272,10 +274,11 @@ The repo keeps these paths out of git in two places:
    overrides `.git/hooks`, so `pre-commit install` would be bypassed.)
 
 The guard also refuses a `bw_package` directory anywhere in a path, an archive
-named `bw_package.*`, and the matrix files of a scoring package or a Brightway
+of it (`bw_package.zip`, `bw_package.tar.gz` and the like), and the matrix files of a scoring package or a Brightway
 export under any directory name (`*.csr.npz`; `technosphere.*.npy`,
 `biosphere.*.npy`, `characterization.*.npy`), so an export written with
-`--out` is caught as well. It refuses suffixed copies of the licensed files
+`--out` is caught as well. Both hold under `src/` and `tests/` too, so a test
+fixture cannot be a matrix file of these names. It refuses suffixed copies of the licensed files
 (`…-exchanges.parquet.bak`) on purpose: they hold the same data. It checks
 renamed and non-ASCII paths. It allows the elementary-flow snapshot (ODbL),
 `registry/method_cfs/_index.json`, `registry/cf_comparison_by_code.parquet`
