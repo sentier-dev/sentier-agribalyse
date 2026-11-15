@@ -8,4 +8,4 @@ The existing project already supplies the canonical version-specific import, tie
 
 The Brightcon BAFU toolkit is a distinct contribution in sentier-models PR 2. No AGRIBALYSE hackathon minutes or newly approved partner dataset corrections have been supplied. Gather those records here, attach candidate implementations and tests, and retain dissent and provider responses alongside the canonical import.
 
-This change adds the public contribution lifecycle and comparison tooling around existing import/application hooks. It does not implement a new importer, alter dataset scores or assert that a 4.0 release is public.
+This change adds the public contribution lifecycle and comparison tooling around existing import/application hooks. It does not implement a new importer or alter dataset scores.

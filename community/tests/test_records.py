@@ -105,7 +105,7 @@ class ContributionTests(unittest.TestCase):
             self.assertIn("title must be a non-empty string", records.validate(record), bad)
 
     def test_check_rejects_an_empty_id_and_an_id_that_is_not_the_file_name(self):
-        proposed = records.read(ROOT / "community/contributions/C001.json")
+        proposed = records.read(ROOT / "community/templates/contribution-example.json")
         cases = [
             ({"C001.json": "C001"}, 0),
             ({"C001.json": ""}, 1),

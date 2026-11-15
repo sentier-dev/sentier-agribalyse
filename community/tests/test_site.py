@@ -123,5 +123,28 @@ class SiteCheckTests(unittest.TestCase):
                 self.assertEqual(quiet(check_site.check, root), 1, link)
 
 
+
+
+class ContributionCardsTests(unittest.TestCase):
+    def test_the_contribution_list_shows_cards_or_says_that_there_are_none(self):
+        records = sorted((ROOT / "community/contributions").glob("*.json"))
+        with tempfile.TemporaryDirectory() as directory:
+            out = Path(directory) / "site"
+            quiet(build_site.build, out)
+            for name in ("contribute.html", "index.html"):
+                page = (out / name).read_text()
+                if records:
+                    self.assertIn('class="record"', page, name)
+                    self.assertNotIn("No contribution is recorded yet", page, name)
+                else:
+                    self.assertIn("No contribution is recorded yet", page, name)
+                    self.assertNotIn('class="record"', page, name)
+
+    def test_the_example_record_is_a_valid_record(self):
+        records = load("community")
+        example = records.read(ROOT / "community/templates/contribution-example.json")
+        self.assertEqual(records.validate(example), [])
+
+
 if __name__ == "__main__":
     unittest.main()
