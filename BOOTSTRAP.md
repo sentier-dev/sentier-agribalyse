@@ -22,7 +22,7 @@ user** from their own credentials:
 | `source/ef-v31-methods.json` | EF v3.1 methods with CFs attached to the ecoinvent biosphere through ecoinvent's LCIA implementation | **licensed: never commit** |
 | `registry/method_cfs/ecoinvent-3.9.1__*/` | per-method CF parquets keyed by ecoinvent biosphere UUID (rebuilt by `dds-build-registry`) | **licensed: never commit** |
 | `source/ecoinvent-3.9.1-cutoff-activities.json` | dataset list (name / location / unit / reference product) plus bw2io's `code` (MD5 of ecoinvent's activity and product UUIDs), no amounts | **keep local**: the names are ODbL glossary data, but this list and `code` are not confirmed as published |
-| `source/ecoinvent-3.9.1-biosphere-flows.json` | elementary flows (UUID / name / compartment / unit / CAS / synonyms), no amounts | **ODbL, not EULA data**: ecoinvent Data Glossary content; the tracked `source/biosphere3-flows.json` holds the 3.9 version of this list; ignored only because it is regenerated |
+| `source/ecoinvent-3.9.1-biosphere-flows.json` | elementary flows (UUID / name / compartment / unit / CAS / synonyms), no amounts | **ODbL, not EULA data**: ecoinvent Data Glossary content; the tracked `source/biosphere3-flows.json` holds the 3.9 version of this list. Ignored because it is regenerated, and the guard refuses it until this reading is confirmed |
 
 > **⚠️ The files marked "licensed" or "keep local", the outputs built from them (step 6) and any built `bw_package/` must NEVER be committed.**
 > `.gitignore` and the pre-commit guard (`.githooks/`, see step 6) block them,
@@ -262,7 +262,8 @@ The repo keeps these paths out of git in two places:
    and for `AGB32_final.*`, and the entries `registry/*.parquet`, `cache/`,
    `dashboard/*`, `to_review/*` and `bw_package/`.
 2. A pre-commit guard at `.githooks/pre-commit`, which refuses the licensed
-   files, the activities snapshot, every path in the table above, any SimaPro
+   files, the activities and elementary-flow snapshots, every path in the
+   table above, any SimaPro
    export under `source/` but the stripped archive, and a file named
    `AGB32_final.*` anywhere, wired into the existing `pre-commit`
    framework as the `ecoinvent-eula-guard` hook. Activate once per clone (this
@@ -284,7 +285,8 @@ export under any directory name (`*.csr.npz`; `technosphere.*.npy`,
 `--out` is caught as well. Both hold under `src/` and `tests/` too, so a test
 fixture cannot be a matrix file of these names. It refuses suffixed copies of the licensed files
 (`…-exchanges.parquet.bak`) on purpose: they hold the same data. It checks
-renamed and non-ASCII paths. It allows the elementary-flow snapshot (ODbL),
+renamed and non-ASCII paths. It allows the tracked elementary-flow list
+`source/biosphere3-flows.json`,
 `registry/method_cfs/_index.json`, `registry/cf_comparison_by_code.parquet`
 (SimaPro CFs only) and the product scores under `dashboard/backtest/`.
 

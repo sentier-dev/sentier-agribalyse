@@ -2,7 +2,7 @@
 
 Each test builds a throwaway git repository, stages paths, runs the hook and
 checks that it refuses or allows the commit. Covers every path class the hook
-names, the paths it must leave alone (the ODbL elementary-flow snapshot, the
+names, the paths it must leave alone (the tracked elementary-flow list, the
 stripped Agribalyse archive, code whose file name contains ``bw_package``),
 renames, non-ASCII names, deletions and the first commit of a repository.
 The last class checks ``.gitignore`` around the two Agribalyse CSV variants.
@@ -50,6 +50,9 @@ REFUSED = [
     "source/ecoinvent-3.9.1-cutoff-activities.json.bak",
     "source/ef-v31-methods.json",
     "source/ef-v31-methods.json.orig",
+    # The regenerated elementary-flow snapshot: refused until the ODbL reading
+    # is confirmed.
+    "source/ecoinvent-3.9.1-biosphere-flows.json",
     # A SimaPro export: ADEME's full one embeds ecoinvent inventories. Refused
     # under source/ at any depth, compressed or suffixed, and by its own name
     # anywhere.
@@ -101,8 +104,7 @@ REFUSED = [
 ]
 
 ALLOWED = [
-    # Elementary-flow lists: ODbL Data Glossary content.
-    "source/ecoinvent-3.9.1-biosphere-flows.json",
+    # The tracked elementary-flow list: ODbL Data Glossary content.
     "source/biosphere3-flows.json",
     # The Agribalyse export that ships: the stripped archive and its manifest.
     "source/AGB32_ecoinvent_free.CSV.xz",
