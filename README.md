@@ -1,4 +1,4 @@
-<p><img src="site/assets/sentier.svg" alt="sentier.dev" width="160"></p>
+<p><img src="site/assets/dds-logo.svg" alt="Départ de Sentier" width="160"></p>
 
 # AGRIBALYSE · a shared dataset workspace
 
@@ -39,7 +39,7 @@ Reuse the existing MappingRegistry, parameter overrides, dangling-edge auditor, 
 The [review ledger](community/findings.md) brings relevant lci-bafu-catalog lessons into AGRIBALYSE:
 
 - Account for source, imported and served exchange counts through named changes.
-- Audit final biosphere characterization separately from successful linking: a flow that links but has no factor scores zero without an error. `scripts/build_checks.py` checks this on a submitted build audit; a check inside the adapter's emit stage continues on a branch of its own, and a pull request for it follows this one.
+- Audit final biosphere characterization separately from successful linking: a flow that links but has no factor scores zero without an error. `scripts/build_checks.py` checks this on a submitted build audit; a check inside the adapter's emit stage is not part of the adapter yet: it continues on a branch of its own and gets its own pull request.
 - Keep exact input/output hashes alongside a portable aggregate-summary identity. The summary is not a complete inventory fingerprint.
 - Give reconstructed inventories separate identities and evidence. BAFU-specific values, prefixes and factor choices are not copied into AGRIBALYSE.
 
@@ -54,9 +54,9 @@ Read [build validation](community/build-validation.md) for the checks' precise s
 
 ## Documentation site
 
-The responsive site shares Sentier's visual identity with [the BAFU / UVEK site](https://sentier-dev.github.io/sentier-bafu/). Its public pages cover import, findings, application tests and consensus. To see the site, build it with the command below. The address that carried the review preview of [PR #6](https://github.com/sentier-dev/sentier-agribalyse/pull/6), `https://mklarmann.github.io/sentier-agribalyse/`, now shows a later state of the workspace, in which the site is built from records; that work follows this pull request and is not part of it.
+The responsive site shares Sentier's visual identity with [the BAFU / UVEK site](https://sentier-dev.github.io/sentier-bafu/). Its public pages cover import, findings, application tests and consensus. To see the site, build it with the command below. The address that carried the review preview of [PR #6](https://github.com/sentier-dev/sentier-agribalyse/pull/6), `https://mklarmann.github.io/sentier-agribalyse/`, now shows a later state of the workspace, in which the site is built from records; that work is not part of this repository yet.
 
-The [Documentation workflow](.github/workflows/pages.yml) checks pull requests and is ready to publish from `main` at `https://sentier-dev.github.io/sentier-agribalyse/`. The canonical site becomes available after a maintainer merges this PR and enables **Settings → Pages → Source: GitHub Actions**. Build locally with `uv run --no-project --with markdown==3.7 scripts/build_site.py`; see [site maintenance](site/README.md). Generated pages contain coordination material only, with no licensed inventory downloads.
+The [Documentation workflow](.github/workflows/pages.yml) checks pull requests and is ready to publish from `main` at `https://sentier-dev.github.io/sentier-agribalyse/`. The canonical site becomes available after a maintainer enables **Settings → Pages → Source: GitHub Actions**. Build locally with `uv run --no-project --with markdown==3.7 scripts/build_site.py`; see [site maintenance](site/README.md). Generated pages contain coordination material only, with no licensed inventory downloads.
 
 ## Data, credit and participation
 

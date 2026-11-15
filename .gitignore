@@ -89,9 +89,10 @@ unlinked/*
 !unlinked/.gitkeep
 
 # Caches rebuilt by the pipeline: parquet copies of upstream xlsx, the SimaPro
-# CSV parse and linked-graph pickles, and the scoring packages. The pickles and
-# the scoring packages carry licensed ecoinvent amounts and CFs; the pre-commit
-# guard refuses everything under cache/.
+# CSV parse and linked-graph pickles, and the scoring packages. The scoring
+# packages and the linked-graph pickle carry licensed ecoinvent amounts (the
+# CSV parse too, when ADEME's full export was read); the pre-commit guard
+# refuses everything under cache/.
 cache/
 
 # Brightway export (dds-build-bw-package) — contains licensed ecoinvent

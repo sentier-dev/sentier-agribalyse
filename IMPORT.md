@@ -213,7 +213,7 @@ BOOTSTRAP.md   how a licensed user regenerates the gitignored source/ files
 
 ## Licence
 
-Code: MIT (`pyproject.toml`). `source/biosphere3-flows.json` holds ecoinvent's elementary-flow
+Code: MIT ([LICENSE](LICENSE)). `source/biosphere3-flows.json` holds ecoinvent's elementary-flow
 list from the ecoinvent Data Glossary, available under the
 [Open Database License 1.0](https://opendatacommons.org/licenses/odbl/1-0/). All other ecoinvent
 data is licensed under the ecoinvent EULA and never ships in this repo; regenerated files stay

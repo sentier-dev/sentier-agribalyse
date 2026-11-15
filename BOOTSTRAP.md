@@ -253,9 +253,9 @@ the pipeline has run, these outputs carry licensed numbers too:
 
 The repo keeps these paths out of git in two places:
 
-1. `.gitignore` — the `ecoinvent EULA` block (all five files) and the entries
-   `registry/method_cfs/`, `registry/*.parquet`, `cache/`, `dashboard/*`,
-   `to_review/*` and `bw_package/`.
+1. `.gitignore` — the `ecoinvent EULA` block (the four snapshot files and
+   `registry/method_cfs/`) and the entries `registry/*.parquet`, `cache/`,
+   `dashboard/*`, `to_review/*` and `bw_package/`.
 2. A pre-commit guard at `.githooks/pre-commit`, which refuses the licensed
    files, the activities snapshot, every path in the table above and any
    uncompressed `.CSV` under `source/`, wired into the existing `pre-commit`

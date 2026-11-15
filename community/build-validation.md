@@ -22,7 +22,7 @@ python3 scripts/build_checks.py path/to/build-audit.json
 
 Start with [the synthetic audit example](../community/templates/build-audit.json). It demonstrates the format; its values and hashes are synthetic and certify no dataset build. A failed audit exits nonzero.
 
-An audit of the final biosphere inside the adapter's emit stage continues on a branch of its own, and a pull request for it follows this one; it is not part of the adapter yet.
+An audit of the final biosphere inside the adapter's emit stage is not part of the adapter yet: it continues on a branch of its own and gets its own pull request.
 
 ## Pin the inputs and the outputs
 
