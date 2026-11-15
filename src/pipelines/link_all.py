@@ -523,12 +523,12 @@ class LinkAllPipeline:
            canonical ``ExchangeFrameBuilder.flow_id_for`` hash.
         7. ``ScoringPackageBuilder().build(frame, method_cfs)`` materialises
            the technosphere/biosphere/CF CSR matrices in memory.
-        8. ``ScoringPackageStore(...).write(pkg)`` lays out the package
-           directory atomically.
-        9. ``RebuiltRecipe`` writes ``rebuilt_recipe.parquet`` beside it:
-           for each exchange of a process rebuilt from ecoinvent that reached
-           the final frame, the ecoinvent exchange it came from. It is
-           written on every emit, also when the package directory existed.
+        8. ``ScoringPackageStore(...).write(pkg, companions=(recipe,))`` lays
+           out the package directory atomically.
+        9. ``rebuilt_recipe.parquet`` lands in that same write: for each
+           exchange of a process rebuilt from ecoinvent that reached the
+           final frame, the ecoinvent exchange it came from. It is written on
+           every emit, also when the package directory existed.
         10. ``ProductCatalogBuilder().build(sp.data, ...)`` emits
             ``registry/product_catalog.parquet`` for L4's product mapping.
         """
@@ -638,9 +638,8 @@ class LinkAllPipeline:
             aware_regional_cf_by_location=aware_regional_cf_by_location,
         )
         store = ScoringPackageStore(root=settings.paths.scoring_packages_root)
-        package_path = store.write(pkg)
         recipe = RebuiltRecipe.from_sp_data(sp.data, frame)
-        recipe.write(package_path)
+        package_path = store.write(pkg, companions=(recipe,))
         report.add_stage("rebuilt_recipe", {"rows": len(recipe.frame)})
 
         catalog_path = settings.paths.registry_product_catalog
