@@ -59,10 +59,17 @@ REFUSED = [
     "source/AGB32_final.CSV.xz",
     "source/AGB32_final.CSV.gz",
     "source/another_export.csv.bak",
+    "source/another_export.Csv",
+    "source/another_export.CSV~",
+    "source/sub/another_export.csv",
     "source/sub/AGB32_final.CSV",
     "source/AGB32_final.zip",
     "AGB32_final.CSV",
     "notes/AGB32_final.CSV.xz",
+    "notes/agb32_final.zip",
+    # The stripped archive is excepted by its exact path only.
+    "source/AGB32_ecoinvent_free.CSV.xz.bak",
+    "source/sub/AGB32_ecoinvent_free.CSV.xz",
     # Registry outputs with CFs or the dataset list.
     "registry/method_cfs/ecoinvent-3.9.1__EF%20v3.1__acidification__x/cfs.parquet",
     "registry/method_cfs/another-slug/regional_cfs.parquet",
@@ -252,10 +259,12 @@ def test_refuses_a_path_that_is_not_utf8_whatever_the_locale(repo: Path) -> None
 def test_refuses_no_file_that_is_in_git(repo: Path) -> None:
     """Every tracked path of this repository passes the guard, so the guard
     never blocks an edit of a file that is meant to be in git."""
-    listed = subprocess.run(["git", "ls-files", "-z"], cwd=REPO_ROOT, env=_ENV, capture_output=True)
-    tracked = [name for name in listed.stdout.decode("utf-8").split("\0") if name]
-    if listed.returncode != 0 or not tracked:
+    if not (REPO_ROOT / ".git").exists():
         pytest.skip("not a git checkout")
+    listed = subprocess.run(
+        ["git", "ls-files", "-z"], cwd=REPO_ROOT, env=_ENV, check=True, capture_output=True
+    )
+    tracked = [os.fsdecode(name) for name in listed.stdout.split(b"\0") if name]
     assert "README.md" in tracked
     for rel in tracked:
         path = repo / rel
@@ -284,6 +293,19 @@ def test_refuses_on_the_first_commit(tmp_path: Path) -> None:
     _stage(tmp_path, "cache/linked_cache.pkl")
     result = _run_hook(tmp_path)
     assert result.returncode == 1, result.stderr
+
+
+def test_the_stripped_archive_does_not_end_the_check(repo: Path) -> None:
+    # Paths are checked in git's order: the archive sorts before the two
+    # refused paths below, and the check must go on after it.
+    _stage(repo, "source/AGB32_ecoinvent_free.CSV.xz")
+    _stage(repo, "source/ef-v31-methods.json")
+    _stage(repo, "tests/x.csr.npz")
+    result = _run_hook(repo)
+    assert result.returncode == 1, result.stderr
+    assert "source/ef-v31-methods.json" in result.stderr
+    assert "tests/x.csr.npz" in result.stderr
+    assert "AGB32_ecoinvent_free" not in result.stderr
 
 
 def test_lists_only_the_licensed_paths(repo: Path) -> None:
@@ -323,6 +345,10 @@ class TestGitignore:
             "source/AGB32_final.CSV.xz",
             "source/another_export.csv.bak",
             "source/export.csv",
+            "source/sub/another_export.csv",
+            "source/AGB32_final.zip",
+            "AGB32_final.CSV",
+            "notes/agb32_final.zip",
             "source/ecoinvent-3.9.1-cutoff-exchanges.parquet",
             "source/ecoinvent-3.9.1-cutoff-activities.json",
             "source/ef-v31-methods.json",

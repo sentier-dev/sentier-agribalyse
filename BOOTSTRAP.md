@@ -234,9 +234,11 @@ dds-run-end-to-end --solver pardiso     # link + register LCIA + score a sample
 It applies to ADEME's full SimaPro export too, if you hold one:
 `source/AGB32_final.CSV` embeds ecoinvent inventories (the
 `… - Copied from Ecoinvent U` processes). It is gitignored. The guard refuses
-any `.CSV` under `source/`, also compressed or with another suffix, and a file
-named `AGB32_final.*` anywhere. The one exception is the stripped archive
-`source/AGB32_ecoinvent_free.CSV.xz`.
+every file under `source/` whose name holds `.csv` in any case, so also a
+compressed or renamed copy and one in a subfolder, and a file named
+`AGB32_final.*` anywhere. The one exception is the stripped archive
+`source/AGB32_ecoinvent_free.CSV.xz`, by its exact path: the guard does not
+look into it, a test checks its checksum against the manifest.
 
 This applies equally to everything *derived* from the regenerated data. Once
 the pipeline has run, these outputs carry licensed numbers too:
@@ -256,11 +258,13 @@ the pipeline has run, these outputs carry licensed numbers too:
 The repo keeps these paths out of git in two places:
 
 1. `.gitignore` — the `ecoinvent EULA` block (the four snapshot files and
-   `registry/method_cfs/`) and the entries `registry/*.parquet`, `cache/`,
+   `registry/method_cfs/`), the entries for SimaPro exports under `source/`
+   and for `AGB32_final.*`, and the entries `registry/*.parquet`, `cache/`,
    `dashboard/*`, `to_review/*` and `bw_package/`.
 2. A pre-commit guard at `.githooks/pre-commit`, which refuses the licensed
-   files, the activities snapshot, every path in the table above and any
-   SimaPro export but the stripped archive, wired into the existing `pre-commit`
+   files, the activities snapshot, every path in the table above, any SimaPro
+   export under `source/` but the stripped archive, and a file named
+   `AGB32_final.*` anywhere, wired into the existing `pre-commit`
    framework as the `ecoinvent-eula-guard` hook. Activate once per clone (this
    also installs the ruff hooks):
 
