@@ -50,14 +50,14 @@ python3 scripts/build_checks.py path/to/build-audit.json
 uv run pytest -q
 ```
 
-Read [build validation](community/build-validation.md) for the checks' precise scope and limitations. These additions are reviewed through [PR #6](https://github.com/sentier-dev/sentier-agribalyse/pull/6); synthetic tests do not establish a newly reproduced licensed baseline or new partner consensus.
+Read [build validation](community/build-validation.md) for the checks' precise scope and limitations. These additions were reviewed in [PR #6](https://github.com/sentier-dev/sentier-agribalyse/pull/6); synthetic tests do not establish a newly reproduced licensed baseline or new partner consensus.
 
 ## Documentation site
 
-The responsive site shares Sentier's visual identity with [the BAFU / UVEK site](https://sentier-dev.github.io/sentier-bafu/). Its public pages cover import, findings, application tests and consensus. To see the site of [PR #6](https://github.com/sentier-dev/sentier-agribalyse/pull/6), build it from its branch with the command below. The address that carried its review preview, `https://mklarmann.github.io/sentier-agribalyse/`, now shows a later state of the workspace, in which the site is built from records; that work follows this pull request and is not part of it.
+The responsive site shares Sentier's visual identity with [the BAFU / UVEK site](https://sentier-dev.github.io/sentier-bafu/). Its public pages cover import, findings, application tests and consensus. To see the site, build it with the command below. The address that carried the review preview of [PR #6](https://github.com/sentier-dev/sentier-agribalyse/pull/6), `https://mklarmann.github.io/sentier-agribalyse/`, now shows a later state of the workspace, in which the site is built from records; that work follows this pull request and is not part of it.
 
 The [Documentation workflow](.github/workflows/pages.yml) checks pull requests and is ready to publish from `main` at `https://sentier-dev.github.io/sentier-agribalyse/`. The canonical site becomes available after a maintainer merges this PR and enables **Settings → Pages → Source: GitHub Actions**. Build locally with `uv run --no-project --with markdown==3.7 scripts/build_site.py`; see [site maintenance](site/README.md). Generated pages contain coordination material only, with no licensed inventory downloads.
 
 ## Data, credit and participation
 
-Code: MIT. ADEME source material and ecoinvent backgrounds retain their applicable terms; [data and attribution](community/data-and-attribution.md) explains the artifact distinctions. Licensed inputs and confidential evidence stay local. Reviewer agreement and provider responses require evidence in [the workflow](community/workflow.md) and [recommendation tracker](community/recommendations/tracker.json).
+Code: MIT, see [LICENSE](LICENSE). ADEME source material and ecoinvent backgrounds retain their applicable terms; [data and attribution](community/data-and-attribution.md) explains the artifact distinctions. Licensed inputs and confidential evidence stay local. Reviewer agreement and provider responses require evidence in [the workflow](community/workflow.md) and [recommendation tracker](community/recommendations/tracker.json).
