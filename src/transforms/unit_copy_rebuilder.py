@@ -66,6 +66,10 @@ from scoring.rebuilt_recipe import RebuiltRecipe
 Key = tuple[str, str]
 
 
+class RebuiltWithoutProductionError(ValueError):
+    """An ecoinvent activity to rebuild has no production exchange in the snapshot."""
+
+
 @dataclass(frozen=True)
 class UnitCopyRebuild:
     """Outcome: where references to a stripped unit copy must point."""
@@ -319,17 +323,25 @@ class UnitCopyRebuilder:
                     RebuiltRecipe.ATTRIBUTE: self._source(row, multiplier),
                 }
             )
-        production_exchange = {
-            "type": "production",
-            "functional": True,
-            "name": name,
-            "unit": ref.unit,
-            "amount": production,
-            "input": product_key,
-        }
-        if production_source is not None:
-            production_exchange[RebuiltRecipe.ATTRIBUTE] = production_source
-        exchanges.insert(0, production_exchange)
+        if production_source is None:
+            raise RebuiltWithoutProductionError(
+                f"The ecoinvent activity {ref.code} has no production exchange in the "
+                f"exchanges snapshot, so {name!r} cannot be rebuilt from it: its production "
+                "amount would be a guess that no recipe can reproduce. Regenerate the "
+                "snapshot (BOOTSTRAP.md)."
+            )
+        exchanges.insert(
+            0,
+            {
+                "type": "production",
+                "functional": True,
+                "name": name,
+                "unit": ref.unit,
+                "amount": production,
+                "input": product_key,
+                RebuiltRecipe.ATTRIBUTE: production_source,
+            },
+        )
         common = {
             "database": agb_db,
             "name": name,

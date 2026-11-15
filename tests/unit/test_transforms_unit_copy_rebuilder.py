@@ -15,7 +15,7 @@ from tests.fixtures.builders import (
     make_unit_aliases_df,
     make_unit_conversions_df,
 )
-from transforms import UnitCopyRebuilder
+from transforms import RebuiltWithoutProductionError, UnitCopyRebuilder
 
 EI = "ecoinvent-3.9.1-cutoff"
 BIO = "ecoinvent-3.9.1-biosphere"
@@ -275,6 +275,21 @@ class TestNoOp:
         sp = FakeSimaProImporter(data=[])
 
         assert rebuilder.apply(sp).redirects == {}
+
+
+class TestSnapshotWithoutProduction:
+    def test_an_activity_without_a_production_exchange_is_refused_by_name(
+        self, rebuilder, settings
+    ):
+        """A production amount of 1 would be a guess, and the skeleton's recipe
+        could not reproduce it: the rebuild says which activity lacks the row."""
+        exchanges = _exchanges()
+        lacking = (exchanges["output_code"] == "mkt-br") & (exchanges["type"] == "production")
+        exchanges[~lacking].to_parquet(settings.paths.ecoinvent_exchanges_parquet)
+        sp = FakeSimaProImporter(data=_adapted_dataset())
+
+        with pytest.raises(RebuiltWithoutProductionError, match="mkt-br"):
+            rebuilder.apply(sp)
 
 
 class TestPruneUnused:
