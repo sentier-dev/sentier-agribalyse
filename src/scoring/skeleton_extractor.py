@@ -43,7 +43,8 @@ pipeline. The extractor:
 7. Writes the AGB skeleton to ``<output_root>/<hash>/`` and emits
    ``ecoinvent_slot_index.parquet`` so the customer-side filler knows
    which col_idx ↔ ecoinvent activity to refill,
-   ``rebuilt_slot_index.parquet`` for the rebuilt processes, the checked
+   ``rebuilt_slot_index.parquet`` for the rebuilt processes (their column
+   and the kind of rebuild, nothing of ecoinvent's metadata), the checked
    recipe as ``rebuilt_recipe.parquet``, keyed by matrix row and column
    index, and ``ecoinvent_slot_cols.json``: every column the skeleton
    zeroed and a filler must fill, ecoinvent's and the rebuilt ones. That
@@ -92,6 +93,9 @@ class SkeletonExtractor:
         "multiplier",
         *RebuiltRecipe.SOURCE_KEY,
     )
+    REBUILT_SLOT_COLUMNS: ClassVar[tuple[str, ...]] = ("col_idx", "kind")
+    """What ``rebuilt_slot_index.parquet`` ships: no name, location, unit,
+    reference product or code of the ecoinvent activity behind a column."""
     RTOL: ClassVar[float] = 1e-9
     """Relative difference a recomputed entry may show against the package:
     the recipe sums an entry's sources in another order than the matrix
@@ -170,7 +174,11 @@ class SkeletonExtractor:
         (partial / "ecoinvent_slot_cols.json").write_text(
             json.dumps(sorted(int(c) for c in zeroed_cols))
         )
-        rebuilt_df.to_parquet(
+        # What ships about the rebuilt processes is which columns they are and
+        # which rebuild made them. The filler reads the column numbers and takes
+        # everything else from the recipe; ecoinvent's names, locations, units
+        # and codes stay out of the skeleton.
+        rebuilt_df[list(self.REBUILT_SLOT_COLUMNS)].to_parquet(
             partial / "rebuilt_slot_index.parquet", engine="pyarrow", compression="snappy"
         )
         recipe.to_parquet(

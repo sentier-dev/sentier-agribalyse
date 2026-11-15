@@ -478,18 +478,20 @@ class TestRebuiltEcoinventProcesses:
     def test_rebuilt_processes_are_named_apart_from_the_ecoinvent_slots(
         self, package, tmp_path: Path
     ):
-        _, _, col_map, keys, *_ = package
+        from transforms.unit_copy_rebuilder import UnitCopyRebuilder
+
+        _, _, _col_map, keys, *_ = package
         out = self._extract(package, tmp_path)
         slots = pd.read_parquet(out / "ecoinvent_slot_index.parquet")
         assert sorted(slots["code"]) == ["ei_x", "ei_y"]
         rebuilt = pd.read_parquet(out / "rebuilt_slot_index.parquet")
-        assert sorted(zip(rebuilt["kind"], rebuilt["rebuilt_from"], strict=True)) == [
-            ("combustion_extract", "ei_y"),
-            ("unit_copy", "ei_x"),
+        # Column and kind of rebuild only: no name, location, unit or code of
+        # the ecoinvent activity behind a column ships in the skeleton.
+        assert list(rebuilt.columns) == ["col_idx", "kind"]
+        assert sorted((row.kind, keys[row.col_idx]) for row in rebuilt.itertuples()) == [
+            ("combustion_extract", (self.AGB_DB, UnitCopyRebuilder.EXTRACT_PREFIX + "ei_y")),
+            ("unit_copy", (self.AGB_DB, UnitCopyRebuilder.PROCESS_PREFIX + "ei_x")),
         ]
-        for row in rebuilt.itertuples():
-            assert col_map[int(row.flow_id)] == row.col_idx
-            assert keys[row.col_idx][0] == self.AGB_DB
 
     def test_the_skeleton_recipe_refills_every_rebuilt_column(self, package, tmp_path: Path):
         """Applied to the snapshot (waste signs normalised, as the rebuilder
@@ -797,7 +799,7 @@ class TestBuildSkeletonCli:
         self._run(settings, bundle)
         skeleton = bundle / "skeleton" / self.HASH
         rebuilt = pd.read_parquet(skeleton / "rebuilt_slot_index.parquet")
-        assert rebuilt["rebuilt_from"].tolist() == ["ei_x"]
+        assert rebuilt.to_dict("records") == [{"col_idx": 1, "kind": "unit_copy"}]
         recipe = pd.read_parquet(skeleton / RebuiltRecipe.FILENAME)
         assert recipe["col_idx"].tolist() == [1, 1]
 
