@@ -3,7 +3,6 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 CI_FILES = (
-    ".gitlab-ci.yml",
     ".github/workflows/pages.yml",
     "community/ci/github-actions.yml",
 )

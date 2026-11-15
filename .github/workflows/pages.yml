@@ -34,13 +34,15 @@ jobs:
       - name: Check links, assets and published file types
         run: uv run --no-project python scripts/check_site.py _site
       - name: Upload the documentation site only
-        if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+        if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main' && vars.PAGES_ENABLED == 'true'
         uses: actions/upload-pages-artifact@v4
         with:
           path: _site
 
+  # Runs only where the repository variable PAGES_ENABLED is 'true', so that
+  # main stays green until Pages is switched on.
   deploy:
-    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main' && vars.PAGES_ENABLED == 'true'
     needs: build
     runs-on: ubuntu-latest
     timeout-minutes: 10

@@ -54,9 +54,9 @@ Read [build validation](community/build-validation.md) for the checks' precise s
 
 ## Documentation site
 
-The responsive site shares Sentier's visual identity with [the BAFU / UVEK site](https://sentier-dev.github.io/sentier-bafu/). Its public pages cover import, findings, application tests and consensus. To see the site, build it with the command below. The address that carried the review preview of [PR #6](https://github.com/sentier-dev/sentier-agribalyse/pull/6), `https://mklarmann.github.io/sentier-agribalyse/`, now shows a later state of the workspace, in which the site is built from records; that work is not part of this repository yet.
+The responsive site shares Sentier's visual identity with [the BAFU / UVEK site](https://sentier-dev.github.io/sentier-bafu/). Its public pages cover import, findings, application tests and consensus. To see the site, build it with the command below.
 
-The [Documentation workflow](.github/workflows/pages.yml) checks pull requests and is ready to publish from `main` at `https://sentier-dev.github.io/sentier-agribalyse/`. The canonical site becomes available after a maintainer enables **Settings → Pages → Source: GitHub Actions**. Build locally with `uv run --no-project --with markdown==3.7 scripts/build_site.py`; see [site maintenance](site/README.md). Generated pages contain coordination material only, with no licensed inventory downloads.
+The [Documentation workflow](.github/workflows/pages.yml) checks pull requests and is ready to publish from `main` at `https://sentier-dev.github.io/sentier-agribalyse/`. The canonical site becomes available after a maintainer enables **Settings → Pages → Source: GitHub Actions** and sets the repository variable `PAGES_ENABLED` to `true`; until then the workflow builds and checks the site and deploys nothing. Build locally with `uv run --no-project --with markdown==3.7 scripts/build_site.py`; see [site maintenance](site/README.md). Generated pages contain coordination material only, with no licensed inventory downloads.
 
 ## Data, credit and participation
 
