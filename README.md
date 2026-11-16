@@ -81,7 +81,7 @@ Run every script as `uv run <script>`.
 
 | Command | What it does |
 |---|---|
-| `dds-bootstrap-ecoinvent` | Once per clone. Download ecoinvent with your credentials and write the four ecoinvent-derived files under `source/`. Needs the `bootstrap` extra. `--discard-project`. |
+| `dds-bootstrap-ecoinvent` | Once per clone. Download ecoinvent with your credentials and write the four ecoinvent-derived files under `source/`. Needs the `bootstrap` extra. `--fresh`, `--discard-project`. |
 | `dds-snapshot-ecoinvent-exchanges` | Alternative for an existing Brightway project: dump its ecoinvent exchanges into `source/`. |
 | `dds-fetch-harmonised-flows` | Download the pinned Brightway Flows list into `source/` and check its sha256. Once per clone. `--force`. |
 | `dds-build-registry` | Build `registry/*.parquet` from every `source/` artifact. Run after the fetch. |

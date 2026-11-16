@@ -891,7 +891,7 @@ function DistributionsView({ products, loadState, loadError }) {
   if (loadState === 'error') {
     return (
       <div style={{ padding: '14px 22px', color: '#8a3e25', fontFamily: 'Nunito, system-ui, sans-serif', fontSize: 12 }}>
-        Failed to load {DATA_CSV_URL}: {loadError}
+        Failed to load {DATA_CSV_URL}: {loadError}. This file is written by `dds-backtest`: run the pipeline first (see README).
       </div>
     );
   }

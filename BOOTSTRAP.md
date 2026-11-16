@@ -60,7 +60,8 @@ It does everything this file used to describe by hand:
 
 Count on about five minutes and 1.5 GB under `cache/`. Running it again reuses
 the imported project and only rewrites the files. Add `--discard-project` to
-delete the Brightway project once the files are written.
+delete the Brightway project once the files are written, or `--fresh` to
+start from an empty project (after an interrupted import, for instance).
 
 The command ends by printing the next step.
 

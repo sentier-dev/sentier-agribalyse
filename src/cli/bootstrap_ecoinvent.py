@@ -3,7 +3,8 @@
 Downloads ecoinvent with the credentials in ``.env``, imports it into a
 private Brightway project under ``cache/``, and writes the four
 ecoinvent-derived files under ``source/``. Needs the ``bootstrap`` extra.
-Running it again reuses the imported project and only rewrites the files.
+Running it again reuses the imported project and only rewrites the files;
+``--fresh`` starts from an empty project.
 """
 
 from __future__ import annotations
@@ -31,6 +32,14 @@ class BootstrapEcoinventCli(BaseCli):
     def parser(cls) -> argparse.ArgumentParser:
         p = super().parser()
         p.add_argument(
+            "--fresh",
+            action="store_true",
+            help=(
+                "Delete the private Brightway project before starting and download "
+                "ecoinvent again. Use it after an interrupted import."
+            ),
+        )
+        p.add_argument(
             "--discard-project",
             action="store_true",
             help=(
@@ -43,6 +52,8 @@ class BootstrapEcoinventCli(BaseCli):
     def execute(self, args: argparse.Namespace) -> None:
         paths = self.settings.paths
         brightway_dir = paths.bootstrap_brightway_dir
+        if args.fresh:
+            shutil.rmtree(brightway_dir, ignore_errors=True)
         brightway_dir.mkdir(parents=True, exist_ok=True)
         # Must be set before bw2data is imported: it picks its data directory
         # at import time. A private directory keeps the user's projects apart.
