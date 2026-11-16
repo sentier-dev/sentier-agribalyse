@@ -64,13 +64,20 @@ source/harmonised-flows-simple.json.gz
 source/parameter_overrides.csv
 
 # Built registry — regeneratable from source/ via `dds-build-registry`.
-# Bit-identical re-builds, so we keep parquets out of git. Three of them are
-# also refused by the pre-commit guard: cf_comparison_join.parquet (registry
-# CF per flow) and ecoinvent_catalog / activity_catalog (the dataset list).
+# Bit-identical re-builds, so we keep it out of git (parquets and the
+# registry.meta.json that records their source hashes). Three of the parquets
+# are also refused by the pre-commit guard: cf_comparison_join.parquet
+# (registry CF per flow) and ecoinvent_catalog / activity_catalog (the dataset
+# list).
 registry/*.parquet
+registry/registry.meta.json
 
 # Run-time artifacts under dashboard/, to_review/, unlinked/.
 # Directory tracked via .gitkeep; contents ignored unless explicitly checked in.
+#
+# Everything a run writes stays out of git, so a clone is still clean after
+# the pipeline has run: backtest_pass1.csv (written by `dds-backtest`), the
+# registry, to_review/ and unlinked/.
 #
 # The dashboard's generated data (cf_comparison.csv, decomp/,
 # product_reasons.json) is NOT shipped: those files carry numbers from the
@@ -83,7 +90,6 @@ registry/*.parquet
 dashboard/*
 !dashboard/.gitkeep
 !dashboard/backtest_dashboard.html
-!dashboard/backtest_pass1.csv
 !dashboard/outlier_reasons.json
 !dashboard/dds-logo.svg
 !dashboard/react.min.js

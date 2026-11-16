@@ -220,7 +220,7 @@ class EcoinventCatalogBuilder:
         return target
 
     def _load_snapshot(self) -> dict[str, Any]:
-        path = self.settings.paths.source / "ecoinvent-3.9.1-cutoff-activities.json"
+        path = self.settings.paths.ecoinvent_activities_json
         if not path.exists():
             raise FileNotFoundError(
                 f"ecoinvent activity snapshot missing: {path}. "
