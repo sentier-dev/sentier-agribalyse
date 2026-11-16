@@ -58,7 +58,7 @@ It does everything this file used to describe by hand:
    Brightway projects are not touched);
 2. writes the four files of the table above under `source/`.
 
-Count on about five minutes and 1.2 GB under `cache/`. Running it again reuses
+Count on about five minutes and 1.5 GB under `cache/`. Running it again reuses
 the imported project and only rewrites the files. Add `--discard-project` to
 delete the Brightway project once the files are written.
 
