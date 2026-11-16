@@ -568,6 +568,27 @@ class TestBootstrapEcoinventCli:
         cli.run(["--discard-project"])
         assert not settings.paths.bootstrap_brightway_dir.exists()
 
+    def test_fresh_empties_the_private_project_before_starting(self, settings, monkeypatch):
+        cli, _ = self._cli(settings, monkeypatch)
+        leftover = settings.paths.bootstrap_brightway_dir / "half-imported.db"
+        leftover.parent.mkdir(parents=True)
+        leftover.write_bytes(b"x")
+
+        assert cli.run(["--fresh"]) == 0
+
+        assert not leftover.exists()
+        assert settings.paths.bootstrap_brightway_dir.exists()
+
+    def test_rerun_without_fresh_keeps_the_project(self, settings, monkeypatch):
+        cli, _ = self._cli(settings, monkeypatch)
+        kept = settings.paths.bootstrap_brightway_dir / "projects.db"
+        kept.parent.mkdir(parents=True)
+        kept.write_bytes(b"x")
+
+        cli.run([])
+
+        assert kept.exists()
+
     def test_missing_bootstrap_extra_gives_the_install_command(self, settings, monkeypatch, capsys):
         from cli import bootstrap_ecoinvent as module
 
