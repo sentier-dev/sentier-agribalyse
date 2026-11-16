@@ -34,7 +34,7 @@ class BootstrapEcoinventCli(BaseCli):
             "--discard-project",
             action="store_true",
             help=(
-                "Delete the private Brightway project (about 1.2 GB under cache/) once the "
+                "Delete the private Brightway project (about 1.5 GB under cache/) once the "
                 "snapshots are written. The next run downloads ecoinvent again."
             ),
         )
