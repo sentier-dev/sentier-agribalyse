@@ -29,6 +29,10 @@ from cli._base import BaseCli
 from core.logging import Logging
 
 
+class EmptyEcoinventSnapshotError(RuntimeError):
+    """The SQLite holds no exchange for the requested database."""
+
+
 @dataclass(frozen=True)
 class EcoinventSqliteReader:
     """Read all exchanges owned by activities of one ``database`` from a
@@ -93,6 +97,13 @@ class EcoinventExchangesSnapshotter:
 
     def snapshot(self) -> dict[str, int]:
         df = self.reader.read_exchanges()
+        if df.empty:
+            raise EmptyEcoinventSnapshotError(
+                f"No exchange of database {self.reader.db_name!r} in {self.reader.sqlite_path}. "
+                f"This is probably the databases.db of another project (Brightway keeps one "
+                f"per project, under <project>/lci/). Nothing was written. "
+                f"`dds-bootstrap-ecoinvent` finds the right file by itself."
+            )
         self.output_path.parent.mkdir(parents=True, exist_ok=True)
         df.to_parquet(self.output_path, engine="pyarrow", compression="snappy")
         type_counts = df["type"].value_counts().to_dict() if not df.empty else {}

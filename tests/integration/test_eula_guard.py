@@ -66,6 +66,45 @@ class TestGitignore:
         assert result.returncode == 0
 
     @pytest.mark.parametrize(
+        "path",
+        [
+            "dashboard/backtest_pass1.csv",
+            "dashboard/run_report.json",
+            "dashboard/cf_comparison.csv",
+            "registry/registry.meta.json",
+            "registry/mappings_biosphere.parquet",
+            "to_review/mappings_comparison.xlsx",
+            "unlinked/biosphere_unlinked.xlsx",
+            "unlinked/technosphere_unlinked.json",
+            "cache/bootstrap-brightway/projects.db",
+            "source/ecoinvent-3.9.1-cutoff-exchanges.parquet",
+            "source/ecoinvent-3.9.1-cutoff-activities.json",
+            "source/ecoinvent-3.9.1-biosphere-flows.json",
+            "source/ef-v31-methods.json",
+            "bw_package/README.md",
+        ],
+    )
+    def test_everything_a_run_writes_is_ignored(self, repo, path):
+        result = subprocess.run(["git", "check-ignore", "-q", path], cwd=repo)
+
+        assert result.returncode == 0, f"{path} would dirty the tree after a run"
+
+    @pytest.mark.parametrize(
+        "path",
+        [
+            "dashboard/backtest_dashboard.html",
+            "dashboard/outlier_reasons.json",
+            "dashboard/.gitkeep",
+            "to_review/.gitkeep",
+            "unlinked/.gitkeep",
+        ],
+    )
+    def test_shipped_dashboard_files_stay_tracked(self, repo, path):
+        result = subprocess.run(["git", "check-ignore", "-q", path], cwd=repo)
+
+        assert result.returncode == 1
+
+    @pytest.mark.parametrize(
         "name",
         ["AGB32_ecoinvent_free.CSV.xz", "agribalyse-3.2-stripped-ecoinvent-processes.json"],
     )

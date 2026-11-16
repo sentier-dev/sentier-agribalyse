@@ -14,7 +14,7 @@ ecoinvent user** from their own credentials:
 | `registry/method_cfs/ecoinvent-3.9.1__*/` | per-method CF parquets keyed by ecoinvent biosphere UUID (rebuilt by `dds-build-registry`) |
 
 > **⚠️ These regenerated files ARE licensed ecoinvent data. NEVER commit them.**
-> `.gitignore` and the pre-commit guard (`.githooks/`, see step 6) block them,
+> `.gitignore` and the pre-commit guard (`.githooks/`, see section 5) block them,
 > but the responsibility is yours. Publishing more than five (5) ecoinvent Data
 > Points, or any ecoinvent nomenclature, breaches the EULA (§6.1 / §7 / §9,
 > CHF 100,000 confidentiality penalty).
@@ -26,203 +26,103 @@ The rationale and full data classification live in
 
 ## 1. Prerequisites
 
-- A valid **ecoinvent licence** and credentials in `.env`:
+- A valid **ecoinvent licence** and its credentials in `.env` at the repository root:
 
   ```dotenv
   ECOINVENT_USERNAME=your-username
   ECOINVENT_PASSWORD=your-password
   ```
 
-  Get these from <https://ecoquery.ecoinvent.org/> after licence purchase.
+  They are the login of <https://ecoquery.ecoinvent.org/>.
 
-- The **`[bootstrap]`** extra, which pulls in the import-only toolchain
-  (`bw2io`, `bw2data`, `ecoinvent_interface`). These are **not** part of the
-  runtime — the pipeline reads only `source/` + `registry/` artifacts once
-  bootstrapped:
+- The **`bootstrap`** extra, which pulls in the import-only toolchain
+  (`bw2io`, `bw2data`, `ecoinvent_interface`). The pipeline itself never uses
+  it:
 
   ```bash
-  pip install -e ".[bootstrap]"
+  uv sync --extra pardiso --extra bootstrap
   ```
 
 ---
 
-## 2. Import ecoinvent 3.9.1 cutoff into a Brightway project
-
-Use `bw2io.import_ecoinvent_release` with your credentials. This downloads the
-release and populates a bw2data project (SQLite `databases.db` + the ecoinvent
-biosphere). Run once:
-
-```python
-import os
-import bw2data as bd
-import bw2io as bi
-
-
-def main():
-    bd.projects.set_current("dds-bootstrap")
-    bi.import_ecoinvent_release(
-        version="3.9.1",
-        system_model="cutoff",
-        username=os.environ["ECOINVENT_USERNAME"],
-        password=os.environ["ECOINVENT_PASSWORD"],
-        use_mp=False,
-    )
-    # Confirm the database name the rest of the pipeline expects:
-    assert "ecoinvent-3.9.1-cutoff" in bd.databases
-
-
-if __name__ == "__main__":
-    main()
-```
-
-Keep the `main()` wrapper and `use_mp=False`. bw2io defaults to
-multiprocessing, and with the `spawn` start method (Windows, macOS) every
-worker re-imports the main module, so module-level code re-runs the import
-recursively. Single-process is a few minutes slower and works everywhere.
-
-Note the on-disk location of that project's `databases.db` (bw2data prints the
-project dir; the SQLite lives under `<project>/lci/databases.db`).
-
----
-
-## 3. Regenerate `source/ecoinvent-3.9.1-cutoff-exchanges.parquet`
-
-There **is** an in-repo, bw2data-free snapshotter for this one. Point it at the
-SQLite from step 2:
+## 2. Bootstrap: one command
 
 ```bash
-dds-snapshot-ecoinvent-exchanges \
-  --sqlite /path/to/<project>/lci/databases.db \
-  --db-name ecoinvent-3.9.1-cutoff
+uv run dds-bootstrap-ecoinvent
 ```
 
-It writes `source/ecoinvent-3.9.1-cutoff-exchanges.parquet`
-(columns: `output_database, output_code, input_database, input_code, amount,
-type`; deterministically sorted). Implementation:
-[`src/cli/snapshot_ecoinvent_exchanges.py`](src/cli/snapshot_ecoinvent_exchanges.py).
+It does everything this file used to describe by hand:
+
+1. downloads ecoinvent 3.9.1 cutoff with your credentials and imports it into
+   a private Brightway project under `cache/bootstrap-brightway/` (your own
+   Brightway projects are not touched);
+2. writes the four files of the table above under `source/`.
+
+Count on about five minutes and 1.2 GB under `cache/`. Running it again reuses
+the imported project and only rewrites the files. Add `--discard-project` to
+delete the Brightway project once the files are written.
+
+The command ends by printing the next step.
 
 ---
 
-## 4. Regenerate the three JSON snapshots (manual, one-time)
-
-There is **no in-repo writer** for these yet — they were one-time extractions in
-REFACTOR_FINAL phase F6. Reproduce them from the bw2data project (step 2) by
-emitting JSON in the exact shapes the readers expect. Each writer must
-deterministically sort its records so rebuilds are byte-stable.
-
-### 4a. `source/ecoinvent-3.9.1-cutoff-activities.json`
-
-Reader: [`src/matching/ecoinvent_catalog.py`](src/matching/ecoinvent_catalog.py)
-(`EcoinventCatalogBuilder._load_snapshot` / `_row_for`).
-
-```json
-{
-  "db_name": "ecoinvent-3.9.1-cutoff",
-  "activities": [
-    {
-      "code": "<activity uuid>",
-      "name": "<activity name>",
-      "unit": "<reference unit>",
-      "location": "<RoW | GLO | FR | ...>",
-      "reference_product": "<reference product name>"
-    }
-  ]
-}
-```
-
-Extract by iterating `bd.Database("ecoinvent-3.9.1-cutoff")`: each activity's
-`code`, `name`, `unit`, `location`, and reference-product name (the
-`production`/reference exchange). `reference product` (with a space) is also
-accepted by the reader.
-
-### 4b. `source/ecoinvent-3.9.1-biosphere-flows.json`
-
-Reader: [`src/matching/bio_registry.py`](src/matching/bio_registry.py)
-(`BiosphereRegistryBuilder._rows_from_json`).
-
-```json
-{
-  "flows": [
-    {
-      "code": "<biosphere flow uuid>",
-      "name": "<flow name>",
-      "categories": ["<top>", "<sub>"],
-      "unit": "<unit>",
-      "cas": "<CAS or null>",
-      "synonyms": ["<synonym>", "..."]
-    }
-  ]
-}
-```
-
-A bare top-level JSON array is also accepted (the reader unwraps `flows` if
-present, else treats the payload as the list). Extract by iterating the
-ecoinvent biosphere database from step 2.
-
-### 4c. `source/ef-v31-methods.json`
-
-Reader: [`src/ef/cf_registry.py`](src/ef/cf_registry.py)
-(`MethodCfsRegistryBuilder._load_methods_snapshot` / `_cfs_for_method`).
-
-```json
-{
-  "ef_db_name": "<ef biosphere db name>",
-  "methods": {
-    "<slug label>": {
-      "key": ["<m0>", "<m1>", "<method category>", "<indicator>"],
-      "inherited_cfs": [
-        { "db": "ecoinvent-3.9.1-biosphere", "code": "<flow uuid>", "amount": 0.0 }
-      ]
-    }
-  }
-}
-```
-
-`key` is the 4-tuple bw2data method key. `inherited_cfs` are the biosphere3 /
-ecoinvent-biosphere CFs that the legacy `EfMethodAugmenter` preserved (the
-non-`ef_db_name` entries). The authoritative JRC EF v3.1 CFs themselves come
-from the kept public parquet (`source/EF-LCIAMethod_CF(EF-v3.1)__lciamethods_CF.parquet`);
-this snapshot only carries the inherited biosphere-keyed CFs.
-
----
-
-## 5. Fetch the flow list and rebuild the registry
+## 3. Fetch the flow list and build the registry
 
 One more input is not in git, because it is larger than the repository's
 file-size guard: the Brightway Flows consensus elementary flow list
 (`source/harmonised-flows-simple.json.gz`, 46 MB, ODbL,
 [doi:10.5281/zenodo.23554066](https://doi.org/10.5281/zenodo.23554066)).
-It needs no licence. Download the pinned release once; the command checks
-its sha256:
+It needs no licence. The command checks its sha256:
 
 ```bash
-dds-fetch-harmonised-flows
+uv run dds-fetch-harmonised-flows
 ```
 
 The Agribalyse inventories themselves need no step: they ship in git as
 `source/AGB32_ecoinvent_free.CSV.xz` and are decompressed into `cache/` on
 first use.
 
-With the four ecoinvent `source/` files and the flow list in place, rebuild
-every registry parquet — including `registry/method_cfs/ecoinvent-3.9.1__EF*/`:
+Then build every registry parquet, including
+`registry/method_cfs/ecoinvent-3.9.1__EF*/`:
 
 ```bash
-dds-build-registry
-dds-build-ef-flows-registry
-dds-build-biosphere-catalog
-dds-build-method-cfs-registry
-dds-build-ecoinvent-catalog
+uv run dds-build-registry
+uv run dds-build-ef-flows-registry
+uv run dds-build-biosphere-catalog
+uv run dds-build-method-cfs-registry
+uv run dds-build-ecoinvent-catalog
 ```
 
-Then run the pipeline as usual (pardiso solver — see `CLAUDE.md`):
+and run the pipeline (see the README):
 
 ```bash
-dds-run-end-to-end --solver pardiso     # link + register LCIA + score a sample
+uv run dds-link-all
+uv run dds-backtest --solver pardiso
 ```
 
 ---
 
-## 6. Never re-commit the regenerated data
+## 4. If you already have ecoinvent in a Brightway project
+
+`dds-bootstrap-ecoinvent` is the supported path. The exchange file alone can
+also be written from any Brightway project that holds
+`ecoinvent-3.9.1-cutoff`, without `bw2data`:
+
+```bash
+uv run dds-snapshot-ecoinvent-exchanges \
+  --sqlite /path/to/<project>/lci/databases.db \
+  --db-name ecoinvent-3.9.1-cutoff
+```
+
+Brightway keeps one `databases.db` per project. The command stops with an
+error when the file holds no exchange of that database, which is what
+happens with another project's file. The three JSON files have no stand-alone
+writer; their shapes are those `EcoinventMetadataSnapshotter`
+([`src/bootstrap/ecoinvent.py`](src/bootstrap/ecoinvent.py)) writes.
+
+---
+
+## 5. Never re-commit the regenerated data
 
 It applies to ADEME's full SimaPro export too, if you hold one:
 `source/AGB32_final.CSV` embeds ecoinvent inventories (the
