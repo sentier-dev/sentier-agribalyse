@@ -4,7 +4,7 @@
 flowchart LR
     ADEME["ADEME: Agribalyse 3.2 SimaPro CSV (ecoinvent-free, in git) + reference scores"] -- read --> REPO["sentier-agribalyse"]
     BF["Brightway Flows 1.1.0 (Zenodo)"] -- "dds-fetch-harmonised-flows" --> REPO
-    EI["ecoinvent 3.9.1 (licensed)"] -- "snapshot (BOOTSTRAP.md)" --> REPO
+    EI["ecoinvent 3.9.1 (licensed)"] -- "dds-bootstrap-ecoinvent" --> REPO
     EF["JRC EF v3.1 CF parquet"] -- read --> REPO
     RD["randonneur_data registry"] -- read --> REPO
     REPO -- write --> DASH["dashboard/ (static backtest UI)"]
@@ -35,7 +35,8 @@ page `sentier-agribalyse`.
 
 ```mermaid
 flowchart LR
-    SNAP["dds-snapshot-ecoinvent-exchanges (bootstrap)"] -.-> REG[dds-build-registry]
+    SNAP["dds-bootstrap-ecoinvent (once)"] -.-> REG[dds-build-registry]
+    FETCH["dds-fetch-harmonised-flows (once)"] -.-> REG
     PK[dds-build-packages] -. "writes source/" .-> REG
     REG --> EFF[dds-build-ef-flows-registry] --> BIO[dds-build-biosphere-catalog] --> MCF[dds-build-method-cfs-registry] --> LINK[dds-link-all]
     EIC[dds-build-ecoinvent-catalog] --> LINK
@@ -57,7 +58,7 @@ flowchart LR
 
 - Python 3.11+ and [uv](https://docs.astral.sh/uv/).
 - Network access once, for `dds-fetch-harmonised-flows` (46 MB from Zenodo).
-- An ecoinvent 3.9.1 licence to regenerate the gitignored `source/` files. Credentials go in `.env` as `ECOINVENT_USERNAME` and `ECOINVENT_PASSWORD`. Bootstrap only: see [BOOTSTRAP.md](BOOTSTRAP.md).
+- An ecoinvent 3.9.1 licence. Credentials go in `.env` as `ECOINVENT_USERNAME` and `ECOINVENT_PASSWORD`; `dds-bootstrap-ecoinvent` does the rest once per clone: see [BOOTSTRAP.md](BOOTSTRAP.md).
 - The `pardiso` extra for scoring. scipy rejects the matrix's zero-diagonal placeholder activities as "exactly singular".
 
 ## Install
@@ -80,7 +81,8 @@ Run every script as `uv run <script>`.
 
 | Command | What it does |
 |---|---|
-| `dds-snapshot-ecoinvent-exchanges` | Bootstrap only. Dump ecoinvent exchanges from a bw2data SQLite into `source/`. |
+| `dds-bootstrap-ecoinvent` | Once per clone. Download ecoinvent with your credentials and write the four ecoinvent-derived files under `source/`. Needs the `bootstrap` extra. `--fresh`, `--discard-project`. |
+| `dds-snapshot-ecoinvent-exchanges` | Alternative for an existing Brightway project: dump its ecoinvent exchanges into `source/`. |
 | `dds-fetch-harmonised-flows` | Download the pinned Brightway Flows list into `source/` and check its sha256. Once per clone. `--force`. |
 | `dds-build-registry` | Build `registry/*.parquet` from every `source/` artifact. Run after the fetch. |
 | `dds-strip-ecoinvent` | Maintainers only. Rebuild `source/AGB32_ecoinvent_free.CSV.xz` and its manifest from ADEME's full export. |
@@ -115,7 +117,7 @@ Flags worth knowing:
 
 ## Typical workflow
 
-1. Licensed users, once: regenerate the ecoinvent-derived `source/` files per [BOOTSTRAP.md](BOOTSTRAP.md).
+1. Once: put your ecoinvent login in `.env`, then `uv sync --extra pardiso --extra bootstrap` and `uv run dds-bootstrap-ecoinvent`. Details in [BOOTSTRAP.md](BOOTSTRAP.md).
 2. Fetch the flow list, once: `uv run dds-fetch-harmonised-flows`.
 3. Build the registry: `uv run dds-build-registry`, then `dds-build-ef-flows-registry`, `dds-build-biosphere-catalog`, `dds-build-method-cfs-registry`, `dds-build-ecoinvent-catalog`.
 4. Link: `uv run dds-link-all`.
@@ -200,7 +202,7 @@ For structural edits (new parameters, changed formulas), edit in SimaPro, re-exp
 source/        inputs + the randonneur packages we publish (ecoinvent-derived files gitignored)
 registry/      built mapping parquets, single source of mapping truth (gitignored, regenerable)
 cache/         parquet caches, importer pickle, scoring packages (gitignored)
-dashboard/     static React UI + backtest_pass1.csv (committed); other generated data gitignored
+dashboard/     static React UI (committed); everything a run writes is gitignored
 to_review/     human-review artifacts
 unlinked/      residual unlinked exports
 bw_package/    Brightway export (gitignored, EULA-guarded)

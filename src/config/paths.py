@@ -181,6 +181,17 @@ class Paths:
         return self.source / "biosphere3-flows.json"
 
     @property
+    def ecoinvent_activities_json(self) -> Path:
+        """Snapshot of ecoinvent activity labels (``dds-bootstrap-ecoinvent``)."""
+        return self.source / "ecoinvent-3.9.1-cutoff-activities.json"
+
+    @property
+    def bootstrap_brightway_dir(self) -> Path:
+        """Private Brightway data directory used by ``dds-bootstrap-ecoinvent``.
+        Lives under ``cache/`` so it never touches the user's own projects."""
+        return self.cache / "bootstrap-brightway"
+
+    @property
     def ecoinvent_biosphere_flows_json(self) -> Path:
         """One-time snapshot of the ecoinvent biosphere database (F6)."""
         return self.source / "ecoinvent-3.9.1-biosphere-flows.json"

@@ -509,3 +509,92 @@ class TestFetchHarmonisedFlowsCli:
         assert module.FetchHarmonisedFlowsCli(settings=settings).run(["--force"]) == 0
         assert calls == [True]
         assert "Brightway Flows 1.1.0 (downloaded)" in capsys.readouterr().out
+
+
+# ============================================================================
+# One-command ecoinvent bootstrap
+
+
+class TestBootstrapEcoinventCli:
+    def _cli(self, settings, monkeypatch, report=None):
+        from cli import bootstrap_ecoinvent as module
+
+        seen = {}
+
+        class FakeBootstrapper:
+            def __init__(self, *, settings, bd, bi):
+                seen["modules"] = (bd, bi)
+
+            def run(self, username, password):
+                seen["credentials"] = (username, password)
+                seen["brightway_dir"] = __import__("os").environ.get("BRIGHTWAY2_DIR")
+                return report or {
+                    "imported": True,
+                    "exchanges": 3,
+                    "activities": 2,
+                    "biosphere_flows": 2,
+                    "methods": 1,
+                    "method_cfs": 2,
+                }
+
+        monkeypatch.setattr(module, "EcoinventBootstrapper", FakeBootstrapper)
+        monkeypatch.setattr(
+            module.BootstrapEcoinventCli, "_brightway", staticmethod(lambda: ("bd", "bi"))
+        )
+        monkeypatch.setenv("ECOINVENT_USERNAME", "user")
+        monkeypatch.setenv("ECOINVENT_PASSWORD", "secret")
+        monkeypatch.delenv("BRIGHTWAY2_DIR", raising=False)
+        return module.BootstrapEcoinventCli(settings=settings), seen
+
+    def test_points_brightway_at_a_private_directory_and_passes_credentials(
+        self, settings, monkeypatch, capsys
+    ):
+        cli, seen = self._cli(settings, monkeypatch)
+
+        assert cli.run([]) == 0
+
+        assert seen["brightway_dir"] == str(settings.paths.bootstrap_brightway_dir)
+        assert seen["credentials"] == ("user", "secret")
+        out = capsys.readouterr().out
+        assert "downloaded and imported" in out
+        assert "3 exchanges, 2 activities" in out
+        assert "secret" not in out
+
+    def test_keeps_the_project_by_default_and_discards_it_on_request(self, settings, monkeypatch):
+        cli, _ = self._cli(settings, monkeypatch)
+        cli.run([])
+        assert settings.paths.bootstrap_brightway_dir.exists()
+
+        cli.run(["--discard-project"])
+        assert not settings.paths.bootstrap_brightway_dir.exists()
+
+    def test_fresh_empties_the_private_project_before_starting(self, settings, monkeypatch):
+        cli, _ = self._cli(settings, monkeypatch)
+        leftover = settings.paths.bootstrap_brightway_dir / "half-imported.db"
+        leftover.parent.mkdir(parents=True)
+        leftover.write_bytes(b"x")
+
+        assert cli.run(["--fresh"]) == 0
+
+        assert not leftover.exists()
+        assert settings.paths.bootstrap_brightway_dir.exists()
+
+    def test_rerun_without_fresh_keeps_the_project(self, settings, monkeypatch):
+        cli, _ = self._cli(settings, monkeypatch)
+        kept = settings.paths.bootstrap_brightway_dir / "projects.db"
+        kept.parent.mkdir(parents=True)
+        kept.write_bytes(b"x")
+
+        cli.run([])
+
+        assert kept.exists()
+
+    def test_missing_bootstrap_extra_gives_the_install_command(self, settings, monkeypatch, capsys):
+        from cli import bootstrap_ecoinvent as module
+
+        def boom(name):
+            raise ImportError(name)
+
+        monkeypatch.setattr(module.importlib, "import_module", boom)
+
+        assert module.BootstrapEcoinventCli(settings=settings).run([]) == 1
