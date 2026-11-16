@@ -343,7 +343,9 @@ class SkeletonExtractor:
         scale = np.maximum(e, a)
         gap = np.abs(diff.data)
         rel = np.divide(gap, scale, out=np.zeros_like(gap), where=scale > 0)
-        bad = gap > cls.RTOL * scale
+        # A value that is not finite never passes: NaN compares false to everything,
+        # and an infinite gap is not beyond an infinite scale.
+        bad = ~(gap <= cls.RTOL * scale) | ~np.isfinite(gap) | ~np.isfinite(scale)
         positions = list(zip(r[bad].tolist(), c[bad].tolist(), strict=True))
         return int(bad.sum()), positions[:5], float(rel.max(initial=0.0))
 

@@ -809,3 +809,31 @@ class TestBuildSkeletonCli:
         with pytest.raises(ValueError, match="full export"):
             self._run(settings, bundle)
         assert not (bundle / "skeleton" / self.HASH).exists()
+
+
+class TestDifferences:
+    """The comparison behind the extractor's checks."""
+
+    @staticmethod
+    def _matrix(value: float) -> sp.csr_matrix:
+        return sp.csr_matrix(np.array([[1.0, value], [0.0, 2.0]]))
+
+    def test_equal_matrices_have_no_difference(self):
+        n, positions, worst = SkeletonExtractor._differences(self._matrix(3.0), self._matrix(3.0))
+        assert (n, positions, worst) == (0, [], 0.0)
+
+    def test_a_difference_within_the_tolerance_passes(self):
+        n, _, _ = SkeletonExtractor._differences(self._matrix(3.0), self._matrix(3.0 * (1 + 1e-11)))
+        assert n == 0
+
+    def test_a_difference_beyond_the_tolerance_is_counted(self):
+        n, positions, _ = SkeletonExtractor._differences(self._matrix(3.0), self._matrix(3.1))
+        assert (n, positions) == (1, [(0, 1)])
+
+    @pytest.mark.parametrize("value", [float("nan"), float("inf"), float("-inf")])
+    @pytest.mark.parametrize("side", ["expected", "actual", "both"])
+    def test_a_value_that_is_not_finite_never_passes(self, value: float, side: str):
+        expected = self._matrix(value if side in ("expected", "both") else 3.0)
+        actual = self._matrix(value if side in ("actual", "both") else 3.0)
+        n, positions, _ = SkeletonExtractor._differences(expected, actual)
+        assert (n, positions) == (1, [(0, 1)])
