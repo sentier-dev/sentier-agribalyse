@@ -159,6 +159,21 @@ class TestLinkedSpCache:
         with pytest.raises(LinkedCacheStaleError, match="old cache format"):
             cache.load()
 
+    def test_a_cache_from_before_the_rebuilt_source_tags_is_stale(self, cache):
+        """Schema 1 pickles lack the source tag on rebuilt exchanges; replaying
+        one would write an empty rebuilt recipe over the package's, so it is
+        refused like any old format."""
+        import pickle
+
+        from transforms.linked_cache import LinkedCacheStaleError
+
+        sp = ParsedSimaProCsv(db_name="agb", data=[], parameters=[])
+        cache.path.write_bytes(
+            pickle.dumps({"schema": 1, "csv_stamp": cache._csv_stamp(), "sp": sp})
+        )
+        with pytest.raises(LinkedCacheStaleError, match="old cache format"):
+            cache.load()
+
     def test_truncated_pickle_raises_corrupt_error(self, cache):
         from transforms.linked_cache import LinkedCacheCorruptError
 

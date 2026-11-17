@@ -49,7 +49,10 @@ class LinkedSpCache:
 
     # Bump when the pickled payload's expected shape changes so old caches
     # fail loudly instead of mis-replaying.
-    SCHEMA_VERSION: ClassVar[int] = 1
+    # 2: the exchanges of the processes rebuilt from ecoinvent carry their
+    # source (``RebuiltRecipe.ATTRIBUTE``). Replayed, a version-1 cache would
+    # write an empty recipe over the package's good one.
+    SCHEMA_VERSION: ClassVar[int] = 2
 
     @property
     def _log(self) -> Any:

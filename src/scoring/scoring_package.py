@@ -27,9 +27,10 @@ from __future__ import annotations
 import hashlib
 import io
 import json
+from collections.abc import Sequence
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import ClassVar
+from typing import ClassVar, Protocol
 
 import numpy as np
 import pandas as pd
@@ -290,6 +291,12 @@ class ScoringPackageBuilder:
         return buf.getvalue()
 
 
+class PackageCompanion(Protocol):
+    """A file that travels with a scoring package without being hashed into it."""
+
+    def write(self, package_dir: Path) -> Path: ...
+
+
 @dataclass(frozen=True)
 class ScoringPackageStore:
     """Directory-backed cache for ``ScoringPackage``.
@@ -313,9 +320,18 @@ class ScoringPackageStore:
     def path_for(self, content_hash: str) -> Path:
         return self.root / content_hash
 
-    def write(self, package: ScoringPackage) -> Path:
+    def write(self, package: ScoringPackage, companions: Sequence[PackageCompanion] = ()) -> Path:
+        """Lay the package out under its content hash.
+
+        ``companions`` are files that belong to the package without being part
+        of what is hashed (the recipe of the rebuilt processes). They are
+        written into the directory before it is renamed into place, so an
+        interrupted run never leaves a package without them. A package that
+        exists already gets them written again, each replaced atomically."""
         target = self.path_for(package.content_hash)
         if target.exists():
+            for companion in companions:
+                companion.write(target)
             # Refresh mtime so the LRU eviction treats a re-used package
             # (e.g. clearing overrides back to baseline) as recent.
             target.touch()
@@ -344,6 +360,8 @@ class ScoringPackageStore:
             "correction_keys": [list(m) for m in package.corrections],
         }
         (partial / "ids.json").write_text(json.dumps(ids, sort_keys=True, default=str))
+        for companion in companions:
+            companion.write(partial)
 
         partial.rename(target)
         self._evict_lru(keep=target)

@@ -305,6 +305,50 @@ class TestEmitScoringPackage:
             "product_id",
         }
 
+    def test_writes_the_recipe_of_rebuilt_processes_beside_the_package(self, settings):
+        """A process rebuilt from ecoinvent tags each exchange with its
+        ecoinvent source; the emit stage collects the tagged exchanges that
+        reach the package into ``rebuilt_recipe.parquet`` beside it, so a
+        skeleton can carry the recipe instead of the amounts."""
+        from scoring.rebuilt_recipe import RebuiltRecipe
+
+        method_key = ("ef", "v3.1", "climate change", "GWP100")
+        _seed_method_cfs_registry(
+            settings,
+            method_key,
+            rows=[{"database": "bio3", "code": "co2", "amount": 1.0}],
+        )
+        _seed_empty_ecoinvent_exchanges(settings)
+        _seed_biosphere_catalog(settings)
+        _seed_empty_ef_cf_parquet(settings)
+        source = {
+            "output_code": "ei-wheat",
+            "input_database": "ecoinvent-biosphere",
+            "input_code": "co2",
+            "type": "biosphere",
+            "multiplier": 1.0,
+        }
+        data = _trivial_sp_data()
+        data[0]["exchanges"][1][RebuiltRecipe.ATTRIBUTE] = source
+
+        payload = LinkAllPipeline._emit_scoring_package(
+            FakeSimaProImporter(data), settings, RunReport()
+        )
+
+        package_dir = settings.paths.scoring_packages_root / payload["content_hash"]
+        recipe = RebuiltRecipe.read(package_dir)
+        assert recipe is not None
+        rows = recipe.frame
+        assert len(rows) == 1
+        row = rows.iloc[0]
+        assert row["output_id"] == ExchangeFrameBuilder.flow_id_for(("agb", "a"))
+        assert row["input_id"] == ExchangeFrameBuilder.flow_id_for(("bio3", "co2"))
+        assert (row["matrix"], row["sign"], row["source_output_code"]) == (
+            "biosphere",
+            1.0,
+            "ei-wheat",
+        )
+
     def test_does_not_import_matrix_purger(self, settings, monkeypatch):
         # MatrixPurger has been deleted — but if any future refactor
         # accidentally re-introduces it, this guard fails fast.
