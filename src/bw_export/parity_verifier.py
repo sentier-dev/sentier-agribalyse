@@ -46,6 +46,21 @@ class ParityResult:
 @dataclass(frozen=True)
 class ParityVerifier:
     tolerance: float = 1e-9
+    # A score can be the sum of terms that cancel: on the real system a few
+    # products have two land-use terms with opposite factors and equal amounts.
+    # One side then returns an exact 0 and the other the rounding residue of the
+    # sum (a fused multiply-add leaves about 1e-17 of one term), and relative to
+    # itself that residue is an error of 1. So the error of a score is measured
+    # against the score or against this fraction of its gross, the sum of the
+    # absolute terms it is made of, whichever is larger. The gross belongs to
+    # the one product and method, so the result does not depend on which other
+    # products are checked.
+    zero_floor: float = 1e-6
+
+    def relative_error(self, score: float, expected: float, gross: float) -> float:
+        """``|score - expected|`` relative to ``expected``, floored by the score's gross."""
+        denom = max(abs(expected), self.zero_floor * gross)
+        return abs(score - expected) / (denom if denom > 0 else 1.0)
 
     def assert_square(self, package: ScoringPackage) -> None:
         a = package.technosphere.matrix
@@ -101,11 +116,14 @@ class ParityVerifier:
             bwp.generic_directory_filesystem(dirpath=written.method_paths[anchor])
         )
 
+        for pid in product_ids:
+            assert native_scores[(str(pid), str(pid))].scores is not None, (
+                f"native scorer skipped {pid}"
+            )
         max_rel = 0.0
         n_checked = 0
         for pid in product_ids:
             native_res = native_scores[(str(pid), str(pid))]
-            assert native_res.scores is not None, f"native scorer skipped {pid}"
 
             # One factorization per product: stock bw2calc solves the
             # technosphere and assembles the inventory for the anchor method.
@@ -132,8 +150,8 @@ class ParityVerifier:
                     else self._characterise(method_cfs[method], inventory_vector, biosphere_row)
                 )
                 expected = native_res.scores[method]
-                denom = abs(expected) if expected != 0 else 1.0
-                rel = abs(score - expected) / denom
+                gross = self._gross(method_cfs[method], inventory_vector, biosphere_row)
+                rel = self.relative_error(score, expected, gross)
                 max_rel = max(max_rel, rel)
                 n_checked += 1
 
@@ -161,4 +179,16 @@ class ParityVerifier:
             row = biosphere_row.get(flow_id)
             if row is not None:
                 total += cf * float(inventory_vector[row])
+        return total
+
+    @staticmethod
+    def _gross(
+        cfs: dict[int, float], inventory_vector: np.ndarray, biosphere_row: dict[int, int]
+    ) -> float:
+        """``sum_f |cf_f * inventory_f|`` — what the score is made of before terms cancel."""
+        total = 0.0
+        for flow_id, cf in cfs.items():
+            row = biosphere_row.get(flow_id)
+            if row is not None:
+                total += abs(cf * float(inventory_vector[row]))
         return total

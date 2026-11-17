@@ -306,3 +306,102 @@ def test_main_returns_2_with_pyarrow_hint_when_no_parquet_engine(tmp_path, monke
 
 def test_ensure_parquet_engine_accepts_installed_pyarrow():
     imp._ensure_parquet_engine()  # pyarrow is a test dependency; must not raise
+
+
+# --------------------------------------------------------------------------- #
+# --verify measures a score's error as the export's own parity check does:
+# against the score, or against 1e-6 of its gross, whichever is larger. The
+# gross must be the same quantity on both sides, the sum over flows of
+# |cf x inventory|, each flow's inventory summed over activities first.
+# --------------------------------------------------------------------------- #
+
+
+class _FakeLca:
+    """bw2calc 1.x surface: ``LCA(demand, method=...)``, ``lci``, ``lcia``."""
+
+    characterized: ClassVar[list[list[float]]] = []
+
+    def __init__(self, demand, method=None):
+        self.demand, self.method = demand, method
+
+    def lci(self):
+        pass
+
+    def lcia(self):
+        from scipy import sparse
+
+        self.characterized_inventory = sparse.csr_matrix(np.array(self.characterized))
+        self.score = float(self.characterized_inventory.sum())
+
+
+def _fake_bw2calc(monkeypatch, characterized: list[list[float]]) -> None:
+    """Make ``_score`` see one characterised inventory, flows x activities."""
+    import types
+
+    monkeypatch.setattr(_FakeLca, "characterized", characterized)
+    monkeypatch.setitem(sys.modules, "bw2calc", types.SimpleNamespace(LCA=_FakeLca))
+
+
+class _FakeBd:
+    """No ``prepare_lca_inputs``: ``_score`` takes the bw2calc 1.x path."""
+
+    @staticmethod
+    def get_node(database, code):
+        return (database, code)
+
+
+# Flow 0 receives +2 from one activity and -2 from another: its inventory is 0.
+# Flow 1 receives 1e-9 from one activity.
+_CANCELLING_WITHIN_A_FLOW = [[2.0, -2.0], [1e-9, 0.0]]
+
+
+def test_score_gross_sums_each_flow_over_activities_first(monkeypatch):
+    _fake_bw2calc(monkeypatch, _CANCELLING_WITHIN_A_FLOW)
+
+    _, gross = imp._score(_FakeBd(), "act", ("m",))
+
+    # Per flow: |2 - 2| + |1e-9| = 1e-9. Per cell it would be 4 + 1e-9.
+    assert gross == pytest.approx(1e-9)
+
+
+def test_score_gross_equals_the_exports_measure(monkeypatch):
+    parity = pytest.importorskip("bw_export.parity_verifier", reason="needs the [bw] extra")
+    _fake_bw2calc(monkeypatch, _CANCELLING_WITHIN_A_FLOW)
+
+    _, gross = imp._score(_FakeBd(), "act", ("m",))
+
+    inventory = np.array([2.0 - 2.0, 1e-9])  # cf 1 per flow
+    exported = parity.ParityVerifier._gross({10: 1.0, 11: 1.0}, inventory, {10: 0, 11: 1})
+    assert gross == pytest.approx(exported)
+
+
+def _bundle(tmp_path: Path, expected: float) -> tuple[Path, pd.DataFrame]:
+    (tmp_path / "metadata").mkdir()
+    samples = {
+        "tolerance": 1e-6,
+        "samples": [{"activity_col_id": 7, "expected": [[["m"], expected]]}],
+    }
+    (tmp_path / "metadata" / "parity_samples.json").write_text(json.dumps(samples))
+    activities = pd.DataFrame([{"col_id": 7, "database": "agb", "code": "a"}])
+    return tmp_path, activities
+
+
+def test_verify_fails_a_small_score_whose_flows_cancel_elsewhere(monkeypatch, tmp_path):
+    # The importer's score is 1e-9 + 2e-12; the export expected 1e-9: 0.2 %
+    # off. Against a per-cell gross (4) the error would read 5e-7 and pass.
+    _fake_bw2calc(monkeypatch, [[2.0, -2.0], [1e-9 + 2e-12, 0.0]])
+    bundle, activities = _bundle(tmp_path, expected=1e-9)
+
+    with pytest.raises(imp.ImportError_, match="parity FAILED"):
+        imp._verify(_FakeBd(), bundle, activities, n=1)
+
+
+def test_verify_passes_a_rounding_residue_against_an_exact_zero(monkeypatch, tmp_path, capsys):
+    # Two terms of +40 and -40 in two flows: the export expected an exact 0,
+    # the importer is left with a residue of 1e-15 (1.25e-17 of the gross).
+    _fake_bw2calc(monkeypatch, [[40.0], [-40.0 + 1e-15]])
+    bundle, activities = _bundle(tmp_path, expected=0.0)
+
+    imp._verify(_FakeBd(), bundle, activities, n=1)
+
+    assert "Parity OK" in capsys.readouterr().out
