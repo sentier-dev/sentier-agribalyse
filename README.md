@@ -162,18 +162,18 @@ Share of the 2,451 backtested products within ±5% of ADEME's reference, shipped
 | Ozone depletion | 100.0% | 100.0% |
 | Ionising radiation | 100.0% | 100.0% |
 | Photochemical ozone formation | 100.0% | 100.0% |
-| Particulate matter | 98.8% | 98.8% |
+| Particulate matter | 98.9% | 98.9% |
 | Acidification | 93.6% | 93.6% |
 | Eutrophication, freshwater / marine / terrestrial | 100.0% / 100.0% / 96.2% | 100.0% / 100.0% / 96.2% |
 | Land use | 100.0% | 100.0% |
 | Energy resources / material resources | 100.0% / 100.0% | 100.0% / 100.0% |
-| Human toxicity, non-carcinogenic | 93.8% | 93.2% |
-| Ecotoxicity, freshwater | 95.8% | 52.7% |
-| Human toxicity, carcinogenic | 36.5% | 44.5% |
+| Human toxicity, non-carcinogenic | 94.1% | 94.0% |
+| Ecotoxicity, freshwater | 97.4% | 97.4% |
+| Human toxicity, carcinogenic | 98.4% | 98.4% |
 | Water use | 22.8% | 29.7% |
-| **All 19 indicators** | **91.4%** | **89.9%** |
+| **All 19 indicators** | **94.8%** | **95.1%** |
 
-The two variants differ on four indicators, for one reason: with the shipped file the ecoinvent background keeps its own sub-compartments and locations, where the embedded copies are aggregated blocks. Checked against SimaPro's own factors on the embedded copies, the ecoinvent route is the closer one on freshwater ecotoxicity, carcinogenic toxicity and water use. It moves the product scores toward ADEME's reference on ecotoxicity and away from it on carcinogenic toxicity and water use, two indicators that were already the weakest.
+A mapping that names an elementary flow without a code is linked in the exchange's own sub-compartment, as SimaPro characterises it. Before, it was linked in whichever variant had the smallest code, and the two variants differed on four indicators: freshwater ecotoxicity (95.8% shipped, 52.7% full), carcinogenic toxicity (36.5%, 44.5%), non-carcinogenic toxicity (93.7%, 93.2%) and water use. All 19 indicators were at 91.4% and 89.9%. Now the two variants agree within 0.1 point on every indicator except water use. Water use differs for one reason: with the shipped file the ecoinvent background keeps its own sub-compartments and locations, where the embedded copies are aggregated blocks. Checked against SimaPro's own factors on the embedded copies, the ecoinvent route is the closer one on water use, and it moves the product scores away from ADEME's reference.
 
 Maintainers holding the full export rebuild the three files with `uv run dds-strip-ecoinvent`. It fails if any process of the aggregated-process deletion list survives, and `tests/integration/test_ecoinvent_free_csv_shipped.py` audits the committed files.
 
