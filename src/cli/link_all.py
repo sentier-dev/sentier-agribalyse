@@ -36,7 +36,9 @@ class LinkAllCli(BaseCli):
                 "Which Agribalyse CSV to read. 'auto' (default) reads ADEME's full "
                 "export when it is in source/, else the ecoinvent-free CSV shipped "
                 "with the repository; 'ecoinvent-free' reads that one although the "
-                "full export is there (to build a package for dds-build-skeleton)."
+                "full export is there (to build a package for dds-build-skeleton). "
+                "Commands without --csv (dds-set-parameter, dds-list-parameters, ...) "
+                "read what the last dds-link-all asked for."
             ),
         )
         return p

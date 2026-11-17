@@ -148,7 +148,7 @@ Which file is read:
 
 - `source/AGB32_final.CSV` (ADEME's full export), when you have it. It is gitignored and the guard refuses it.
 - Otherwise the shipped archive, decompressed once into `cache/`.
-- `dds-link-all --csv ecoinvent-free` reads the shipped archive although the full export is there, for a package `dds-build-skeleton` accepts; `--csv full` insists on the full export.
+- `dds-link-all --csv ecoinvent-free` reads the shipped archive although the full export is there, for a package `dds-build-skeleton` accepts; `--csv full` insists on the full export. Commands without `--csv` (`dds-set-parameter`, `dds-list-parameters`, …) read what the last `dds-link-all` asked for.
 
 `dashboard/run_report.json` records the variant under `stages.csv_source` and the rebuild under `stages.unit_copy_rebuild`.
 

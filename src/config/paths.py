@@ -211,6 +211,12 @@ class Paths:
         return self.cache / "linked_cache.pkl"
 
     @property
+    def agribalyse_csv_request(self) -> Path:
+        """Which CSV the last ``dds-link-all`` asked for (``auto``, ``full`` or
+        ``ecoinvent-free``); commands that ask for none follow it."""
+        return self.cache / "agribalyse_csv_request.txt"
+
+    @property
     def parameter_overrides_csv(self) -> Path:
         """Local what-if parameter overrides (gitignored; cleared by ``dds-reset``)."""
         return self.source / "parameter_overrides.csv"

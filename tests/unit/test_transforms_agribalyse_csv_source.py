@@ -119,6 +119,72 @@ class TestRequest:
             settings.with_agribalyse_csv("free")
 
 
+class TestLastLinkRequest:
+    """A command that asks for no CSV (``Settings.agribalyse_csv is None``: every
+    command but ``dds-link-all``) reads what the last link asked for."""
+
+    @staticmethod
+    def _both(settings) -> None:
+        settings.paths.agribalyse_csv.write_bytes(b"full")
+        _write_xz(settings)
+
+    def test_without_a_record_the_full_export_wins(self, settings):
+        self._both(settings)
+
+        source = AgribalyseCsvSource(settings=settings)
+
+        assert (source.requested, source.variant, source.follows_last_link) == (
+            "auto",
+            "full",
+            False,
+        )
+
+    def test_the_last_links_request_is_followed(self, settings):
+        self._both(settings)
+        AgribalyseCsvSource(
+            settings=settings.with_agribalyse_csv("ecoinvent-free")
+        ).record_request()
+
+        source = AgribalyseCsvSource(settings=settings)
+
+        assert (source.requested, source.variant, source.follows_last_link) == (
+            "ecoinvent-free",
+            "ecoinvent-free",
+            True,
+        )
+        assert source.describe()["follows_last_link"] is True
+
+    def test_a_request_of_its_own_ignores_the_record(self, settings):
+        """``dds-link-all`` always asks (``auto`` by default): without ``--csv``
+        it reads the full export again, whatever the last link asked for."""
+        self._both(settings)
+        AgribalyseCsvSource(
+            settings=settings.with_agribalyse_csv("ecoinvent-free")
+        ).record_request()
+
+        source = AgribalyseCsvSource(settings=settings.with_agribalyse_csv("auto"))
+
+        assert source.variant == "full"
+        source.record_request()
+        assert AgribalyseCsvSource(settings=settings).variant == "full"
+
+    def test_following_a_request_whose_file_is_gone_says_whose_request_it_was(self, settings):
+        _write_xz(settings)
+        AgribalyseCsvSource(settings=settings.with_agribalyse_csv("full")).record_request()
+
+        with pytest.raises(AgribalyseCsvMissingError, match=r"last dds-link-all.*--csv full"):
+            AgribalyseCsvSource(settings=settings).path()
+
+    def test_a_record_that_names_no_csv_is_refused(self, settings):
+        _write_xz(settings)
+        settings.paths.agribalyse_csv_request.write_text("free\n")
+
+        with pytest.raises(
+            ValueError, match=r"agribalyse_csv_request\.txt names no Agribalyse CSV"
+        ):
+            AgribalyseCsvSource(settings=settings).path()
+
+
 class TestStamp:
     """What the caches record: which file fed the run, and its state."""
 
@@ -173,6 +239,7 @@ class TestDescribe:
 
         assert AgribalyseCsvSource(settings=settings).describe() == {
             "requested": "auto",
+            "follows_last_link": False,
             "variant": "ecoinvent-free",
             "file": "AGB32_ecoinvent_free.CSV.xz",
         }
@@ -185,6 +252,7 @@ class TestDescribe:
 
         assert source.describe() == {
             "requested": "ecoinvent-free",
+            "follows_last_link": False,
             "variant": "ecoinvent-free",
             "file": "AGB32_ecoinvent_free.CSV.xz",
         }
