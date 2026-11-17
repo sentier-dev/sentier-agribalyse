@@ -20,16 +20,10 @@ a distinct product.
 One duplicate comes with every allocated product, though: the SimaPro
 reader already wrote a ``readonly_process`` child for it, and the
 ``Allocator`` adds its split of the same parent. The smallest id decides
-between the two. Their exchanges are the same; their location is not —
-``LinkAllPipeline._col_id_to_location`` knows the child by its
-``(database, code)`` and knows no synthetic id, so the regional
-correction (water use, freshwater ecotoxicity) reaches an allocated
-product only where the child is the one kept. The ids are stable since
-``StableCodeAssigner``, so the outcome is the same on every build. It is
-still arbitrary: on Agribalyse 3.2 the child is kept for 191 of the 1,592
-allocated products, and a change of the code scheme would pick others.
-Which of the two should stand for an allocated product is a decision of
-method that this class does not take."""
+between the two, and either may stand for the product: their exchanges
+are the same, and ``LinkAllPipeline._col_id_to_location`` gives both one
+location (the child's override, the parent's override, the child's own
+location, the parent's), so the product scores the same whichever is kept."""
 
 from __future__ import annotations
 

@@ -16,10 +16,10 @@ the product ids, on the index order of the matrices and on the content
 hash. They also disagreed on content: ``ProductDeduplicator`` keeps the
 producer with the smallest id, so which of two columns stood for an
 allocated product (the reader's read-only child or the ``Allocator``'s
-split) was drawn anew on each build. The two hold the same exchanges, but
-only the child has a location, so the regional correction of an allocated
-product followed the draw. With stable codes every build makes the same
-choice; the choice itself is still made by id order (see
+split) was drawn anew on each build, and the regional correction followed
+the draw wherever only the child had a location. With stable codes every
+build makes the same choice; ``LinkAllPipeline._col_id_to_location`` gives
+both columns one location, so the choice no longer changes a score (see
 ``ProductDeduplicator``).
 
 This step runs right after the parse and replaces each of those values by
