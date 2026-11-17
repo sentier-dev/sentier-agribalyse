@@ -290,6 +290,25 @@ class TestEmitScoringPackage:
         assert settings.paths.dashboard_run_report.read_bytes() == last_report
         assert not list(settings.paths.dashboard.glob("*.partial"))
 
+    def test_registry_without_a_climate_method_emits_and_says_it_was_not_audited(self, settings):
+        # Same emitted CO2 without a factor as in the failing tests, but no climate method:
+        # the audit has nothing to certify, so it must not report a pass either.
+        _seed_method_cfs_registry(
+            settings, ("ef", "v3.1", "acidification", "AE"), rows=list(self.NO_CO2_FACTOR)
+        )
+        _seed_empty_ecoinvent_exchanges(settings)
+        _seed_biosphere_catalog(settings)
+        _seed_empty_ef_cf_parquet(settings)
+        report = RunReport()
+        payload = LinkAllPipeline._emit_scoring_package(
+            FakeSimaProImporter(_trivial_sp_data()), settings, report
+        )
+        assert (settings.paths.scoring_packages_root / payload["content_hash"]).is_dir()
+        assert report.stages["characterization_audit"]["status"] == "not_audited"
+        receipt = json.loads(settings.paths.dashboard_characterization_audit.read_text())
+        assert receipt["status"] == "not_audited"
+        assert receipt["not_audited_reason"]
+
     def test_failed_audit_in_a_fast_rescore_keeps_the_last_run_report(self, settings):
         # The fast path loads the last report from disk; a failed audit must not put
         # ``status: failed`` next to the content hash of the package that passed.
