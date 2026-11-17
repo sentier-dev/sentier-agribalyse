@@ -134,12 +134,14 @@ writer; their shapes are those `EcoinventMetadataSnapshotter`
 
 It applies to ADEME's full SimaPro export too, if you hold one:
 `source/AGB32_final.CSV` embeds ecoinvent inventories (the
-`… - Copied from Ecoinvent U` processes). It is gitignored. The guard refuses
+`… - Copied from Ecoinvent U` and `… - Adapted from Ecoinvent U`
+processes). It is gitignored. The guard refuses
 every file under `source/` whose name holds `.csv` in any case, so also a
 compressed or renamed copy and one in a subfolder, and a file named
 `AGB32_final.*` anywhere. The one exception is the stripped archive
-`source/AGB32_ecoinvent_free.CSV.xz`, by its exact path: the guard does not
-look into it, a test checks its checksum against the manifest.
+`source/AGB32_ecoinvent_free.CSV.xz`, by its exact path. The guard opens it
+and refuses it while a `Copied from` or `Adapted from Ecoinvent` block is
+still inside, and a test checks its checksum against the manifest.
 
 This applies equally to everything *derived* from the regenerated data. Once
 the pipeline has run, these outputs carry licensed numbers too:
@@ -165,7 +167,8 @@ The repo keeps these paths out of git in two places:
 2. A pre-commit guard at `.githooks/pre-commit`, which refuses the licensed
    files, the activities and elementary-flow snapshots, every path in the
    table above, any SimaPro
-   export under `source/` but the stripped archive, and a file named
+   export under `source/` but the stripped archive, the stripped archive
+   itself while an embedded ecoinvent block is still inside, and a file named
    `AGB32_final.*` anywhere, wired into the existing `pre-commit`
    framework as the `ecoinvent-eula-guard` hook. Activate once per clone (this
    also installs the ruff hooks):

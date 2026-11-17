@@ -58,14 +58,24 @@ class TestStrip:
     def test_removes_only_marked_blocks_and_keeps_the_rest_byte_identical(self):
         result = EcoinventStripper().strip(_full())
 
-        expected = (HEADER + KEPT_A + ADAPTED + KEPT_B + TRAILER).encode("latin-1")
+        expected = (HEADER + KEPT_A + KEPT_B + TRAILER).encode("latin-1")
         assert result.stripped == expected
 
     def test_removed_rows_carry_identifier_type_and_block_hash(self):
         result = EcoinventStripper().strip(_full())
 
-        assert [r.identifier for r in result.removed] == ["AGB0002", "AGB0004", "AGB0005"]
-        assert [r.process_type for r in result.removed] == ["System", "Unit process", "System"]
+        assert [r.identifier for r in result.removed] == [
+            "AGB0002",
+            "AGB0003",
+            "AGB0004",
+            "AGB0005",
+        ]
+        assert [r.process_type for r in result.removed] == [
+            "System",
+            "Unit process",
+            "Unit process",
+            "System",
+        ]
         block = COPY_S.encode("latin-1").rstrip(b"\r\n") + b"\r\n"
         assert result.removed[0].sha256 == hashlib.sha256(block).hexdigest()
 
@@ -73,7 +83,21 @@ class TestStrip:
         result = EcoinventStripper().strip(_full())
 
         assert result.processes_total == 6
-        assert result.processes_kept == 3
+        assert result.processes_kept == 2
+
+    def test_adapted_blocks_are_removed_like_copied_ones(self):
+        result = EcoinventStripper().strip(_full())
+
+        assert {r.identifier: r.marker for r in result.removed}["AGB0003"] == (
+            "Adapted from Ecoinvent"
+        )
+        assert b"Adapted from" not in result.stripped
+
+    def test_a_single_marker_can_be_selected(self):
+        result = EcoinventStripper(markers=("Copied from Ecoinvent",)).strip(_full())
+
+        assert [r.identifier for r in result.removed] == ["AGB0002", "AGB0004", "AGB0005"]
+        assert b"Adapted from" in result.stripped
 
     def test_marker_match_ignores_case(self):
         result = EcoinventStripper().strip(_full())
@@ -85,7 +109,7 @@ class TestStrip:
 
         result = EcoinventStripper().strip(raw)
 
-        assert len(result.removed) == 3
+        assert len(result.removed) == 4
         assert b"Copied from" not in result.stripped
 
     def test_nothing_to_strip_returns_input_unchanged(self):
@@ -104,7 +128,12 @@ class TestAudit:
         assert stripper.leftovers(stripper.strip(_full()).stripped) == ()
 
     def test_full_file_reports_marked_identifiers(self):
-        assert EcoinventStripper().leftovers(_full()) == ("AGB0002", "AGB0004", "AGB0005")
+        assert EcoinventStripper().leftovers(_full()) == (
+            "AGB0002",
+            "AGB0003",
+            "AGB0004",
+            "AGB0005",
+        )
 
     def test_required_identifiers_must_all_be_removed(self):
         stripper = EcoinventStripper(required_identifiers=frozenset({"AGB0002", "AGB0006"}))
@@ -126,14 +155,15 @@ class TestWrite:
 
         assert lzma.decompress(out.read_bytes()) == result.stripped
         manifest = json.loads(manifest_path.read_text())
-        assert manifest["marker"] == "Copied from Ecoinvent"
+        assert manifest["markers"] == ["Copied from Ecoinvent", "Adapted from Ecoinvent"]
         assert manifest["full_csv"]["sha256"] == hashlib.sha256(_full()).hexdigest()
         assert manifest["stripped_csv"]["sha256"] == hashlib.sha256(result.stripped).hexdigest()
         assert manifest["stripped_csv"]["bytes"] == len(result.stripped)
-        assert manifest["processes"] == {"total": 6, "kept": 3, "removed": 3}
+        assert manifest["processes"] == {"total": 6, "kept": 2, "removed": 4}
         assert manifest["removed"][0] == {
             "identifier": "AGB0002",
             "type": "System",
+            "marker": "Copied from Ecoinvent",
             "sha256": result.removed[0].sha256,
         }
 
@@ -161,7 +191,7 @@ class TestWrite:
 
 
 class TestUnitProcessNames:
-    def test_strip_reports_the_names_of_removed_unit_processes_only(self):
+    def test_strip_reports_the_names_of_removed_copied_unit_processes_only(self):
         result = EcoinventStripper().strip(_full())
 
         assert result.unit_process_names == (
