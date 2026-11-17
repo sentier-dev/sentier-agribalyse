@@ -1,26 +1,33 @@
 # BOOTSTRAP.md — regenerating the ecoinvent-derived working data
 
-This repository **does not ship any proprietary ecoinvent data**. To keep it
-publishable under the ecoinvent EULA (v3, 2022-04-01), the following derived
-artifacts are gitignored and must be regenerated locally by a **licensed
-ecoinvent user** from their own credentials:
+This repository **does not ship any licensed ecoinvent data**: no exchange
+amounts (Data Points), no characterisation factors from ecoinvent's LCIA
+implementation, and no build that embeds them, so it stays publishable under the
+ecoinvent EULA (v3, 2022-04-01).
 
-| Path | Content |
-|---|---|
-| `source/ecoinvent-3.9.1-cutoff-exchanges.parquet` | LCI exchange amounts (Data Points) |
-| `source/ecoinvent-3.9.1-cutoff-activities.json` | activity nomenclature (name / location / reference product / code) |
-| `source/ecoinvent-3.9.1-biosphere-flows.json` | ecoinvent elementary-flow nomenclature |
-| `source/ef-v31-methods.json` | EF v3.1 methods with CFs inherited against the ecoinvent biosphere |
-| `registry/method_cfs/ecoinvent-3.9.1__*/` | per-method CF parquets keyed by ecoinvent biosphere UUID (rebuilt by `dds-build-registry`) |
+Names are a different matter. ecoinvent publishes the metadata used in its
+datasets (activity names, products, elementary flows, geographies, units,
+compartments) in its Data Glossary under the Open Database License (ODbL), with
+individual entries under the Database Contents License
+([archived copy](https://web.archive.org/web/20260911185012/https://glossary.ecoinvent.org/); the glossary host no longer resolves). A single name
+can be cited freely; a substantial extract, such as a whole snapshot below, may
+only be published under the ODbL with its notice.
 
-> **⚠️ These regenerated files ARE licensed ecoinvent data. NEVER commit them.**
+The following artifacts are regenerated locally by a **licensed ecoinvent
+user** from their own credentials:
+
+| Path | Content | In git? |
+|---|---|---|
+| `source/ecoinvent-3.9.1-cutoff-exchanges.parquet` | LCI exchange amounts (Data Points) | **licensed: never commit** |
+| `source/ef-v31-methods.json` | EF v3.1 methods with CFs attached to the ecoinvent biosphere through ecoinvent's LCIA implementation | **licensed: never commit** |
+| `registry/method_cfs/ecoinvent-3.9.1__*/` | per-method CF parquets keyed by ecoinvent biosphere UUID (rebuilt by `dds-build-registry`) | **licensed: never commit** |
+| `source/ecoinvent-3.9.1-cutoff-activities.json` | dataset list (name / location / unit / reference product) plus bw2io's `code` (MD5 of ecoinvent's activity and product UUIDs), no amounts | **keep local**: the names are ODbL glossary data, but this list and `code` are not confirmed as published |
+| `source/ecoinvent-3.9.1-biosphere-flows.json` | elementary flows (UUID / name / compartment / unit / CAS / synonyms), no amounts | **ODbL, not EULA data**: ecoinvent Data Glossary content; the tracked `source/biosphere3-flows.json` holds the 3.9 version of this list. Ignored because it is regenerated, and the guard refuses it until this reading is confirmed |
+
+> **⚠️ The files marked "licensed" or "keep local", the outputs built from them (section 5) and any built `bw_package/` must NEVER be committed.**
 > `.gitignore` and the pre-commit guard (`.githooks/`, see section 5) block them,
 > but the responsibility is yours. Publishing more than five (5) ecoinvent Data
-> Points, or any ecoinvent nomenclature, breaches the EULA (§6.1 / §7 / §9,
-> CHF 100,000 confidentiality penalty).
-
-The rationale and full data classification live in
-[`docs/superpowers/specs/2026-06-03-ecoinvent-eula-clean-repo-design.md`](docs/superpowers/specs/2026-06-03-ecoinvent-eula-clean-repo-design.md).
+> Points breaches the EULA (§6.1 / §7 / §9, CHF 100,000 confidentiality penalty).
 
 ---
 
@@ -56,7 +63,7 @@ It does everything this file used to describe by hand:
 1. downloads ecoinvent 3.9.1 cutoff with your credentials and imports it into
    a private Brightway project under `cache/bootstrap-brightway/` (your own
    Brightway projects are not touched);
-2. writes the four files of the table above under `source/`.
+2. writes the four `source/` files of the table above.
 
 Count on about five minutes and 1.5 GB under `cache/`. Running it again reuses
 the imported project and only rewrites the files. Add `--discard-project` to
@@ -127,20 +134,44 @@ writer; their shapes are those `EcoinventMetadataSnapshotter`
 
 It applies to ADEME's full SimaPro export too, if you hold one:
 `source/AGB32_final.CSV` embeds ecoinvent inventories (the
-`… - Copied from Ecoinvent U` and `… - Adapted from Ecoinvent U` processes). It is gitignored, and the guard
-refuses any uncompressed `.CSV` under `source/`.
+`… - Copied from Ecoinvent U` and `… - Adapted from Ecoinvent U`
+processes). It is gitignored. The guard refuses
+every file under `source/` whose name holds `.csv` in any case, so also a
+compressed or renamed copy and one in a subfolder, and a file named
+`AGB32_final.*` anywhere. The one exception is the stripped archive
+`source/AGB32_ecoinvent_free.CSV.xz`, by its exact path. The guard opens it
+and refuses it while a `Copied from` or `Adapted from Ecoinvent` block is
+still inside, and a test checks its checksum against the manifest.
 
-This applies equally to everything *derived* from the regenerated data —
-including the Brightway export `bw_package/` written by
-`dds-build-bw-package` after the pipeline has run (it embeds ecoinvent
-LCI amounts).
+This applies equally to everything *derived* from the regenerated data. Once
+the pipeline has run, these outputs carry licensed numbers too:
 
-The repo blocks these paths in two places:
+| Path | Written by | Licensed content |
+|---|---|---|
+| `cache/scoring_packages/<hash>/` | `dds-link-all` | ecoinvent exchange amounts and the registry CFs, as CSR matrices |
+| `cache/importer_cache.pkl`, `cache/linked_cache.pkl` | `dds-link-all` | the parsed and linked SimaPro CSV: the linked one holds the unit processes rebuilt from the ecoinvent snapshot, with their amounts, and both hold ADEME's copied ecoinvent processes when the full export was read |
+| `registry/method_cfs/<slug>/` | `dds-build-method-cfs-registry` | per-method CFs, including those inherited from `source/ef-v31-methods.json` |
+| `registry/cf_comparison_join.parquet`, `dashboard/cf_comparison.csv` | `dds-compare-cfs`, `dds-build-cf-comparison-csv` | the registry CF of each flow (`cf_registry`) |
+| `to_review/cf_comparison/` | `CfComparisonExporter` | the mean registry CF of each flow |
+| `dashboard/decomp/` | `dds-build-flow-decomp` | per-flow inventory and registry CF for each product |
+| `dashboard/product_reasons.json` | `dds-build-product-reasons` | notes written from the decomposition's flow shares and CF differences |
+| `registry/ecoinvent_catalog.parquet`, `registry/activity_catalog.parquet` | `dds-build-ecoinvent-catalog`, `dds-link-all` | the dataset list with bw2io's `code`, as in the activities snapshot |
+| `bw_package/` | `dds-build-bw-package` | ecoinvent LCI amounts and the registry CFs |
 
-1. `.gitignore` — the `ecoinvent EULA` block.
-2. A pre-commit guard at `.githooks/pre-commit`, wired into the existing
-   `pre-commit` framework as the `ecoinvent-eula-guard` hook. Activate once per
-   clone (this also installs the ruff hooks):
+The repo keeps these paths out of git in two places:
+
+1. `.gitignore` — the `ecoinvent EULA` block (the four snapshot files and
+   `registry/method_cfs/`), the entries for SimaPro exports under `source/`
+   and for `AGB32_final.*`, and the entries `registry/*.parquet`, `cache/`,
+   `dashboard/*`, `to_review/*` and `bw_package/`.
+2. A pre-commit guard at `.githooks/pre-commit`, which refuses the licensed
+   files, the activities and elementary-flow snapshots, every path in the
+   table above, any SimaPro
+   export under `source/` but the stripped archive, the stripped archive
+   itself while an embedded ecoinvent block is still inside, and a file named
+   `AGB32_final.*` anywhere, wired into the existing `pre-commit`
+   framework as the `ecoinvent-eula-guard` hook. Activate once per clone (this
+   also installs the ruff hooks):
 
    ```bash
    pip install pre-commit   # if not already present
@@ -151,5 +182,17 @@ The repo blocks these paths in two places:
    instead: `git config core.hooksPath .githooks`. (Don't do both — `core.hooksPath`
    overrides `.git/hooks`, so `pre-commit install` would be bypassed.)
 
-If `git add` ever stages one of the gitignored ecoinvent paths (e.g. via
-`git add -f`), the guard aborts the commit. Do not override it.
+The guard also refuses a `bw_package` directory anywhere in a path, an archive
+of it (`bw_package.zip`, `bw_package.tar.gz` and the like), and the matrix files of a scoring package or a Brightway
+export under any directory name (`*.csr.npz`; `technosphere.*.npy`,
+`biosphere.*.npy`, `characterization.*.npy`), so an export written with
+`--out` is caught as well. Both hold under `src/` and `tests/` too, so a test
+fixture cannot be a matrix file of these names. It refuses suffixed copies of the licensed files
+(`…-exchanges.parquet.bak`) on purpose: they hold the same data. It checks
+renamed and non-ASCII paths. It allows the tracked elementary-flow list
+`source/biosphere3-flows.json`,
+`registry/method_cfs/_index.json`, `registry/cf_comparison_by_code.parquet`
+(SimaPro CFs only) and the product scores under `dashboard/backtest/`.
+
+If `git add -f` stages any of these paths, the guard aborts the commit. Do not
+override it.

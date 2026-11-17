@@ -26,17 +26,22 @@ venv/
 # the snapshotted state instead.
 .bw_projects/
 
-# ── ecoinvent EULA: proprietary Licensed Data — NEVER COMMIT ──
-# Licensed local working copies only. Regenerate from your own ecoinvent
-# credentials per BOOTSTRAP.md. See
-# docs/superpowers/specs/2026-06-03-ecoinvent-eula-clean-repo-design.md.
+# ── ecoinvent EULA: licensed data — NEVER COMMIT ──
+# Exchange amounts, CFs attached through ecoinvent's LCIA implementation, and
+# ecoinvent's dataset list (kept local: not confirmed as published).
+# Regenerate from your own ecoinvent credentials per BOOTSTRAP.md.
 source/ecoinvent-3.9.1-cutoff-exchanges.parquet
 source/ecoinvent-3.9.1-cutoff-activities.json
-source/ecoinvent-3.9.1-biosphere-flows.json
 source/ef-v31-methods.json
+# ecoinvent elementary flows: names, units, compartments (no amounts).
+# ecoinvent publishes these under the ODbL (Data Glossary). Ignored because
+# BOOTSTRAP.md regenerates them; the guard refuses the snapshot too until that
+# reading is confirmed.
+source/ecoinvent-3.9.1-biosphere-flows.json
 # Entire per-method CF tree is ecoinvent-3.9.1-keyed + rebuilt by
 # `dds-build-registry` (subdirs hold CF rows keyed by ecoinvent biosphere
-# UUID; _index.json is their manifest). None of it ships.
+# UUID; _index.json is their manifest). None of it ships; the pre-commit
+# guard refuses every subdir.
 registry/method_cfs/
 
 # ADEME's full SimaPro export embeds ecoinvent inventories — NEVER COMMIT
@@ -45,6 +50,11 @@ registry/method_cfs/
 source/AGB32_final.CSV
 source/*.CSV
 source/*.csv
+# Compressed or renamed copies hold the same data, in a subfolder too; only
+# the stripped archive is in git.
+source/**/*.[Cc][Ss][Vv]*
+[Aa][Gg][Bb]32_final.*
+!source/AGB32_ecoinvent_free.CSV.xz
 
 # Brightway Flows consensus list (46 MB, over the file-size guard). Fetched
 # and sha256-checked by `dds-fetch-harmonised-flows`.
@@ -55,7 +65,10 @@ source/parameter_overrides.csv
 
 # Built registry — regeneratable from source/ via `dds-build-registry`.
 # Bit-identical re-builds, so we keep it out of git (parquets and the
-# registry.meta.json that records their source hashes).
+# registry.meta.json that records their source hashes). Three of the parquets
+# are also refused by the pre-commit guard: cf_comparison_join.parquet
+# (registry CF per flow) and ecoinvent_catalog / activity_catalog (the dataset
+# list).
 registry/*.parquet
 registry/registry.meta.json
 
@@ -66,11 +79,14 @@ registry/registry.meta.json
 # the pipeline has run: backtest_pass1.csv (written by `dds-backtest`), the
 # registry, to_review/ and unlinked/.
 #
-# The dashboard's generated data (cf_comparison.csv, product_reasons.json) is
-# NOT shipped: those files embed ecoinvent elementary-flow nomenclature
-# (name/compartment of registry flows) and are regenerated locally by a
-# licensed user via `dds-compare-cfs` / `dds-build-cf-comparison-csv` /
-# `dds-build-product-reasons`. Only the static UI shell + vendored JS ship.
+# The dashboard's generated data (cf_comparison.csv, decomp/,
+# product_reasons.json) is NOT shipped: those files carry numbers from the
+# licensed build (CF rows joined through ecoinvent's LCIA implementation,
+# per-flow contributions of ecoinvent-linked products) and are regenerated
+# locally by a licensed user via `dds-compare-cfs` /
+# `dds-build-cf-comparison-csv` / `dds-build-flow-decomp` /
+# `dds-build-product-reasons`; the pre-commit guard refuses them, as it does
+# to_review/cf_comparison/. Only the static UI shell + vendored JS ship.
 dashboard/*
 !dashboard/.gitkeep
 !dashboard/backtest_dashboard.html
@@ -84,11 +100,17 @@ to_review/*
 unlinked/*
 !unlinked/.gitkeep
 
-# Parquet caches of upstream xlsx (rebuilt from source)
+# Caches rebuilt by the pipeline: parquet copies of upstream xlsx, the SimaPro
+# CSV parse and linked-graph pickles, and the scoring packages. The scoring
+# packages and the linked-graph pickle carry licensed ecoinvent amounts (the
+# CSV parse too, when ADEME's full export was read); the pre-commit guard
+# refuses everything under cache/.
 cache/
 
 # Brightway export (dds-build-bw-package) — contains licensed ecoinvent
-# amounts; never commit or redistribute (also blocked by the pre-commit guard)
+# amounts; never commit or redistribute. The pre-commit guard refuses a
+# bw_package/ directory at any depth, bw_package.* archives, and the export's
+# matrix files under any --out name.
 bw_package/
 
 # OS
@@ -106,3 +128,10 @@ CLAUDE.md
 MEMORY.md
 docs/
 .gstack/
+
+# Isolated community experiments and private evidence
+.local/
+community/private/
+
+# Generated public documentation
+_site/

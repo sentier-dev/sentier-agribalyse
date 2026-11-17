@@ -1,0 +1,33 @@
+{
+  "id": "C001",
+  "title": "Review parameter scenarios and mapping contributions against the canonical AGRIBALYSE import",
+  "status": "proposed",
+  "baseline": {
+    "dataset": "AGRIBALYSE",
+    "release": "3.2",
+    "import_repository": "https://github.com/sentier-dev/sentier-agribalyse",
+    "import_revision": "f75a44db8ea1e6a06094d151012706b9ec6daa8d",
+    "input_hashes": {}
+  },
+  "layer": {
+    "kind": "parameter-scenario-or-curated-mapping",
+    "implementation_url": "https://github.com/sentier-dev/sentier-agribalyse/pull/4",
+    "implementation_revision": "f75a44db8ea1e6a06094d151012706b9ec6daa8d",
+    "payloads": []
+  },
+  "evidence": [
+    "https://github.com/sentier-dev/sentier-agribalyse/pull/4",
+    "https://github.com/sentier-dev/sentier-agribalyse/pull/2"
+  ],
+  "required_checks": [
+    "baseline-reproduction",
+    "input-scope-equivalence",
+    "intended-change-and-regression",
+    "export-score-parity"
+  ],
+  "runs": [],
+  "required_reviewers": [],
+  "approvals": [],
+  "objections": [],
+  "upstream_project": "ADEME / AGRIBALYSE"
+}

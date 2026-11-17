@@ -1,0 +1,22 @@
+{
+  "baseline_id": "dataset-release__import-revision__input-hashes",
+  "scope": {
+    "background": "release/system-model",
+    "method": "version/category",
+    "functional_unit": "quantity/unit",
+    "allocation": "rule",
+    "boundary": "stage",
+    "geography": "region"
+  },
+  "metrics": {
+    "processes": {
+      "value": 1,
+      "unit": "count"
+    },
+    "unresolved_exchanges": {
+      "value": 0,
+      "unit": "count"
+    }
+  },
+  "checks": []
+}

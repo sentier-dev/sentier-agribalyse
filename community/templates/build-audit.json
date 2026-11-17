@@ -1,0 +1,64 @@
+{
+  "dataset": "synthetic",
+  "release": "test",
+  "revision": "test-revision",
+  "input_sha256": {
+    "input": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+  },
+  "scope": {
+    "background": "synthetic",
+    "method_source": "synthetic",
+    "functional_unit": "synthetic",
+    "allocation": "synthetic",
+    "boundary": "synthetic",
+    "geography": "synthetic",
+    "representation": "synthetic"
+  },
+  "counts": {
+    "source": {
+      "processes": 2,
+      "production": 2,
+      "technosphere": 1,
+      "biosphere": 3
+    },
+    "imported": {
+      "processes": 2,
+      "production": 2,
+      "technosphere": 1,
+      "biosphere": 3
+    },
+    "served": {
+      "processes": 2,
+      "production": 2,
+      "technosphere": 1,
+      "biosphere": 3
+    }
+  },
+  "changes": [],
+  "methods": [
+    {
+      "id": "climate",
+      "emitted": [
+        "methane",
+        "co2-biogenic"
+      ],
+      "required": [
+        "methane",
+        "co2-biogenic"
+      ],
+      "factors": {
+        "methane": 27.0,
+        "co2-biogenic": 0.0
+      },
+      "excluded": {},
+      "policy_evidence_url": "https://example.org/synthetic-policy"
+    }
+  ],
+  "probes": {
+    "synthetic-product": 1.123456789012345
+  },
+  "packages": [],
+  "artifacts": {
+    "output": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+  }
+}
