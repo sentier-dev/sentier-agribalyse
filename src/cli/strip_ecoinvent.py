@@ -1,7 +1,8 @@
 """``dds-strip-ecoinvent`` — write the ecoinvent-free Agribalyse CSV.
 
 Maintainer-side: needs ADEME's full export (``source/AGB32_final.CSV``).
-Removes every ``Copied from Ecoinvent`` process block as text and writes
+Removes every ``Copied from Ecoinvent`` and ``Adapted from Ecoinvent``
+process block as text and writes
 ``source/AGB32_ecoinvent_free.CSV.xz`` plus the manifest of removed
 blocks. Fails if any process on the registry's deletion list survives.
 """

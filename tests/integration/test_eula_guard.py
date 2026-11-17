@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import lzma
 import shutil
 import subprocess
 from pathlib import Path
@@ -27,15 +28,29 @@ def repo(tmp_path: Path) -> Path:
     return tmp_path
 
 
+ARCHIVE = "source/AGB32_ecoinvent_free.CSV.xz"
+
+
+def _archive(product: str, *, section: str = "Products", inputs: str = "") -> bytes:
+    text = (
+        "{SimaPro 9.6.0.1}\r\n\r\nProcess\r\n\r\n"
+        "Type\r\nUnit process\r\n\r\n"
+        f"{section}\r\n{product};kg;1;100;not defined;Cat;\r\n\r\n"
+        f"Materials/fuels\r\n{inputs}\r\n\r\n"
+        "End\r\n\r\n"
+    )
+    return lzma.compress(text.encode("latin-1"), format=lzma.FORMAT_XZ)
+
+
 def _guard(repo: Path) -> subprocess.CompletedProcess:
     return subprocess.run(
         ["bash", str(repo / ".githooks" / "pre-commit")], cwd=repo, capture_output=True, text=True
     )
 
 
-def _stage(repo: Path, relative: str, *, force: bool = False) -> None:
+def _stage(repo: Path, relative: str, *, force: bool = False, content: bytes = b"x") -> None:
     path = repo / relative
-    path.write_bytes(b"x")
+    path.write_bytes(content)
     subprocess.run(["git", "add", *(["-f"] if force else []), relative], cwd=repo, check=True)
 
 
@@ -50,10 +65,42 @@ class TestGuard:
         assert name in result.stderr
 
     def test_allows_the_stripped_archive_and_its_manifest(self, repo):
-        _stage(repo, "source/AGB32_ecoinvent_free.CSV.xz")
+        _stage(repo, ARCHIVE, content=_archive("Wheat flour {FR}| production | Cut-off, U"))
         _stage(repo, "source/agribalyse-3.2-stripped-ecoinvent-processes.json")
 
         assert _guard(repo).returncode == 0
+
+    @pytest.mark.parametrize(
+        ("section", "name"),
+        [
+            ("Products", "Steel {RER}| production | Cut-off, S - Copied from Ecoinvent U"),
+            ("Products", "Banana {CO}| banana production | Cut-off, U - Adapted from Ecoinvent U"),
+            ("Waste treatment", "Waste {CH}| treatment | Cut-off, S - adapted from ecoinvent U"),
+        ],
+    )
+    def test_blocks_an_archive_that_still_holds_an_embedded_ecoinvent_block(
+        self, repo, section, name
+    ):
+        _stage(repo, ARCHIVE, content=_archive(name, section=section))
+
+        result = _guard(repo)
+
+        assert result.returncode == 1
+        assert "AGB32_ecoinvent_free.CSV.xz" in result.stderr
+
+    def test_an_input_line_naming_an_ecoinvent_dataset_is_not_a_block(self, repo):
+        content = _archive(
+            "Bread {FR}| baking | Cut-off, U",
+            inputs="Wheat {FR}| market | Cut-off, U - Adapted from Ecoinvent U;kg;0,7;Undefined",
+        )
+        _stage(repo, ARCHIVE, content=content)
+
+        assert _guard(repo).returncode == 0
+
+    def test_blocks_an_archive_that_is_not_xz(self, repo):
+        _stage(repo, ARCHIVE)
+
+        assert _guard(repo).returncode != 0
 
 
 class TestGitignore:
