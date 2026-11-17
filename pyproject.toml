@@ -98,10 +98,18 @@ llm-api = [
 pardiso = [
     "pypardiso>=0.4.6",
 ]
+# Sparse solver where pardiso cannot be installed: Apple Silicon has no `mkl`
+# wheel. With scikit-umfpack present, scipy's `factorized` (the `--solver
+# scipy` path) and bw2calc both use UMFPACK. It builds from source and needs
+# SuiteSparse and swig (Homebrew: `brew install suite-sparse swig`).
+umfpack = [
+    "scikit-umfpack>=0.4",
+]
 # Brightway export (`dds-build-bw-package`). Writes bw_processing
 # datapackages and parity-checks them through stock bw2calc; the core
 # runtime stays bw-free without this extra. Install together with
-# [pardiso] — the parity check needs it on the real matrix.
+# [pardiso] or [umfpack] — the parity check needs one of them on the real
+# matrix.
 bw = [
     "bw_processing>=1.0",
     "bw2calc>=2.0",

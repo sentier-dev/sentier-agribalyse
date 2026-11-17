@@ -2069,6 +2069,16 @@ wheels = [
 ]
 
 [[package]]
+name = "scikit-umfpack"
+version = "0.4.2"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "numpy" },
+    { name = "scipy" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/c9/87/e9837fbc60271bcbc569911814f3e63cb40c75aa4904a3d1d82cf8f5e079/scikit_umfpack-0.4.2.tar.gz", hash = "sha256:7cd652e6559804a52379f4ff367cfad54d6f7a6fc65a5e0bd26d26a1282c3f64", size = 33827, upload-time = "2025-07-08T08:52:41.643Z" }
+
+[[package]]
 name = "scipy"
 version = "1.17.1"
 source = { registry = "https://pypi.org/simple" }
@@ -2177,6 +2187,9 @@ test = [
     { name = "pytest-cov" },
     { name = "pytest-mock" },
 ]
+umfpack = [
+    { name = "scikit-umfpack" },
+]
 
 [package.metadata]
 requires-dist = [
@@ -2198,10 +2211,11 @@ requires-dist = [
     { name = "python-dotenv", specifier = ">=1.0" },
     { name = "randonneur", specifier = ">=0.6.3" },
     { name = "randonneur-data", specifier = ">=0.6.2" },
+    { name = "scikit-umfpack", marker = "extra == 'umfpack'", specifier = ">=0.4" },
     { name = "scipy", specifier = ">=1.10" },
     { name = "structlog", specifier = ">=25.0" },
 ]
-provides-extras = ["bootstrap", "test", "llm-api", "pardiso", "bw"]
+provides-extras = ["bootstrap", "test", "llm-api", "pardiso", "umfpack", "bw"]
 
 [[package]]
 name = "six"
