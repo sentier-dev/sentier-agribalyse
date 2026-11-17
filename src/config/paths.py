@@ -72,7 +72,8 @@ class Paths:
 
     @property
     def agribalyse_csv_ecoinvent_free_xz(self) -> Path:
-        """The committed export without the ``Copied from Ecoinvent`` blocks.
+        """The committed export without the ``Copied from Ecoinvent`` and
+        ``Adapted from Ecoinvent`` blocks.
         Written by ``dds-strip-ecoinvent``; read when the full CSV is absent."""
         return self.source / "AGB32_ecoinvent_free.CSV.xz"
 

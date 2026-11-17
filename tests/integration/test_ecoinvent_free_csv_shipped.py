@@ -1,7 +1,7 @@
 """Audit of the committed ecoinvent-free CSV (spec acceptance A1).
 
 Runs on the real shipped archive: no block carries the ``Copied from
-Ecoinvent`` marker, no process of the manifest or of the deletion list is
+Ecoinvent`` or ``Adapted from Ecoinvent`` marker, no process of the manifest or of the deletion list is
 present, and the archive is the one the manifest describes.
 """
 
@@ -60,7 +60,15 @@ class TestShippedArchive:
             rb"^(?:Products|Waste treatment)\r?\n([^\r\n;]*)", stripped, flags=re.MULTILINE
         )
         assert heads
-        assert [h for h in heads if b"copied from ecoinvent" in h.lower()] == []
+        assert [
+            h
+            for h in heads
+            if b"copied from ecoinvent" in h.lower() or b"adapted from ecoinvent" in h.lower()
+        ] == []
+
+    def test_both_markers_were_stripped(self, manifest):
+        assert manifest["markers"] == ["Copied from Ecoinvent", "Adapted from Ecoinvent"]
+        assert {row["marker"] for row in manifest["removed"]} == set(manifest["markers"])
 
     def test_no_removed_process_is_present(self, identifiers, manifest):
         removed = {row["identifier"] for row in manifest["removed"]}
@@ -80,7 +88,11 @@ class TestShippedArchive:
 class TestShippedUnitProcessNames:
     def test_one_name_per_removed_unit_process(self, manifest):
         payload = json.loads(PATHS.copied_unit_processes_json.read_text(encoding="utf-8"))
-        removed_units = [r for r in manifest["removed"] if r["type"] == "Unit process"]
+        removed_units = [
+            r
+            for r in manifest["removed"]
+            if r["type"] == "Unit process" and r["marker"] == "Copied from Ecoinvent"
+        ]
 
         assert len(payload["names"]) == len(removed_units)
         assert all("copied from ecoinvent" in name.lower() for name in payload["names"])

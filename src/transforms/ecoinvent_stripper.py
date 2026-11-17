@@ -1,15 +1,14 @@
 """``EcoinventStripper`` — remove embedded ecoinvent copies from the SimaPro CSV.
 
 The ADEME export of Agribalyse 3.2 embeds ecoinvent datasets as process
-blocks whose product name ends in ``… - Copied from Ecoinvent U``. Those
-blocks are licensed ecoinvent data and cannot be published. This class
+blocks whose product name ends in ``… - Copied from Ecoinvent U`` (the
+dataset as it is) or ``… - Adapted from Ecoinvent U`` (the dataset with a
+few values changed by ADEME; most of its amounts are still ecoinvent's).
+Both are licensed ecoinvent data and cannot be published. This class
 removes them **as text**: the file is split on SimaPro's ``Process`` /
 ``End`` block boundaries and every other byte (header, kept blocks,
 trailing sections, line endings, encoding) is left untouched. There is no
 parse and re-serialise step, so kept blocks cannot drift.
-
-``… - Adapted from Ecoinvent U`` blocks are ADEME's own modified datasets
-and are kept, as in the Agribalyse 4.0 "without ecoinvent" export.
 
 Maintainer-side tool: it needs the full CSV. Users of the public repo get
 its output, ``source/AGB32_ecoinvent_free.CSV.xz``.
@@ -34,11 +33,13 @@ class EcoinventLeftoverError(RuntimeError):
 
 @dataclass(frozen=True)
 class StrippedProcess:
-    """One removed block. No name and no amount: identifier, type, hash."""
+    """One removed block. No name and no amount: identifier, type, hash,
+    and which marker its product name carried."""
 
     identifier: str
     process_type: str
     sha256: str
+    marker: str = ""
 
 
 @dataclass(frozen=True)
@@ -47,7 +48,8 @@ class StripResult:
     removed: tuple[StrippedProcess, ...]
     processes_total: int
     unit_process_names: tuple[str, ...] = ()
-    """Product names of the removed blocks of type ``Unit process``."""
+    """Product names of the removed ``Copied from Ecoinvent`` blocks of
+    type ``Unit process`` (the ones ``UnitCopyRebuilder`` rebuilds)."""
 
     @property
     def processes_kept(self) -> int:
@@ -56,19 +58,20 @@ class StripResult:
 
 @dataclass(frozen=True)
 class EcoinventStripper:
-    """Strip every process block whose product name carries ``marker``.
+    """Strip every process block whose product name carries one of ``markers``.
 
     ``required_identifiers`` is a cross-check, not a selector: the strip
     fails when one of them survives (the registry's deletion list of
     aggregated ecoinvent processes is passed here by the CLI).
     """
 
-    marker: str = "Copied from Ecoinvent"
+    markers: tuple[str, ...] = ("Copied from Ecoinvent", "Adapted from Ecoinvent")
     encoding: str = "latin-1"
     required_identifiers: frozenset[str] = frozenset()
 
     XZ_PRESET: ClassVar[int] = 6
     UNIT_PROCESS: ClassVar[str] = "Unit process"
+    COPIED: ClassVar[str] = "Copied from Ecoinvent"
 
     # A block runs from a ``Process`` line to the next ``End`` line. The
     # blank lines that follow belong to it, so removing a block leaves the
@@ -100,7 +103,8 @@ class EcoinventStripper:
         for match in self._BLOCK.finditer(raw):
             total += 1
             block = match.group(0)
-            if not self._is_marked(block):
+            marker = self._marker_of(block)
+            if marker is None:
                 continue
             kept.append(raw[cursor : match.start()])
             cursor = match.end()
@@ -110,10 +114,15 @@ class EcoinventStripper:
                     identifier=self._field(self._IDENTIFIER, block),
                     process_type=process_type,
                     sha256=hashlib.sha256(self._body(block)).hexdigest(),
+                    marker=marker,
                 )
             )
             if process_type == self.UNIT_PROCESS:
-                unit_names += self._product_names(block)
+                unit_names += [
+                    name
+                    for name in self._product_names(block)
+                    if self.COPIED.lower() in name.lower()
+                ]
         kept.append(raw[cursor:])
         stripped = b"".join(kept)
         self._check(stripped)
@@ -169,8 +178,15 @@ class EcoinventStripper:
     # ── internals ────────────────────────────────────────────────────────
 
     def _is_marked(self, block: bytes) -> bool:
-        needle = self.marker.lower()
-        return any(needle in name.lower() for name in self._product_names(block))
+        return self._marker_of(block) is not None
+
+    def _marker_of(self, block: bytes) -> str | None:
+        """The first of ``markers`` found in one of the block's product names."""
+        names = [name.lower() for name in self._product_names(block)]
+        for marker in self.markers:
+            if any(marker.lower() in name for name in names):
+                return marker
+        return None
 
     def _product_names(self, block: bytes) -> list[str]:
         products = self._PRODUCTS.search(block)
@@ -196,7 +212,7 @@ class EcoinventStripper:
         left = self.leftovers(stripped)
         if left:
             raise EcoinventLeftoverError(
-                f"{len(left)} block(s) still carry the marker {self.marker!r}: {left[:5]}"
+                f"{len(left)} block(s) still carry one of {self.markers!r}: {left[:5]}"
             )
         if not self.required_identifiers:
             return
@@ -207,7 +223,7 @@ class EcoinventStripper:
         if survivors:
             raise EcoinventLeftoverError(
                 f"{len(survivors)} process(es) on the deletion list do not carry the "
-                f"marker {self.marker!r} and were not removed: {survivors[:5]}"
+                f"markers {self.markers!r} and were not removed: {survivors[:5]}"
             )
 
     def _manifest(self, raw: bytes, result: StripResult) -> dict[str, Any]:
@@ -216,11 +232,12 @@ class EcoinventStripper:
             "description": (
                 "Process blocks removed from the ADEME SimaPro export of Agribalyse 3.2 "
                 "to produce the ecoinvent-free CSV. One row per removed block: SimaPro "
-                "process identifier, process type and the sha256 of the removed block. "
+                "process identifier, process type, the marker its name carried and the "
+                "sha256 of the removed block. "
                 "No names and no amounts. Anyone holding the full export can re-run "
                 "dds-strip-ecoinvent and compare."
             ),
-            "marker": self.marker,
+            "markers": list(self.markers),
             "full_csv": self._fingerprint(raw),
             "stripped_csv": self._fingerprint(result.stripped),
             "processes": {
@@ -229,7 +246,12 @@ class EcoinventStripper:
                 "removed": len(result.removed),
             },
             "removed": [
-                {"identifier": r.identifier, "type": r.process_type, "sha256": r.sha256}
+                {
+                    "identifier": r.identifier,
+                    "type": r.process_type,
+                    "marker": r.marker,
+                    "sha256": r.sha256,
+                }
                 for r in result.removed
             ],
         }

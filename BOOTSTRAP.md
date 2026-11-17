@@ -127,7 +127,7 @@ writer; their shapes are those `EcoinventMetadataSnapshotter`
 
 It applies to ADEME's full SimaPro export too, if you hold one:
 `source/AGB32_final.CSV` embeds ecoinvent inventories (the
-`… - Copied from Ecoinvent U` processes). It is gitignored, and the guard
+`… - Copied from Ecoinvent U` and `… - Adapted from Ecoinvent U` processes). It is gitignored, and the guard
 refuses any uncompressed `.CSV` under `source/`.
 
 This applies equally to everything *derived* from the regenerated data —

@@ -28,4 +28,28 @@ if [ -n "$blocked" ]; then
   exit 1
 fi
 
+# The stripped archive itself: refuse it when a process block of an embedded
+# ecoinvent dataset is still inside ("Copied from Ecoinvent" as it is,
+# "Adapted from Ecoinvent" with a few values changed). Only the line that
+# names a block's product is checked; input lines may keep the names.
+archives="$(printf '%s\n' "$staged" | grep -E '^source/[^/]*\.(CSV|csv)\.xz$' || true)"
+for archive in $archives; do
+  if ! command -v xz >/dev/null 2>&1; then
+    echo "✖ ecoinvent EULA guard: xz is needed to check $archive before committing it." >&2
+    exit 1
+  fi
+  leftovers="$(git show ":$archive" | xz -dc | tr -d '\r' | awk '
+    prev == "Products" || prev == "Waste treatment" {
+      if (tolower($0) ~ /(copied|adapted) from ecoinvent[^;]*;/) n++
+    }
+    { prev = $0 }
+    END { print n + 0 }')"
+  if [ "$leftovers" != "0" ]; then
+    echo "✖ ecoinvent EULA guard: $archive still holds $leftovers embedded ecoinvent" >&2
+    echo "  process block(s) (Copied from / Adapted from Ecoinvent). Rebuild it with" >&2
+    echo "  dds-strip-ecoinvent; do not commit it as it is." >&2
+    exit 1
+  fi
+done
+
 exit 0

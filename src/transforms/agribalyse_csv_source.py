@@ -5,7 +5,8 @@ Two variants of the Agribalyse 3.2 export exist:
 * ``full`` — ``source/AGB32_final.CSV``, ADEME's export with the embedded
   ecoinvent copies. Local-only, never committed.
 * ``ecoinvent-free`` — ``source/AGB32_ecoinvent_free.CSV.xz``, the same
-  export without the ``Copied from Ecoinvent`` blocks (see
+  export without the ``Copied from Ecoinvent`` and ``Adapted from
+  Ecoinvent`` blocks (see
   ``EcoinventStripper``). Committed, so a clone runs with only an
   ecoinvent licence.
 
