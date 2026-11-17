@@ -148,3 +148,13 @@ def test_readme_tells_importer_users_to_install_pyarrow(tmp_path, synthetic_pack
     section_b = readme.split("## B. Import into Brightway")[1]
     assert "pyarrow" in section_b
     assert "conda install pyarrow" in section_b
+
+
+def test_readme_gives_the_legacy_install_command(tmp_path, synthetic_package):
+    """Legacy bw2data 3.x does not cap NumPy but needs NumPy 1, and pyarrow 26
+    needs NumPy 2 without declaring it: a legacy virtualenv needs both pins,
+    in one command a user can copy (the integration test uses the same pins)."""
+    _emit(tmp_path, synthetic_package)
+    section_b = (tmp_path / "README.md").read_text().split("## B. Import into Brightway")[1]
+    assert 'pip install "numpy<2" "pyarrow<26"' in section_b
+

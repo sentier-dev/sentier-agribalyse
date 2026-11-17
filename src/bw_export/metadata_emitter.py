@@ -108,12 +108,20 @@ strongly recommended: plain scipy works but each solve takes ~20s on this
 Run the importer **inside the same Python environment where Brightway (or
 Activity Browser) is installed** — it writes into *your* Brightway data
 directory, so it needs *your* `bw2data`. It works on both Brightway generations
-(legacy `bw2data` 3.x and `bw2data` 4.x / bw2.5); nothing here is pinned.
+(legacy `bw2data` 3.x and `bw2data` 4.x / bw2.5) and installs nothing itself.
+Besides `bw2data` and `bw2calc` it needs pandas and a parquet engine (pyarrow).
 
     # activate the env that has Activity Browser / Brightway, then:
     conda install pyarrow          # once; a fresh Activity Browser env has pandas
-                                   # but no parquet engine (pip install pyarrow in venvs)
+                                   # but no parquet engine
     python import_into_brightway.py --verify 3
+
+In a plain virtualenv, install pyarrow with pip. Legacy `bw2data` 3.x uses
+`np.NaN`, which NumPy 2 removed, but does not cap NumPy; pyarrow 26 needs NumPy 2
+without declaring it. A legacy environment therefore needs both pinned:
+
+    pip install "numpy<2" "pyarrow<26"   # legacy bw2data 3.x
+    pip install pyarrow                  # bw2data 4.x / bw2.5
 
 This creates a project (default `agribalyse-ef31`) with two databases — the
 activities database and its biosphere — and the 19 EF v3.1 methods, then

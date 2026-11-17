@@ -3,11 +3,14 @@
 Run this **inside the Python environment where Brightway (or Activity Browser)
 is installed** — it writes into *your* Brightway data directory using *your*
 ``bw2data``. It works on both Brightway generations (legacy ``bw2data`` 3.x and
-``bw2data`` 4.x / bw2.5); nothing here is pinned, and it imports nothing from the
-``sentier-agribalyse`` package. Besides ``bw2data`` it needs only ``pandas``
-plus a parquet engine (``pyarrow``): a fresh Activity Browser environment has
-pandas but NOT pyarrow, so run ``conda install pyarrow`` (or ``pip install
-pyarrow``) in that environment first. Its only inputs are the exported files:
+``bw2data`` 4.x / bw2.5), installs nothing itself, and imports nothing from the
+``sentier-agribalyse`` package. Besides ``bw2data`` and ``bw2calc`` it needs
+only ``pandas`` plus a parquet engine (``pyarrow``): a fresh Activity Browser
+environment has pandas but NOT pyarrow, so run ``conda install pyarrow`` (or
+``pip install pyarrow``) in that environment first. A virtualenv with legacy
+``bw2data`` 3.x needs ``pip install "numpy<2" "pyarrow<26"``: that ``bw2data``
+uses ``np.NaN``, which NumPy 2 removed, and pyarrow 26 needs NumPy 2 without
+declaring it. Its only inputs are the exported files:
 
     metadata/activities.parquet     col_id -> (database, code, name, unit,
                                     location, reference_product,
@@ -397,19 +400,42 @@ def _ensure_parquet_engine() -> None:
     Activity Browser's conda environment ships pandas but no parquet engine;
     without this check the user gets a pandas traceback on the first
     ``read_parquet`` instead of a one-line instruction.
+
+    An engine that is installed but fails on import is reported as such, with
+    its error: pyarrow 26 needs NumPy 2 without declaring it, so pip installs it
+    next to the NumPy 1 that legacy bw2data 3.x needs, and "install pyarrow"
+    would then be answered with "already satisfied".
     """
+    broken = []
     for engine in ("pyarrow", "fastparquet"):
         try:
             __import__(engine)
-        except ImportError:
+        except ModuleNotFoundError as exc:
+            if exc.name != engine:  # installed, but something it imports is missing
+                broken.append(f"{engine}: {exc}")
+            continue
+        except ImportError as exc:
+            broken.append(f"{engine}: {exc}")
             continue
         return
+    if broken:
+        raise ImportError_(
+            "a parquet engine is installed in this Python environment but cannot be "
+            "imported:\n"
+            + "".join(f"    {line}\n" for line in broken)
+            + "pyarrow 26 needs NumPy 2, and legacy bw2data 3.x needs NumPy 1. If that is "
+            "the error above, install an older pyarrow into the SAME environment, then "
+            "re-run:\n"
+            '    conda install "pyarrow<26"   # conda / mamba environments (Activity Browser)\n'
+            '    pip install "pyarrow<26"     # plain virtualenvs'
+        )
     raise ImportError_(
         "no parquet engine is installed in this Python environment (the export's "
         "metadata is stored as parquet). Install pyarrow into the SAME environment "
         "as Activity Browser / Brightway, then re-run:\n"
         "    conda install pyarrow      # conda / mamba environments (Activity Browser)\n"
-        "    pip install pyarrow        # plain virtualenvs"
+        "    pip install pyarrow        # plain virtualenvs with NumPy 2\n"
+        '    pip install "pyarrow<26"   # plain virtualenvs with NumPy 1 (legacy bw2data 3.x)'
     )
 
 

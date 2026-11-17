@@ -301,6 +301,32 @@ def test_main_returns_2_with_pyarrow_hint_when_no_parquet_engine(tmp_path, monke
     err = capsys.readouterr().err
     assert "pyarrow" in err
     assert "conda install pyarrow" in err
+    assert 'pip install "pyarrow<26"' in err  # the line a NumPy-1 virtualenv needs
+    assert "Traceback" not in err
+
+
+class _PyarrowNeedingNumpy2:
+    """A pyarrow that is installed but fails on import, as pyarrow 26 does next to NumPy 1."""
+
+    @staticmethod
+    def find_spec(name, path=None, target=None):
+        if name == "pyarrow":
+            raise ImportError("pyarrow requires NumPy 2.0 or newer, found 1.26.4")
+        return None
+
+
+def test_main_reports_an_installed_engine_that_fails_to_import(tmp_path, monkeypatch, capsys):
+    monkeypatch.delitem(sys.modules, "pyarrow", raising=False)
+    monkeypatch.setattr(sys, "meta_path", [_PyarrowNeedingNumpy2(), *sys.meta_path])
+    monkeypatch.setitem(sys.modules, "fastparquet", None)
+    rc = imp.main(["--bundle-dir", str(tmp_path), "--no-verify"])
+    assert rc == 2
+    err = capsys.readouterr().err
+    # Not "not installed": `pip install pyarrow` would answer "already satisfied".
+    assert "no parquet engine is installed" not in err
+    assert "cannot be imported" in err
+    assert "pyarrow requires NumPy 2.0 or newer, found 1.26.4" in err
+    assert 'pip install "pyarrow<26"' in err
     assert "Traceback" not in err
 
 
