@@ -14,6 +14,7 @@ from typing import ClassVar
 
 from cli._base import BaseCli
 from exports import MappingsComparisonExporter
+from transforms.stable_codes import StableCodeAssigner
 
 
 class MappingsComparisonCli(BaseCli):
@@ -36,6 +37,14 @@ class MappingsComparisonCli(BaseCli):
                 f"materialise the parsed AGB CSV."
             )
         sp = pickle.loads(cache.read_bytes())
+        if getattr(sp, "code_scheme", None) != StableCodeAssigner.SCHEME:
+            # The importer re-parses such a cache; this command only reads it,
+            # so it refuses rather than export codes the next build will not have.
+            raise RuntimeError(
+                f"importer cache {cache} holds codes of another scheme (parsed "
+                f"before the codes were derived from content). Run dds-link-all "
+                f"to re-parse it."
+            )
         return list(sp.data)
 
 
