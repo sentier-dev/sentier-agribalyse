@@ -150,6 +150,58 @@ class TestUnmatchedFlowDiagnostic:
         )
         assert outcome.status == "target_unresolved_only"
 
+    def test_name_only_target_resolves_in_the_row_sub_compartment(self, tmp_path: Path):
+        """The diagnostic replays the matcher, so it must pick the variant
+        the matcher picks: the row's own sub-compartment, not the smallest
+        code (``06…`` = long-term groundwater)."""
+        settings = make_settings(tmp_path)
+        registry = make_registry(
+            settings,
+            mappings_biosphere=make_mappings_biosphere_df(
+                [
+                    {
+                        "source_name": "Turbined water",
+                        "source_top_bucket": Bucket.WATER,
+                        "target_db": "",
+                        "target_code": "",
+                        "target_name": "Water",
+                        "target_unit": "",
+                        "priority_tier": int(Tier.CURATED_TARGETED),
+                    }
+                ]
+            ),
+        )
+        catalog = _catalog(
+            *(
+                BioFlowRef(
+                    db="ecoinvent-3.9.1-biosphere",
+                    code=code,
+                    name="Water",
+                    unit="cubic meter",
+                    bucket=Bucket.WATER,
+                    categories=cats,
+                )
+                for code, cats in (
+                    ("06-long-term", ("water", "ground-, long-term")),
+                    ("24-unspecified", ("water",)),
+                    ("db-surface", ("water", "surface water")),
+                )
+            )
+        )
+        diag = UnmatchedFlowDiagnostic(settings=settings, registry=registry, catalog=catalog)
+        unspecified = diag.diagnose(
+            UnmatchedInputRow(
+                name="Turbined water", unit="cubic meter", top_cat="water", sub_cat=None
+            )
+        )
+        river = diag.diagnose(
+            UnmatchedInputRow(
+                name="Turbined water", unit="cubic meter", top_cat="water", sub_cat="river"
+            )
+        )
+        assert unspecified.final_target_code == "24-unspecified"
+        assert river.final_target_code == "db-surface"
+
     def test_unmatchable_candidate_halts_walk(self, tmp_path: Path):
         settings = make_settings(tmp_path)
         registry = make_registry(

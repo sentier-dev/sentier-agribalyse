@@ -1421,6 +1421,324 @@ class TestTargetBucketFallbacks:
         )
 
 
+class TestNameOnlyTargetFollowsTheExchangeSubCompartment:
+    """A mapping that names its target without a code (the placeholder
+    sheets, CAS rows) used to resolve to the lexicographically smallest
+    code among every variant of that name in the bucket, whatever the
+    exchange's sub-compartment. For ``Water`` that is the long-term
+    groundwater variant, so ADEME's ``Turbined water`` (emissions to water,
+    unspecified) was linked as a long-term groundwater release. SimaPro
+    characterises an exchange in its own sub-compartment, and uses the
+    compartment's unspecified factor where that sub-compartment has none;
+    the resolution follows the same order."""
+
+    VARIANTS = (
+        ("06-long-term", ("water", "ground-, long-term")),
+        ("24-unspecified", ("water",)),
+        ("4f-ocean", ("water", "ocean")),
+        ("51-ground", ("water", "ground-")),
+        ("db-surface", ("water", "surface water")),
+    )
+
+    def _link(self, settings, tmp_path, categories, variants=VARIANTS):
+        df = make_mappings_biosphere_df(
+            [
+                {
+                    "source_name": "Turbined water",
+                    "source_top_bucket": Bucket.WATER,
+                    "target_db": "",
+                    "target_code": "",
+                    "target_name": "Water",
+                    "target_unit": "cubic meter",
+                    "priority_tier": Tier.CURATED_TARGETED,
+                }
+            ]
+        )
+        catalog = make_bio_catalog(
+            [
+                BioFlowRef(
+                    db="ecoinvent-3.9.1-biosphere",
+                    code=code,
+                    name="Water",
+                    unit="cubic meter",
+                    bucket=Bucket.WATER,
+                    categories=cats,
+                )
+                for code, cats in variants
+            ]
+        )
+        m = _matcher(
+            settings,
+            tmp_path,
+            registry=make_registry(settings, mappings_biosphere=df),
+            catalog=catalog,
+        )
+        sp_data = [
+            make_dataset(
+                "Glass, production",
+                exchanges=[
+                    make_exchange(
+                        type="biosphere",
+                        name="Turbined water",
+                        unit="cubic meter",
+                        categories=categories,
+                    )
+                ],
+            )
+        ]
+        m.match(sp_data)
+        return sp_data[0]["exchanges"][0]["input"][1]
+
+    def test_unspecified_exchange_links_to_the_unspecified_variant(self, settings, tmp_path):
+        assert self._link(settings, tmp_path, ("water",)) == "24-unspecified"
+
+    @pytest.mark.parametrize(
+        ("categories", "expected"),
+        [
+            (("water", "surface water"), "db-surface"),
+            (("water", "ocean"), "4f-ocean"),
+            (("water", "ground-"), "51-ground"),
+            (("water", "ground-, long-term"), "06-long-term"),
+        ],
+    )
+    def test_specified_exchange_links_to_its_own_variant(
+        self, settings, tmp_path, categories, expected
+    ):
+        assert self._link(settings, tmp_path, categories) == expected
+
+    def test_missing_sub_compartment_falls_back_to_unspecified(self, settings, tmp_path):
+        """Neither SimaPro nor ecoinvent has a ``fossil well`` variant here:
+        the unspecified factor applies, not the long-term groundwater one
+        that sorts first."""
+        assert self._link(settings, tmp_path, ("water", "fossil well")) == "24-unspecified"
+
+    def test_unspecified_beats_a_sibling_of_the_same_group(self, settings, tmp_path):
+        """Short-term groundwater is not long-term groundwater (their
+        toxicity factors differ by orders of magnitude); without its own
+        variant the exchange takes the compartment's unspecified one."""
+        variants = tuple(v for v in self.VARIANTS if v[0] != "51-ground")
+        assert self._link(settings, tmp_path, ("water", "ground-"), variants) == "24-unspecified"
+
+    def test_same_group_beats_another_group_without_an_unspecified_variant(
+        self, settings, tmp_path
+    ):
+        variants = (
+            ("06-long-term", ("water", "ground-, long-term")),
+            ("4f-ocean", ("water", "ocean")),
+        )
+        assert self._link(settings, tmp_path, ("water", "ground-"), variants) == "06-long-term"
+
+    EF_VARIANTS = (
+        (
+            "0-stratosphere",
+            (
+                "Emissions",
+                "Emissions to air",
+                "Emissions to lower stratosphere and upper troposphere",
+            ),
+        ),
+        ("1-air-unspecified", ("Emissions", "Emissions to air", "Emissions to air, unspecified")),
+        (
+            "2-air-long-term",
+            ("Emissions", "Emissions to air", "Emissions to air, unspecified (long-term)"),
+        ),
+        (
+            "3-non-urban",
+            ("Emissions", "Emissions to air", "Emissions to non-urban air or from high stacks"),
+        ),
+        ("4-urban", ("Emissions", "Emissions to air", "Emissions to urban air close to ground")),
+        ("5-fresh", ("Emissions", "Emissions to water", "Emissions to fresh water")),
+        ("6-sea", ("Emissions", "Emissions to water", "Emissions to sea water")),
+        (
+            "7-water-unspecified",
+            ("Emissions", "Emissions to water", "Emissions to water, unspecified"),
+        ),
+        ("8-agricultural", ("Emissions", "Emissions to soil", "Emissions to agricultural soil")),
+        (
+            "9-soil-unspecified",
+            ("Emissions", "Emissions to soil", "Emissions to soil, unspecified"),
+        ),
+        (
+            "a-non-agricultural",
+            ("Emissions", "Emissions to soil", "Emissions to non-agricultural soil"),
+        ),
+        ("b-indoor", ("Emissions", "Emissions to air", "Emissions to air, indoor")),
+    )
+
+    @pytest.mark.parametrize(
+        ("categories", "expected"),
+        [
+            (("air",), "1-air-unspecified"),
+            (("air", "non-urban air or from high stacks"), "3-non-urban"),
+            (("air", "urban air close to ground"), "4-urban"),
+            (("air", "lower stratosphere + upper troposphere"), "0-stratosphere"),
+            (("air", "low population density, long-term"), "2-air-long-term"),
+            (("water", "surface water"), "5-fresh"),
+            (("water", "ocean"), "6-sea"),
+            (("soil", "agricultural"), "8-agricultural"),
+            (("soil", "forestry"), "9-soil-unspecified"),
+            # ContextNormaliser's pairs: EF non-agricultural soil is SimaPro's
+            # and ecoinvent's industrial soil.
+            (("soil", "industrial"), "a-non-agricultural"),
+            (("air", "indoor"), "b-indoor"),
+        ],
+    )
+    def test_ef_spellings_of_a_sub_compartment_are_the_same_sub_compartment(
+        self, settings, tmp_path, categories, expected
+    ):
+        """The EF v3.1 flow list spells sub-compartments its own way
+        (``Emissions to non-urban air or from high stacks``). Read as
+        unknown labels, every EF variant lost to ``Emissions to air,
+        unspecified``, and an ADEME pesticide emitted to non-urban air was
+        characterised as if emitted to air in general."""
+        bucket_of = {"air": Bucket.AIR, "water": Bucket.WATER, "soil": Bucket.SOIL}
+        variants = [(code, cats) for code, cats in self.EF_VARIANTS]
+        df = make_mappings_biosphere_df(
+            [
+                {
+                    "source_name": "1,3-dichloropropene",
+                    "source_top_bucket": bucket_of[categories[0]],
+                    "target_db": "",
+                    "target_code": "",
+                    "target_name": "1,3-dichloropropene",
+                    "target_unit": "kg",
+                    "priority_tier": Tier.CURATED_TARGETED,
+                }
+            ]
+        )
+        catalog = make_bio_catalog(
+            [
+                BioFlowRef(
+                    db="ef",
+                    code=code,
+                    name="1,3-dichloropropene",
+                    unit="kg",
+                    bucket=bucket_of[cats[1].split()[-1]],
+                    categories=cats,
+                )
+                for code, cats in variants
+            ]
+        )
+        m = _matcher(
+            settings,
+            tmp_path,
+            registry=make_registry(settings, mappings_biosphere=df),
+            catalog=catalog,
+        )
+        sp_data = [
+            make_dataset(
+                "Pesticide application",
+                exchanges=[
+                    make_exchange(
+                        type="biosphere",
+                        name="1,3-dichloropropene",
+                        unit="kg",
+                        categories=categories,
+                    )
+                ],
+            )
+        ]
+        m.match(sp_data)
+        assert sp_data[0]["exchanges"][0]["input"] == ("ef", expected)
+
+    @pytest.mark.parametrize(
+        ("label", "canonical"),
+        [
+            ("", ""),
+            ("(unspecified)", ""),
+            ("Emissions to air, unspecified", ""),
+            ("low. pop.", "non-urban air or from high stacks"),
+            ("Emissions to non-urban air or from high stacks", "non-urban air or from high stacks"),
+            ("high. pop.", "urban air close to ground"),
+            ("stratosphere + troposphere", "lower stratosphere + upper troposphere"),
+            (
+                "Emissions to lower stratosphere and upper troposphere",
+                "lower stratosphere + upper troposphere",
+            ),
+            ("Emissions to air, unspecified (long-term)", "low population density, long-term"),
+            ("river", "surface water"),
+            ("Emissions to fresh water", "surface water"),
+            ("Emissions to sea water", "ocean"),
+            ("groundwater", "ground-"),
+            ("groundwater, long-term", "ground-, long-term"),
+            ("Emissions to water, unspecified (long-term)", "ground-, long-term"),
+            ("Emissions to agricultural soil", "agricultural"),
+            ("Emissions to non-agricultural soil", "industrial"),
+            ("non-agricultural", "industrial"),
+            ("Emissions to air, indoor", "indoor"),
+            ("river, long-term", "surface water"),
+            ("lake", "surface water"),
+            ("fossil well", "fossil well"),
+            # A stack height is a sibling, not the sub-compartment SimaPro
+            # folds it into (see test_stack_height_is_a_sibling).
+            ("Emissions to urban air high stack", "urban air high stack"),
+        ],
+    )
+    def test_canonical_sub_compartment(self, label, canonical):
+        from matching.biosphere import SubCompartmentNormaliser
+
+        assert SubCompartmentNormaliser.canonical(label) == canonical
+
+    def test_every_ef_emission_label_follows_context_normaliser(self):
+        """The spellings are derived from the tables that translate them
+        for the characterisation factors, so the two cannot drift apart:
+        every EF emission sub-compartment lands where ``ContextNormaliser``
+        puts it in SimaPro's vocabulary, translated as the import does."""
+        from ef.cf_flow_join import ContextNormaliser
+        from matching.biosphere import SubCompartmentNormaliser
+        from transforms.strategies.biosphere import _SIMAPRO_BIO_SUBCATEGORIES
+
+        checked = 0
+        for cats, (_, sp_sub) in ContextNormaliser._EF_CATEGORIES_TO_SP_CONTEXT.items():
+            if cats[0] != "Emissions":
+                continue
+            expected = (
+                "" if sp_sub == "(unspecified)" else _SIMAPRO_BIO_SUBCATEGORIES.get(sp_sub, sp_sub)
+            )
+            assert SubCompartmentNormaliser.nearest(cats[-1]) == expected, cats
+            checked += 1
+        assert checked >= 19
+
+    def test_stack_height_is_a_sibling(self, settings, tmp_path):
+        """SimaPro folds EF's stack heights into ``high. pop.`` / ``low.
+        pop.``; an exchange in urban air close to ground takes its own
+        variant when there is one, and otherwise the stack height (same
+        group) before a variant of another group that sorts first."""
+        from matching.biosphere import BiosphereMatcher
+
+        def ref(code, sub):
+            return BioFlowRef(
+                db="ef",
+                code=code,
+                name="Benzene",
+                unit="kg",
+                bucket=Bucket.AIR,
+                categories=("Emissions", "Emissions to air", f"Emissions to {sub}"),
+            )
+
+        own = ref("9-own", "urban air close to ground")
+        stack = ref("5-stack", "urban air high stack")
+        other = ref("0-long-term", "air, unspecified (long-term)")
+        assert (
+            BiosphereMatcher.pick_for_sub_compartment(
+                [other, stack, own], "urban air close to ground"
+            )
+            == own
+        )
+        assert (
+            BiosphereMatcher.pick_for_sub_compartment([other, stack], "urban air close to ground")
+            == stack
+        )
+
+    def test_code_order_still_breaks_a_tie_between_equal_variants(self, settings, tmp_path):
+        variants = (
+            ("b-surface", ("water", "surface water")),
+            ("a-surface", ("water", "surface water")),
+            ("0-ocean", ("water", "ocean")),
+        )
+        assert self._link(settings, tmp_path, ("water", "surface water"), variants) == "a-surface"
+
+
 class TestCleanupDrops:
     def test_zero_amount_unlinked_biosphere_flows_are_dropped(self, settings, tmp_path):
         m = _matcher(settings, tmp_path, registry=make_registry(settings))
