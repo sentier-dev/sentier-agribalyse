@@ -90,11 +90,10 @@ test = [
 llm-api = [
     "anthropic>=0.40",
 ]
-# Recommended sparse solver. The technosphere carries zero-diagonal
-# placeholder activities that scipy SuperLU rejects as "exactly singular";
-# pypardiso's pivoting handles them (README solver note). pypardiso pulls
-# the `mkl` wheel, which ships libmkl_rt into the venv where pypardiso
-# finds it.
+# Recommended sparse solver: faster than scipy's SuperLU on this
+# technosphere (SuperLU works too; the matrix builder keeps no zero-diagonal
+# placeholder that it would reject). pypardiso pulls the `mkl` wheel, which
+# ships libmkl_rt into the venv where pypardiso finds it.
 pardiso = [
     "pypardiso>=0.4.6",
 ]

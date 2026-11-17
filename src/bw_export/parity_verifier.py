@@ -68,11 +68,10 @@ class ParityVerifier:
             raise ValueError(f"Technosphere is not square: {a.shape[0]}x{a.shape[1]}.")
 
     def assert_solvable(self, package: ScoringPackage) -> None:
-        # The real technosphere carries zero-diagonal placeholder activities
-        # that scipy SuperLU rejects as "Factor is exactly singular" even
-        # though pypardiso's pivoting factorizes them fine (see the solver
-        # note in CLAUDE.md). Prefer pardiso when installed — the same
-        # policy as NativeLciaScorer — and fall back to scipy otherwise.
+        # Prefer pardiso when installed — the same policy as
+        # NativeLciaScorer — and fall back to scipy otherwise (SuperLU
+        # factorises the technosphere too, more slowly; with scikit-umfpack
+        # installed, scipy uses UMFPACK instead).
         a = package.technosphere.matrix.tocsc()
         if _pypardiso_spsolve is not None:
             _pypardiso_spsolve(a, np.ones(a.shape[0], dtype="float64"))
