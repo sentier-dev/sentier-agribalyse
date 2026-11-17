@@ -4,12 +4,15 @@ Each test builds a throwaway git repository, stages paths, runs the hook and
 checks that it refuses or allows the commit. Covers every path class the hook
 names, the paths it must leave alone (the tracked elementary-flow list, the
 stripped Agribalyse archive, code whose file name contains ``bw_package``),
-renames, non-ASCII names, deletions and the first commit of a repository.
+renames, non-ASCII names, deletions and the first commit of a repository,
+and the content check of the stripped archive: no ``Copied from`` or
+``Adapted from Ecoinvent`` process block may be left inside it.
 The last class checks ``.gitignore`` around the two Agribalyse CSV variants.
 """
 
 from __future__ import annotations
 
+import lzma
 import os
 import shutil
 import subprocess
@@ -137,10 +140,34 @@ def _git(repo: Path, *args: str) -> subprocess.CompletedProcess[str]:
     )
 
 
-def _stage(repo: Path, rel: str, *, force: bool = True) -> None:
+ARCHIVE = "source/AGB32_ecoinvent_free.CSV.xz"
+
+
+def _archive(product: str, *, section: str = "Products", inputs: str = "") -> bytes:
+    """A one-process SimaPro export, xz-compressed as the shipped archive is."""
+    text = (
+        "{SimaPro 9.6.0.1}\r\n\r\nProcess\r\n\r\n"
+        "Type\r\nUnit process\r\n\r\n"
+        f"{section}\r\n{product};kg;1;100;not defined;Cat;\r\n\r\n"
+        f"Materials/fuels\r\n{inputs}\r\n\r\n"
+        "End\r\n\r\n"
+    )
+    return lzma.compress(text.encode("latin-1"), format=lzma.FORMAT_XZ)
+
+
+CLEAN_ARCHIVE = _archive("Wheat flour {FR}| production | Cut-off, U")
+
+
+def _placeholder(rel: str) -> bytes:
+    """What a staged path holds: a clean archive for the stripped archive,
+    because the guard opens that one, and a line of text for every other."""
+    return CLEAN_ARCHIVE if rel == ARCHIVE else f"placeholder for {rel}\n".encode()
+
+
+def _stage(repo: Path, rel: str, *, force: bool = True, content: bytes | None = None) -> None:
     path = repo / rel
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(f"placeholder for {rel}\n", encoding="utf-8")
+    path.write_bytes(_placeholder(rel) if content is None else content)
     _git(repo, "add", *(["-f"] if force else []), "--", rel)
 
 
@@ -271,10 +298,42 @@ def test_refuses_no_file_that_is_in_git(repo: Path) -> None:
     for rel in tracked:
         path = repo / rel
         path.parent.mkdir(parents=True, exist_ok=True)
-        path.write_text("placeholder\n", encoding="utf-8")
+        path.write_bytes(_placeholder(rel))
     _git(repo, "add", "-f", "--", ".")
     result = _run_hook(repo)
     assert result.returncode == 0, result.stderr
+
+
+@pytest.mark.parametrize(
+    ("section", "name"),
+    [
+        ("Products", "Steel {RER}| production | Cut-off, S - Copied from Ecoinvent U"),
+        ("Products", "Banana {CO}| banana production | Cut-off, U - Adapted from Ecoinvent U"),
+        ("Waste treatment", "Waste {CH}| treatment | Cut-off, S - adapted from ecoinvent U"),
+    ],
+)
+def test_refuses_an_archive_that_still_holds_an_embedded_ecoinvent_block(
+    repo: Path, section: str, name: str
+) -> None:
+    _stage(repo, ARCHIVE, content=_archive(name, section=section))
+    result = _run_hook(repo)
+    assert result.returncode == 1, result.stderr
+    assert "AGB32_ecoinvent_free.CSV.xz" in result.stderr
+
+
+def test_an_input_line_naming_an_ecoinvent_dataset_is_not_a_block(repo: Path) -> None:
+    content = _archive(
+        "Bread {FR}| baking | Cut-off, U",
+        inputs="Wheat {FR}| market | Cut-off, U - Adapted from Ecoinvent U;kg;0,7;Undefined",
+    )
+    _stage(repo, ARCHIVE, content=content)
+    result = _run_hook(repo)
+    assert result.returncode == 0, result.stderr
+
+
+def test_refuses_an_archive_that_is_not_xz(repo: Path) -> None:
+    _stage(repo, ARCHIVE, content=b"x")
+    assert _run_hook(repo).returncode != 0
 
 
 def test_allows_deleting_a_licensed_file(repo: Path) -> None:

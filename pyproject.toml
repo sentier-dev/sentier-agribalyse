@@ -1,6 +1,6 @@
 [project]
 name = "sentier_agribalyse"
-version = "0.4.1"
+version = "0.4.2"
 description = "Sentier-native adapter bringing Agribalyse 3.2 into Brightway 2.5 via a unified MappingRegistry and the EF v3.1 consensus-flow architecture."
 requires-python = ">=3.11"
 license = { text = "MIT" }
