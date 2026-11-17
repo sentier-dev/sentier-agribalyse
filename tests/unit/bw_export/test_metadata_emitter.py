@@ -45,7 +45,7 @@ def _biosphere(bid: int) -> BioMeta:
     )
 
 
-def _emit(tmp_path, synthetic_package, *, activity=_activity, bio=_biosphere):
+def _emit(tmp_path, synthetic_package, *, activity=_activity, bio=_biosphere, catalog=None):
     embedded = CorrectionEmbedder().embed(synthetic_package)
     written = DatapackageWriter().write(embedded, out_root=tmp_path)
     MetadataEmitter().emit(
@@ -54,7 +54,7 @@ def _emit(tmp_path, synthetic_package, *, activity=_activity, bio=_biosphere):
         written=written,
         activity_resolver=activity,
         bio_resolver=bio,
-        product_catalog=_product_catalog(),
+        product_catalog=_product_catalog() if catalog is None else catalog,
         parity_scores={PRODUCT_IDS[0]: {METHOD: 20.5}},
         parity_tolerance=1e-9,
         manifest_extra={"ecoinvent_version": "3.9.1", "content_hash": "synthetic"},
@@ -158,3 +158,57 @@ def test_readme_gives_the_legacy_install_command(tmp_path, synthetic_package):
     section_b = (tmp_path / "README.md").read_text().split("## B. Import into Brightway")[1]
     assert 'pip install "numpy<2" "pyarrow<26"' in section_b
 
+
+def test_products_keep_the_catalog_names_and_carry_the_producer_location(
+    tmp_path, synthetic_package
+):
+    _emit(tmp_path, synthetic_package)
+    products = pd.read_parquet(tmp_path / "metadata" / "products.parquet")
+
+    assert list(products["name"]) == ["prod one", "prod two"]
+    assert list(products["database"]) == ["agribalyse-3.2", "agribalyse-3.2"]
+    assert list(products["location"]) == ["GLO", "GLO"]
+
+
+def test_a_product_missing_from_the_catalog_is_named_after_its_producer(
+    tmp_path, synthetic_package
+):
+    """The product catalog holds the AGRIBALYSE products only. An ecoinvent
+    product takes the reference product, unit, key and location of the
+    activity that produces it, as the activity table does."""
+
+    def producer(col_id: int) -> ActivityMeta:
+        return ActivityMeta(
+            key=("ecoinvent-3.9.1-cutoff", f"eco-{col_id}"),
+            name=f"market for thing {col_id}",
+            unit="kilowatt hour",
+            location="CH",
+            reference_product=f"thing {col_id}",
+        )
+
+    _emit(tmp_path, synthetic_package, activity=producer, catalog=_product_catalog().iloc[1:])
+    products = pd.read_parquet(tmp_path / "metadata" / "products.parquet").set_index("product_id")
+
+    background = products.loc[PRODUCT_IDS[0]]
+    assert background["name"] == f"thing {ACTIVITY_IDS[0]}"
+    assert (background["database"], background["code"]) == (
+        "ecoinvent-3.9.1-cutoff",
+        f"eco-{ACTIVITY_IDS[0]}",
+    )
+    assert (background["type"], background["unit"], background["location"]) == (
+        "product",
+        "kilowatt hour",
+        "CH",
+    )
+    assert products.loc[PRODUCT_IDS[1], "name"] == "prod two"
+
+
+def test_build_fails_loudly_on_a_product_nothing_names(tmp_path, synthetic_package):
+    def nameless(col_id: int) -> ActivityMeta:
+        return ActivityMeta(
+            ("db", f"act-{col_id}"), name="", unit="kg", location="GLO", reference_product=""
+        )
+
+    empty = _product_catalog().iloc[0:0]
+    with pytest.raises(ValueError, match=r"products\.parquet"):
+        _emit(tmp_path, synthetic_package, activity=nameless, catalog=empty)
