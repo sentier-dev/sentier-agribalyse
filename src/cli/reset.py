@@ -8,8 +8,6 @@ method-CF registries are NOT cleared — they are source-derived parquets
 that only change when you re-run ``dds-build-*``.
 
 Use this when:
-- You modified ``source/AGB32_final.CSV`` — the importer pickle carries
-  no hash of the CSV, so without a reset the old parse is silently reused.
 - You want to force a full re-link without changing the mappings.
 - You suspect the scoring package is stale (e.g. after a code refactor).
 - You want to drop all parameter overrides (``--keep-overrides`` opts out;

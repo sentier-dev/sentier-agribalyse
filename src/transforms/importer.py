@@ -18,7 +18,12 @@ from transforms.sp_csv_parser import ParsedSimaProCsv, SimaProCsvParser
 
 @dataclass(frozen=True)
 class SimaProImporter:
-    """Read AGB SimaPro CSV. Caches the parsed object to a pickle for re-runs."""
+    """Read AGB SimaPro CSV. Caches the parsed object to a pickle for re-runs.
+
+    The pickle records the stamp of the CSV it was parsed from
+    (``AgribalyseCsvSource.stamp``: variant, file, size, content hash)
+    and is reused only while the run reads that same file in that same state.
+    """
 
     settings: Settings
 
@@ -29,6 +34,7 @@ class SimaProImporter:
     def load(self) -> ParsedSimaProCsv:
         cache_path = self.settings.paths.importer_cache_pkl
         cache_path.parent.mkdir(parents=True, exist_ok=True)
+        stamp = AgribalyseCsvSource(settings=self.settings).stamp()
         if cache_path.exists():
             with StepTimer(self._log, "csv.load.cache_hit", path=cache_path.name):
                 t0 = time.time()
@@ -39,6 +45,16 @@ class SimaProImporter:
                     self._log.warning(
                         "csv.load.cache_stale",
                         reason="pickle lacks 'parameters' field; re-parsing",
+                    )
+                elif stamp is None or getattr(sp, "csv_stamp", None) != stamp:
+                    # Parsed from the other CSV, from an earlier state of this
+                    # one, or before the stamp was recorded.
+                    self._log.warning(
+                        "csv.load.cache_stale",
+                        reason="pickle holds a parse of another CSV or of an earlier state; "
+                        "re-parsing",
+                        cached=getattr(sp, "csv_stamp", None),
+                        current=stamp,
                     )
                 else:
                     self._log.info(
@@ -56,6 +72,7 @@ class SimaProImporter:
                 csv_path=csv,
                 database_name=self.settings.resolved_agribalyse_db_name,
             ).parse()
+        sp.csv_stamp = stamp
         cache_path.write_bytes(pickle.dumps(sp))
         self._log.info("csv.cache.written", path=cache_path.name)
         return sp

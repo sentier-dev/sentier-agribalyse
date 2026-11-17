@@ -66,7 +66,105 @@ class TestDecompression:
 
         AgribalyseCsvSource(settings=settings).path()
 
-        assert [p.name for p in settings.paths.cache.iterdir()] == ["AGB32_ecoinvent_free.CSV"]
+        assert sorted(p.name for p in settings.paths.cache.iterdir()) == [
+            "AGB32_ecoinvent_free.CSV",
+            "AGB32_ecoinvent_free.CSV.sha256",
+        ]
+
+    def test_refreshes_when_the_archive_changes_although_the_copy_is_newer(self, settings):
+        """A copy that keeps times (``cp -p``, ``rsync -a``) can put an older
+        modification time on a newer archive."""
+        _write_xz(settings)
+        source = AgribalyseCsvSource(settings=settings)
+        cached = source.path()
+        _write_xz(settings, PAYLOAD + b"more\r\n")
+        older = cached.stat().st_mtime - 10
+        os.utime(settings.paths.agribalyse_csv_ecoinvent_free_xz, (older, older))
+
+        assert source.path().read_bytes() == PAYLOAD + b"more\r\n"
+
+
+class TestRequest:
+    """``Settings.agribalyse_csv`` (``dds-link-all --csv``) picks the variant."""
+
+    def test_ecoinvent_free_is_read_although_the_full_export_is_there(self, settings):
+        settings.paths.agribalyse_csv.write_bytes(b"full")
+        _write_xz(settings)
+
+        source = AgribalyseCsvSource(settings=settings.with_agribalyse_csv("ecoinvent-free"))
+
+        assert source.variant == "ecoinvent-free"
+        assert source.path().read_bytes() == PAYLOAD
+
+    def test_full_asked_for_but_absent_names_the_file(self, settings):
+        _write_xz(settings)
+
+        source = AgribalyseCsvSource(settings=settings.with_agribalyse_csv("full"))
+
+        assert source.variant is None
+        with pytest.raises(AgribalyseCsvMissingError, match=r"AGB32_final\.CSV"):
+            source.path()
+
+    def test_ecoinvent_free_asked_for_but_absent_names_the_file(self, settings):
+        settings.paths.agribalyse_csv.write_bytes(b"full")
+
+        source = AgribalyseCsvSource(settings=settings.with_agribalyse_csv("ecoinvent-free"))
+
+        assert source.variant is None
+        with pytest.raises(AgribalyseCsvMissingError, match=r"AGB32_ecoinvent_free\.CSV\.xz"):
+            source.path()
+
+    def test_an_unknown_request_is_refused(self, settings):
+        with pytest.raises(ValueError, match="auto, full, ecoinvent-free"):
+            settings.with_agribalyse_csv("free")
+
+
+class TestStamp:
+    """What the caches record: which file fed the run, and its state."""
+
+    def test_the_stamp_names_the_file_the_run_reads(self, settings):
+        settings.paths.agribalyse_csv.write_bytes(b"full")
+        _write_xz(settings)
+
+        auto = AgribalyseCsvSource(settings=settings).stamp()
+        free = AgribalyseCsvSource(settings=settings.with_agribalyse_csv("ecoinvent-free")).stamp()
+
+        assert auto[:2] == ("full", "AGB32_final.CSV")
+        assert free[:2] == ("ecoinvent-free", "AGB32_ecoinvent_free.CSV.xz")
+
+    def test_the_stamp_moves_when_the_file_changes(self, settings):
+        settings.paths.agribalyse_csv.write_bytes(b"full")
+        before = AgribalyseCsvSource(settings=settings).stamp()
+
+        settings.paths.agribalyse_csv.write_bytes(b"a newer full export")
+
+        assert AgribalyseCsvSource(settings=settings).stamp() != before
+
+    def test_the_stamp_moves_when_the_content_changes_at_the_same_size_and_time(self, settings):
+        csv = settings.paths.agribalyse_csv
+        when = (1_700_000_000_000_000_000, 1_700_000_000_000_000_000)
+        csv.write_bytes(b"full export, v1")
+        os.utime(csv, ns=when)
+        before = AgribalyseCsvSource(settings=settings).stamp()
+
+        csv.write_bytes(b"full export, v2")
+        os.utime(csv, ns=when)
+
+        assert AgribalyseCsvSource(settings=settings).stamp() != before
+
+    def test_the_stamp_stays_when_an_unchanged_file_is_touched(self, settings):
+        """A checkout or a copy moves the time, not the content: no re-parse."""
+        csv = settings.paths.agribalyse_csv
+        csv.write_bytes(b"full export")
+        before = AgribalyseCsvSource(settings=settings).stamp()
+
+        later = csv.stat().st_mtime + 60
+        os.utime(csv, (later, later))
+
+        assert AgribalyseCsvSource(settings=settings).stamp() == before
+
+    def test_no_csv_no_stamp(self, settings):
+        assert AgribalyseCsvSource(settings=settings).stamp() is None
 
 
 class TestDescribe:
@@ -74,6 +172,19 @@ class TestDescribe:
         _write_xz(settings)
 
         assert AgribalyseCsvSource(settings=settings).describe() == {
+            "requested": "auto",
+            "variant": "ecoinvent-free",
+            "file": "AGB32_ecoinvent_free.CSV.xz",
+        }
+
+    def test_describe_says_when_a_variant_was_asked_for(self, settings):
+        settings.paths.agribalyse_csv.write_bytes(b"full")
+        _write_xz(settings)
+
+        source = AgribalyseCsvSource(settings=settings.with_agribalyse_csv("ecoinvent-free"))
+
+        assert source.describe() == {
+            "requested": "ecoinvent-free",
             "variant": "ecoinvent-free",
             "file": "AGB32_ecoinvent_free.CSV.xz",
         }

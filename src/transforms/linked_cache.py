@@ -27,6 +27,7 @@ from typing import Any, ClassVar
 
 from config import Settings
 from core.logging import Logging, StepTimer
+from transforms.agribalyse_csv_source import AgribalyseCsvSource
 
 
 class LinkedCacheMissingError(FileNotFoundError):
@@ -62,28 +63,20 @@ class LinkedSpCache:
     def path(self):
         return self.settings.paths.linked_cache_pkl
 
-    def _csv_stamp(self) -> tuple[int, int] | None:
-        paths = self.settings.paths
-        # Stamp the file the run was fed from: the full export when present,
-        # else the committed ecoinvent-free archive (not its cache copy).
-        csv = next(
-            (
-                p
-                for p in (paths.agribalyse_csv, paths.agribalyse_csv_ecoinvent_free_xz)
-                if p.exists()
-            ),
-            None,
-        )
-        if csv is None:
-            return None
-        stat = csv.stat()
-        return (stat.st_size, int(stat.st_mtime))
+    def _csv_stamp(self, request: str | None = None) -> tuple[str, str, int, str] | None:
+        """Stamp of the file a run asking for ``request`` (default: this
+        cache's settings) reads; see ``AgribalyseCsvSource.stamp``."""
+        settings = self.settings
+        if request is not None and request != settings.agribalyse_csv:
+            settings = settings.with_agribalyse_csv(request)
+        return AgribalyseCsvSource(settings=settings).stamp()
 
     def write(self, sp: Any) -> None:
         self.path.parent.mkdir(parents=True, exist_ok=True)
         partial = self.path.with_suffix(self.path.suffix + ".partial")
         payload = {
             "schema": self.SCHEMA_VERSION,
+            "csv_request": self.settings.agribalyse_csv,
             "csv_stamp": self._csv_stamp(),
             "sp": sp,
         }
@@ -115,11 +108,18 @@ class LinkedSpCache:
             raise LinkedCacheStaleError(
                 f"{self.path} uses an old cache format — rerun dds-link-all to regenerate it."
             )
-        if payload.get("csv_stamp") != self._csv_stamp():
+        # A command that asks for no CSV (``auto``, e.g. ``dds-set-parameter
+        # --fast``) checks the one the last ``dds-link-all`` asked for, so a
+        # link with ``--csv ecoinvent-free`` replays while the full export
+        # stays in ``source/``.
+        request = self.settings.agribalyse_csv
+        if request == AgribalyseCsvSource.AUTO:
+            request = payload.get("csv_request", AgribalyseCsvSource.AUTO)
+        expected = self._csv_stamp(request)
+        if payload.get("csv_stamp") != expected:
             raise LinkedCacheStaleError(
                 f"{self.path} was built from a different source CSV "
-                f"(size/mtime mismatch with the Agribalyse CSV in "
-                f"{self.settings.paths.source.name}/) — rerun "
-                f"dds-link-all to regenerate it."
+                f"({payload.get('csv_stamp')}; this run reads {expected}: variant, file, "
+                f"size, content hash) — rerun dds-link-all to regenerate it."
             )
         return payload["sp"]

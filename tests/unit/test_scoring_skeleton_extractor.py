@@ -691,8 +691,10 @@ class TestPackageBuiltFromTheFullExport:
         extractor = SkeletonExtractor(
             ecoinvent_catalog_path=catalog, stripped_processes_path=manifest
         )
-        with pytest.raises(ValueError, match="full export"):
+        with pytest.raises(ValueError, match="full export") as refused:
             extractor.extract(pkg, out)
+        # The remedy keeps the full export in place.
+        assert "dds-link-all --csv ecoinvent-free" in str(refused.value)
         assert not out.exists()
         assert not out.with_name(out.name + ".partial").exists()
 

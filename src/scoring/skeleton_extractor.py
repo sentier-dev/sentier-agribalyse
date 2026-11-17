@@ -215,9 +215,8 @@ class SkeletonExtractor:
                 "This scoring package was built from ADEME's full export: it holds "
                 f"copied ecoinvent blocks as Agribalyse processes ({counts}). Their "
                 "amounts are ecoinvent's. Build the package from the ecoinvent-free "
-                "CSV and extract that one: move source/AGB32_final.CSV out of source/ "
-                "(the full export is read whenever it is there), run dds-reset (the "
-                "importer cache does not record which CSV it holds), then dds-link-all."
+                "CSV and extract that one: run dds-link-all --csv ecoinvent-free (the "
+                "full export can stay in source/), then extract again."
             )
 
     def _checked_recipe(
