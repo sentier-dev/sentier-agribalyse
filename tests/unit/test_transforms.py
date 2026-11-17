@@ -30,6 +30,7 @@ from transforms import (
     ProductionReclassifier,
     RestoreSimaproNamesTransform,
     SimaProImporter,
+    StableCodeAssigner,
     StandardLabelNormaliser,
     WasteTreatmentDummyFixer,
 )
@@ -1117,6 +1118,9 @@ class _RecordedParse:
         # Mirrors ``ParsedSimaProCsv.parameters`` — the importer treats
         # cached pickles WITHOUT this attribute as stale and re-parses.
         self.parameters = list(parameters or [])
+        # Mirrors ``ParsedSimaProCsv.code_scheme`` — a pickle of another
+        # scheme holds other codes and is re-parsed too.
+        self.code_scheme = StableCodeAssigner.SCHEME
 
 
 class _LegacyRecordedParse:
@@ -1125,6 +1129,15 @@ class _LegacyRecordedParse:
     def __init__(self, data, db_name="agb"):
         self.data = data
         self.db_name = db_name
+
+
+class _RandomCodesRecordedParse:
+    """Cache shape before the codes were derived: no ``code_scheme`` attribute."""
+
+    def __init__(self, data, db_name="agb"):
+        self.data = data
+        self.db_name = db_name
+        self.parameters = []
 
 
 def _fake_parse(self):
@@ -1177,6 +1190,35 @@ class TestSimaProImporter:
         # Cache rewritten in the new shape — next load hits it.
         SimaProImporter(settings=settings).load()
         assert len(_PARSE_CALLS) == 1
+
+    @pytest.mark.parametrize("scheme", [None, StableCodeAssigner.SCHEME + 1])
+    def test_cache_of_another_code_scheme_is_stale(self, settings, monkeypatch, scheme):
+        """A pickle parsed before the codes were derived from content (no
+        ``code_scheme``), or under another derivation, holds codes no fresh
+        parse gives: it is re-parsed, never mixed with the stable ones."""
+        import pickle
+
+        from transforms import sp_csv_parser
+
+        path = settings.paths.agribalyse_csv
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_bytes(b"fake csv contents")
+
+        old = _RandomCodesRecordedParse(data=[{"name": "OLD", "code": "0" * 32}])
+        if scheme is not None:
+            old.code_scheme = scheme
+        cache = settings.paths.importer_cache_pkl
+        cache.parent.mkdir(parents=True, exist_ok=True)
+        cache.write_bytes(pickle.dumps(old))
+
+        _PARSE_CALLS.clear()
+        monkeypatch.setattr(sp_csv_parser.SimaProCsvParser, "parse", _fake_parse)
+
+        sp = SimaProImporter(settings=settings).load()
+        assert len(_PARSE_CALLS) == 1  # stale cache ignored, fresh parse ran
+        assert sp.data == [{"name": "P", "exchanges": []}]
+        SimaProImporter(settings=settings).load()
+        assert len(_PARSE_CALLS) == 1  # rewritten under the current scheme
 
 
 class TestSimaProImporterCsvVariant:

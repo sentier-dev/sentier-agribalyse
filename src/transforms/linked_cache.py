@@ -49,7 +49,11 @@ class LinkedSpCache:
 
     # Bump when the pickled payload's expected shape changes so old caches
     # fail loudly instead of mis-replaying.
-    SCHEMA_VERSION: ClassVar[int] = 1
+    # 2: the codes of products, allocated processes and identifier-less
+    # processes are derived from content (``StableCodeAssigner``). A
+    # version-1 cache holds the random codes of its own parse; replayed, it
+    # would write a package whose ids no fresh build shares.
+    SCHEMA_VERSION: ClassVar[int] = 2
 
     @property
     def _log(self) -> Any:

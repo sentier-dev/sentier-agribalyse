@@ -14,6 +14,7 @@ from config import Settings
 from core.logging import Logging, StepTimer
 from transforms.agribalyse_csv_source import AgribalyseCsvSource
 from transforms.sp_csv_parser import ParsedSimaProCsv, SimaProCsvParser
+from transforms.stable_codes import StableCodeAssigner
 
 
 @dataclass(frozen=True)
@@ -39,6 +40,14 @@ class SimaProImporter:
                     self._log.warning(
                         "csv.load.cache_stale",
                         reason="pickle lacks 'parameters' field; re-parsing",
+                    )
+                elif getattr(sp, "code_scheme", None) != StableCodeAssigner.SCHEME:
+                    # Parsed before the codes were derived from content (or
+                    # under another derivation): its random codes must not
+                    # reach a build that expects the stable ones.
+                    self._log.warning(
+                        "csv.load.cache_stale",
+                        reason="pickle holds codes of another scheme; re-parsing",
                     )
                 else:
                     self._log.info(

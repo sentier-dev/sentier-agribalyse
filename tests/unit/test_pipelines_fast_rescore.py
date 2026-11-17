@@ -159,6 +159,23 @@ class TestLinkedSpCache:
         with pytest.raises(LinkedCacheStaleError, match="old cache format"):
             cache.load()
 
+    @pytest.mark.parametrize("version", range(1, LinkedSpCache.SCHEMA_VERSION))
+    def test_cache_written_before_the_stable_codes_is_stale(self, cache, version):
+        """A payload of any earlier version may hold the random codes of its
+        own parse; the fast path must not replay it into a package no fresh
+        build shares. Every earlier version, not only 1: another change may
+        have taken a version number before this one lands."""
+        import pickle
+
+        from transforms.linked_cache import LinkedCacheStaleError
+
+        assert LinkedSpCache.SCHEMA_VERSION >= 2
+        cache.write(ParsedSimaProCsv(db_name="agb", data=[], parameters=[]))
+        payload = pickle.loads(cache.path.read_bytes())
+        cache.path.write_bytes(pickle.dumps({**payload, "schema": version}))
+        with pytest.raises(LinkedCacheStaleError, match="old cache format"):
+            cache.load()
+
     def test_truncated_pickle_raises_corrupt_error(self, cache):
         from transforms.linked_cache import LinkedCacheCorruptError
 

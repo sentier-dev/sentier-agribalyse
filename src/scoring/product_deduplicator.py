@@ -15,7 +15,21 @@ production edges with them — no dangling rows.
 Runs *after* ``Allocator`` so the synthetic activity ids produced by
 multifunctional splits are visible. Multifunctional split itself does
 not introduce new product duplicates: each synthetic activity produces
-a distinct product."""
+a distinct product.
+
+One duplicate comes with every allocated product, though: the SimaPro
+reader already wrote a ``readonly_process`` child for it, and the
+``Allocator`` adds its split of the same parent. The smallest id decides
+between the two. Their exchanges are the same; their location is not —
+``LinkAllPipeline._col_id_to_location`` knows the child by its
+``(database, code)`` and knows no synthetic id, so the regional
+correction (water use, freshwater ecotoxicity) reaches an allocated
+product only where the child is the one kept. The ids are stable since
+``StableCodeAssigner``, so the outcome is the same on every build. It is
+still arbitrary: on Agribalyse 3.2 the child is kept for 191 of the 1,592
+allocated products, and a change of the code scheme would pick others.
+Which of the two should stand for an allocated product is a decision of
+method that this class does not take."""
 
 from __future__ import annotations
 

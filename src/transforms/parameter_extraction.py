@@ -56,16 +56,17 @@ class ProcessParameterExtractor:
         Two joins happen here, both against ``bw_processes`` (the
         ``lci_to_brightway`` output):
 
-        * **Parents.** ~700 AGB 3.2 processes have no ``Process
-          identifier``; the export synthesises uuid4 codes that exist only
-          on the output dicts. The export emits exactly one PARENT dataset
+        * **Parents.** A process without a ``Process identifier`` gets a
+          synthesised code (drawn by the export, then derived from content
+          by ``StableCodeAssigner``) that exists only on the output dicts.
+          The export emits exactly one PARENT dataset
           per ``Process`` block, in block order (the multifunctional
           allocation step appends extra ``readonly_process`` children but
           never drops or reorders parents), so parent codes are joined by
           position — cross-checked on every identifier-carrying pair, and
           raising on any disagreement rather than mis-keying silently.
         * **Children.** Multifunctional parents get per-product
-          ``readonly_process`` children (uuid4 codes, ``mf_parent_key``
+          ``readonly_process`` children (synthesised codes, ``mf_parent_key``
           linkage) whose exchange formulas embed the allocation factor
           textually — evaluating them with the PARENT's parameter
           environment reproduces their baked amounts. Each parent's rows
@@ -114,7 +115,7 @@ class ProcessParameterExtractor:
                         )
                 elif ds_code and not uuid_hex.match(ds_code):
                     # An identifier-less block must pair with a SYNTHESISED
-                    # (uuid4-hex) dataset code; a real identifier here means
+                    # (32-hex) dataset code; a real identifier here means
                     # the positional alignment slipped inside an anchor gap.
                     raise ValueError(
                         f"Block/dataset order drift: identifier-less block "
