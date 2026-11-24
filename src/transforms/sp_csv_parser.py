@@ -22,6 +22,7 @@ from bw_simapro_csv import SimaProCSV
 
 from core.logging import Logging
 from transforms.parameter_extraction import ProcessParameterExtractor
+from transforms.stable_codes import StableCodeAssigner
 from transforms.strategies.biosphere import DropUnspecifiedSubcategories
 from transforms.strategies.internal import (
     DropUnlinkedExchanges,
@@ -65,6 +66,9 @@ class SimaProCsvParser:
             separate_products=self.separate_products,
             shorten_names=self.shorten_names,
         )
+        # Before anything reads a code: the reader draws the codes of products,
+        # of allocated processes and of identifier-less processes at random.
+        StableCodeAssigner().apply(spcsv, bw_data)
         data: list[dict] = list(bw_data.get("processes", []))
         if self.separate_products:
             data.extend(bw_data.get("products", []))
@@ -83,6 +87,7 @@ class SimaProCsvParser:
             data=data,
             metadata=dict(bw_data.get("database", {})),
             parameters=parameters,
+            code_scheme=StableCodeAssigner.SCHEME,
         )
 
 
@@ -101,10 +106,15 @@ class ParsedSimaProCsv:
         data: list[dict],
         metadata: dict | None = None,
         parameters: list[dict] | None = None,
+        code_scheme: int | None = None,
     ):
         self.db_name = db_name
         self.data = data
         self.metadata = dict(metadata or {})
+        # ``StableCodeAssigner.SCHEME`` the codes were derived under; ``None``
+        # for data that did not pass through it. Pickles written before the
+        # codes were derived lack the attribute — the importer re-parses those.
+        self.code_scheme = code_scheme
         # Process-local parameter definitions (see ``ProcessParameterExtractor``).
         # Pickles written before this field existed lack the attribute — the
         # importer treats those caches as stale and re-parses.

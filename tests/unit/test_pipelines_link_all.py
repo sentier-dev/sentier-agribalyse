@@ -396,6 +396,126 @@ class TestColIdToLocationOverrides:
         key = ExchangeFrameBuilder.flow_id_for(("agribalyse-3.2", "Y"))
         assert out[key] == "FR"
 
+    def test_an_allocator_split_takes_its_parent_location(self):
+        # The Allocator mints split ids that are no (database, code) hash; the
+        # split is its parent's process for one product, so it is where the
+        # parent is. Without this, the regional correction misses every split.
+        sp_data = [self._sp_dataset("olive oil and pomace production FR", code="P")]
+        parent = ExchangeFrameBuilder.flow_id_for(("agribalyse-3.2", "P"))
+        out = LinkAllPipeline._col_id_to_location(
+            pd.DataFrame(columns=["database", "code", "location"]),
+            sp_data,
+            synthetic_provenance={-11: (parent, 101), -12: (parent, 102)},
+        )
+        assert out[-11] == "FR"
+        assert out[-12] == "FR"
+
+    def test_a_split_follows_an_override_of_its_parent(self, tmp_path):
+        sp_data = [self._sp_dataset("tomato and leaves production GLO", code="P")]
+        parent = ExchangeFrameBuilder.flow_id_for(("agribalyse-3.2", "P"))
+        overrides_path = self._write_overrides(
+            tmp_path / "ov.json",
+            [{"database": "agribalyse-3.2", "code": "P", "location": "FR"}],
+        )
+        out = LinkAllPipeline._col_id_to_location(
+            pd.DataFrame(columns=["database", "code", "location"]),
+            sp_data,
+            overrides=ActivityLocationOverrides.load(overrides_path),
+            synthetic_provenance={-11: (parent, 101)},
+        )
+        assert out[-11] == "FR"
+
+    # An unnamed multi-output block: the reader names the parent
+    # ``MFP: <product>⧺<product>`` with each name cut at 25 characters, so the
+    # parent's name has lost the ``{FR}`` its child's full name still carries.
+    _MFP_PARENT = "MFP: Albacore tuna, main produ⧺Fresh albacore tuna, Fish"
+    _MFP_CHILD = "Fresh albacore tuna, Fish by products {FR} (read-only process)"
+
+    @classmethod
+    def _child(cls, name: str, parent_code: str, product_code: str, code: str = "C"):
+        return {
+            **cls._sp_dataset(name, code=code),
+            "type": "readonly_process",
+            "mf_parent_key": ("agribalyse-3.2", parent_code),
+            "exchanges": [
+                {
+                    "type": "production",
+                    "functional": True,
+                    "input": ("agribalyse-3.2", product_code),
+                },
+                {"type": "production", "functional": False, "input": None},
+            ],
+        }
+
+    def _allocated(self, parent_name, child_name, overrides=None):
+        """Locations of the parent, the reader's child and the Allocator's
+        split of one product (split id -11), plus a split of a second
+        product the reader wrote no child for (split id -12)."""
+        sp_data = [
+            self._sp_dataset(parent_name, code="P"),
+            self._child(child_name, parent_code="P", product_code="PR1"),
+        ]
+        fid = ExchangeFrameBuilder.flow_id_for
+        parent, child = fid(("agribalyse-3.2", "P")), fid(("agribalyse-3.2", "C"))
+        product, other = fid(("agribalyse-3.2", "PR1")), fid(("agribalyse-3.2", "PR2"))
+        out = LinkAllPipeline._col_id_to_location(
+            pd.DataFrame(columns=["database", "code", "location"]),
+            sp_data,
+            overrides=overrides,
+            synthetic_provenance={-11: (parent, product), -12: (parent, other)},
+        )
+        return out.get(parent), out.get(child), out.get(-11), out.get(-12)
+
+    def test_a_split_takes_the_location_of_the_readers_child(self):
+        parent, child, split, other = self._allocated(self._MFP_PARENT, self._MFP_CHILD)
+        assert parent is None
+        assert child == split == "FR"
+        assert other is None  # no child for that product: the parent's (none)
+
+    def test_an_override_of_the_parent_reaches_the_child_and_the_split(self, tmp_path):
+        overrides = ActivityLocationOverrides.load(
+            self._write_overrides(
+                tmp_path / "ov.json",
+                [{"database": "agribalyse-3.2", "code": "P", "location": "ES"}],
+            )
+        )
+        parent, child, split, other = self._allocated(
+            self._MFP_PARENT, self._MFP_CHILD, overrides=overrides
+        )
+        assert parent == child == split == other == "ES"
+
+    def test_an_override_of_the_child_wins_for_the_split_too(self, tmp_path):
+        overrides = ActivityLocationOverrides.load(
+            self._write_overrides(
+                tmp_path / "ov.json",
+                [
+                    {"database": "agribalyse-3.2", "code": "P", "location": "ES"},
+                    {"database": "agribalyse-3.2", "code": "C", "location": "IT"},
+                ],
+            )
+        )
+        parent, child, split, other = self._allocated(
+            self._MFP_PARENT, self._MFP_CHILD, overrides=overrides
+        )
+        assert (parent, child, split, other) == ("ES", "IT", "IT", "ES")
+
+    def test_a_child_without_location_takes_its_parents(self):
+        parent, child, split, _ = self._allocated(
+            "olive oil and pomace production FR", "Olive pomace (read-only process)"
+        )
+        assert parent == child == split == "FR"
+
+    def test_a_split_of_a_parent_without_location_has_none(self):
+        sp_data = [self._sp_dataset("tomato and leaves production GLO", code="P")]
+        parent = ExchangeFrameBuilder.flow_id_for(("agribalyse-3.2", "P"))
+        out = LinkAllPipeline._col_id_to_location(
+            pd.DataFrame(columns=["database", "code", "location"]),
+            sp_data,
+            synthetic_provenance={-11: (parent, 101)},
+        )
+        assert parent not in out
+        assert -11 not in out
+
     @staticmethod
     def _write_overrides(path, rows: list[dict]) -> pathlib.Path:  # noqa: F821 - typing-only string
         path.write_text(json.dumps({"version": 1, "overrides": rows}))

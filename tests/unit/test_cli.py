@@ -325,10 +325,17 @@ class TestMappingsComparisonCli:
         # avoids the local-class pickle issue.
         import types
 
+        from transforms.stable_codes import StableCodeAssigner
+
         cache_path = settings.paths.importer_cache_pkl
         cache_path.parent.mkdir(parents=True, exist_ok=True)
         cache_path.write_bytes(
-            pickle.dumps(types.SimpleNamespace(data=[{"name": "P", "exchanges": []}]))
+            pickle.dumps(
+                types.SimpleNamespace(
+                    data=[{"name": "P", "exchanges": []}],
+                    code_scheme=StableCodeAssigner.SCHEME,
+                )
+            )
         )
 
         class _FakeExporter:
@@ -343,6 +350,35 @@ class TestMappingsComparisonCli:
         rc = MappingsComparisonCli(settings=settings).run([])
         assert rc == 0
         assert order == ["init:1", "export"]
+
+    @pytest.mark.parametrize("scheme", [None, "an-earlier-scheme"])
+    def test_refuses_a_cache_with_codes_of_another_scheme(self, settings, monkeypatch, scheme):
+        """A cache parsed before the stable codes holds random codes; the
+        review export must not be written from it (the importer re-parses
+        such a cache, this command only reads it)."""
+        import pickle
+        import types
+
+        fields = {"data": [{"name": "P", "exchanges": []}]}
+        if scheme is not None:
+            fields["code_scheme"] = scheme
+        cache_path = settings.paths.importer_cache_pkl
+        cache_path.parent.mkdir(parents=True, exist_ok=True)
+        cache_path.write_bytes(pickle.dumps(types.SimpleNamespace(**fields)))
+
+        exported: list[str] = []
+
+        class _FakeExporter:
+            def __init__(self, _settings, sp_data=None):
+                exported.append("init")
+
+            def export(self):
+                exported.append("export")
+
+        monkeypatch.setattr("cli.mappings_comparison.MappingsComparisonExporter", _FakeExporter)
+        rc = MappingsComparisonCli(settings=settings).run([])
+        assert rc == 1
+        assert exported == []
 
     def test_raises_when_importer_cache_missing(self, settings):
         rc = MappingsComparisonCli(settings=settings).run([])

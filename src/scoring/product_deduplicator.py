@@ -15,7 +15,15 @@ production edges with them — no dangling rows.
 Runs *after* ``Allocator`` so the synthetic activity ids produced by
 multifunctional splits are visible. Multifunctional split itself does
 not introduce new product duplicates: each synthetic activity produces
-a distinct product."""
+a distinct product.
+
+One duplicate comes with every allocated product, though: the SimaPro
+reader already wrote a ``readonly_process`` child for it, and the
+``Allocator`` adds its split of the same parent. The smallest id decides
+between the two, and either may stand for the product: their exchanges
+are the same, and ``LinkAllPipeline._col_id_to_location`` gives both one
+location (the child's override, the parent's override, the child's own
+location, the parent's), so the product scores the same whichever is kept."""
 
 from __future__ import annotations
 

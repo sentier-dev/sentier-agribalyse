@@ -31,7 +31,7 @@ from __future__ import annotations
 
 import json
 import math
-from collections.abc import Iterable
+from collections.abc import Iterable, Mapping
 from dataclasses import dataclass, field
 from typing import Any, ClassVar
 
@@ -605,7 +605,10 @@ class LinkAllPipeline:
             settings.paths.activity_location_overrides_json
         )
         col_id_to_location = cls._col_id_to_location(
-            ei_catalog_df, sp.data, overrides=activity_location_overrides
+            ei_catalog_df,
+            sp.data,
+            overrides=activity_location_overrides,
+            synthetic_provenance=synthetic_provenance,
         )
 
         # AWARE per-activity net-consumption correction for water use.
@@ -780,6 +783,7 @@ class LinkAllPipeline:
         sp_data: Iterable[dict] | None = None,
         *,
         overrides: ActivityLocationOverrides | None = None,
+        synthetic_provenance: Mapping[int, tuple[int, int]] | None = None,
     ) -> dict[int, str]:
         """Map technosphere column ids (``flow_id_for((db, code))``) to
         the activity's location.
@@ -802,6 +806,19 @@ class LinkAllPipeline:
           whose aggregate location masks the FR context ADEME actually
           assumes in the synthese (cf. sweet pepper greenhouse).
 
+        An allocated product has two columns: the SimaPro reader's
+        read-only child (``mf_parent_key``) and the column the ``Allocator``
+        splits from the multi-output process (``synthetic_provenance``:
+        split id -> ``(parent id, product id)``), which has no
+        ``(db, code)`` of its own. Both are the parent's process for one
+        product and get one location, in this order: an override of the
+        child, an override of the parent, the child's own location, the
+        parent's. ``ProductDeduplicator`` keeps either column, so the two
+        must not differ. The child's own location matters: when the block
+        has no ``Process name``, the reader names the parent
+        ``MFP: <product>⧺<product>`` with each name cut at 25 characters,
+        which drops the ``{FR}`` marker the child's full name still carries.
+
         Aggregate locations (``GLO`` / ``RoW`` / ``RER`` / …) are
         re-routed to ``AGGREGATE_FALLBACK`` (default ``None`` — see
         the rationale block on that class attribute for why a blanket
@@ -820,6 +837,8 @@ class LinkAllPipeline:
                     continue
                 out[ExchangeFrameBuilder.flow_id_for((str(db), str(code)))] = resolved
 
+        # (parent id, product id) -> child id, for the reader's allocated children.
+        children: dict[tuple[int, int], int] = {}
         if sp_data is not None:
             parser = ActivityLocationParser()
             for ds in sp_data:
@@ -827,6 +846,9 @@ class LinkAllPipeline:
                 code = str(ds.get("code") or "")
                 if not db or not code:
                     continue
+                allocated = cls._allocated_product(ds)
+                if allocated is not None:
+                    children[allocated] = ExchangeFrameBuilder.flow_id_for((db, code))
                 # Prefer the dataset's explicit ``location`` when set
                 # (~5 % of AGB rows, mostly aggregated regions like
                 # ``World`` or ``Europe, Western`` — same form the
@@ -847,10 +869,49 @@ class LinkAllPipeline:
                 # catalog's ISO code is authoritative when present.
                 out.setdefault(key, parsed)
 
+        overridden: set[int] = set()
         if overrides is not None:
             for db, code, location in overrides.items():
-                out[ExchangeFrameBuilder.flow_id_for((db, code))] = location
+                key = ExchangeFrameBuilder.flow_id_for((db, code))
+                out[key] = location
+                overridden.add(key)
+
+        def allocated_location(parent_id: int, child_id: int | None) -> str | None:
+            if child_id is not None and child_id in overridden:
+                return out[child_id]
+            if parent_id in overridden:
+                return out[parent_id]
+            own = out.get(child_id) if child_id is not None else None
+            return own if own is not None else out.get(parent_id)
+
+        for (parent_id, _product_id), child_id in children.items():
+            location = allocated_location(parent_id, child_id)
+            if location is not None:
+                out[child_id] = location
+        for split_id, (parent_id, product_id) in (synthetic_provenance or {}).items():
+            location = allocated_location(parent_id, children.get((parent_id, product_id)))
+            if location is not None:
+                out[split_id] = location
         return out
+
+    @staticmethod
+    def _allocated_product(ds: dict) -> tuple[int, int] | None:
+        """``(parent id, product id)`` of a read-only child the reader wrote
+        for one product of a multi-output process, else ``None``. The product
+        is the input of the child's functional production exchange, the same
+        id the ``Allocator`` records for its split of that product."""
+        parent = ds.get("mf_parent_key")
+        if not parent:
+            return None
+        for exc in ds.get("exchanges") or ():
+            if exc.get("functional") and exc.get("type") in ("production", "generic production"):
+                product = exc.get("input")
+                if product:
+                    return (
+                        ExchangeFrameBuilder.flow_id_for(tuple(parent)),
+                        ExchangeFrameBuilder.flow_id_for(tuple(product)),
+                    )
+        return None
 
     @classmethod
     def _resolve_location(cls, raw: str | None) -> str | None:
