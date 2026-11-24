@@ -65,9 +65,9 @@ class BuildFlowDecompCli(BaseCli):
             choices=("scipy", "pardiso"),
             default="pardiso",
             help=(
-                "Linear solver for A^-1 d. 'pardiso' is the project default "
-                "because scipy SuperLU rejects the post-refactor matrix's "
-                "37 zero-diagonal placeholder activities."
+                "Linear solver for A^-1 d. 'pardiso' (needs pypardiso) is the "
+                "default because it is fast; 'scipy' works too, more slowly, "
+                "and uses UMFPACK if scikit-umfpack is installed."
             ),
         )
         return p

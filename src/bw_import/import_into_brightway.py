@@ -499,7 +499,15 @@ def _get_node(bd, database: str, code: str):
     return bd.Database(database).get(code)  # bw2data 3.x
 
 
-def _score(bd, activity, method_name) -> float:
+# A score made of terms that cancel is compared against this fraction of its
+# gross (the sum of the absolute terms), as the export's own check does: one
+# side may hold an exact 0 where the other holds a rounding residue.
+_ZERO_FLOOR = 1e-6
+
+
+def _score(bd, activity, method_name) -> tuple[float, float]:
+    """The score and its gross: the sum over flows of ``|cf x inventory|``, each
+    flow's inventory summed over activities first, as the export's check has it."""
     import bw2calc as bc
 
     prepare = getattr(bd, "prepare_lca_inputs", None)
@@ -510,7 +518,8 @@ def _score(bd, activity, method_name) -> float:
         lca = bc.LCA({activity: 1.0}, method=method_name)
     lca.lci()
     lca.lcia()
-    return float(lca.score)
+    per_flow = np.asarray(lca.characterized_inventory.sum(axis=1))
+    return float(lca.score), float(np.abs(per_flow).sum())
 
 
 def _verify(bd, bundle_dir: Path, activities: pd.DataFrame, n: int) -> None:
@@ -537,8 +546,8 @@ def _verify(bd, bundle_dir: Path, activities: pd.DataFrame, n: int) -> None:
         _, code = key_by_col[col_id]
         activity = _get_node(bd, _ACTIVITIES_DB, code)
         for method_key, expected in sample["expected"]:
-            got = _score(bd, activity, tuple(method_key))
-            denom = abs(expected) if expected else 1.0
+            got, gross = _score(bd, activity, tuple(method_key))
+            denom = max(abs(expected), _ZERO_FLOOR * gross) or 1.0
             rel = abs(got - expected) / denom
             max_rel = max(max_rel, rel)
             n_checked += 1

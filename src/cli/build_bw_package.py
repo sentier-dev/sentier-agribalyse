@@ -14,6 +14,7 @@ itself: gitignored, blocked by the pre-commit EULA guard, never redistributed.
 from __future__ import annotations
 
 import argparse
+import importlib
 import shutil
 import sys
 from dataclasses import dataclass
@@ -102,6 +103,32 @@ class BuildBwPackageCli(BaseCli):
         step = max(1, len(all_ids) // count)
         return all_ids[::step][:count]
 
+    # Solver bindings under which the native scorer and bw2calc use the same
+    # solver. Without one of them both use scipy's own solver, which on the
+    # real matrix is accurate to about 1e-7 only, not to the 1e-9 asked for.
+    SOLVER_MODULES: ClassVar[tuple[str, ...]] = ("pypardiso", "scikits.umfpack")
+
+    @classmethod
+    def solver_hint(cls) -> str:
+        """What to install when the parity check fails for want of a solver.
+
+        A module counts only if it imports, as scipy and bw2calc decide: an
+        installed scikit-umfpack whose library does not load leaves both on
+        scipy's own solver, so the hint must still be given."""
+        for module in cls.SOLVER_MODULES:
+            try:
+                importlib.import_module(module)
+            except ImportError:
+                continue
+            return ""
+        return (
+            " Neither pypardiso nor scikit-umfpack can be imported. On the real matrix "
+            "scipy's own solver is accurate to about 1e-7 only, so a failure of that "
+            "size can be solver noise. Install the pardiso extra, or the umfpack "
+            "extra on Apple Silicon, and run again; a failure that remains is a "
+            "defect of the export."
+        )
+
     def execute(self, args: argparse.Namespace) -> None:
         package = ScoringPackageLocator(settings=self.settings).load()
         embedded = CorrectionEmbedder().embed(package)
@@ -126,6 +153,7 @@ class BuildBwPackageCli(BaseCli):
                 raise RuntimeError(
                     f"Parity check FAILED: max rel error {result.max_rel_error:.3e} "
                     f"> tolerance {result.tolerance:.1e}. Datapackage not trustworthy."
+                    f"{self.solver_hint()}"
                 )
 
         paths = self.settings.paths

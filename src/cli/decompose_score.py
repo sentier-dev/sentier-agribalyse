@@ -233,9 +233,9 @@ class DecomposeScoreCli(BaseCli):
             choices=("scipy", "pardiso"),
             default="scipy",
             help=(
-                "Linear solver for A^-1 d. 'pardiso' requires pypardiso; needed "
-                "for the post-refactor matrix because scipy SuperLU rejects the "
-                "37 zero-diagonal placeholder activities as 'exactly singular'."
+                "Linear solver for A^-1 d. 'pardiso' requires pypardiso and is "
+                "faster; 'scipy' works too, more slowly, and uses UMFPACK if "
+                "scikit-umfpack is installed."
             ),
         )
         return p
