@@ -37,6 +37,12 @@ Only the *names* of the stripped unit processes ship
 from the user's licensed snapshot. ``TechnosphereMatcher`` sends
 references to a stripped unit copy to its rebuilt twin through
 :pyattr:`UnitCopyRebuild.redirects`.
+
+Every exchange written here names the ecoinvent exchange its amount came
+from, and the unit multiplier applied to it, in the attribute
+:attr:`RebuiltRecipe.ATTRIBUTE`. The link pipeline turns those into the
+amount-free recipe beside the scoring package, from which a licensed user
+refills the rebuilt columns of a skeleton.
 """
 
 from __future__ import annotations
@@ -55,8 +61,13 @@ from matching.simapro_form_resolver import SimaproFormResolver
 from matching.simapro_name_collisions import SimaproNameCollisions
 from registry.indexes import UnitConverter
 from scoring.ecoinvent_exchanges import EcoinventExchangesIngester
+from scoring.rebuilt_recipe import RebuiltRecipe
 
 Key = tuple[str, str]
+
+
+class RebuiltWithoutProductionError(ValueError):
+    """An ecoinvent activity to rebuild has no production exchange in the snapshot."""
 
 
 @dataclass(frozen=True)
@@ -275,10 +286,12 @@ class UnitCopyRebuilder:
         product_key = (agb_db, self.PRODUCT_PREFIX + ref.code)
         exchanges: list[dict] = []
         production = 1.0
+        production_source: dict | None = None
         for row in rows.itertuples(index=False):
             amount = float(row.amount)
             if row.type == "production":
                 production = amount
+                production_source = self._source(row)
                 continue
             if row.type == "biosphere":
                 exchanges.append(
@@ -286,10 +299,11 @@ class UnitCopyRebuilder:
                         "type": "biosphere",
                         "amount": amount,
                         "input": (str(row.input_database), str(row.input_code)),
+                        RebuiltRecipe.ATTRIBUTE: self._source(row),
                     }
                 )
                 continue
-            target, amount = self._input_target(
+            target, amount, multiplier = self._input_target(
                 str(row.input_database),
                 str(row.input_code),
                 amount,
@@ -301,7 +315,21 @@ class UnitCopyRebuilder:
                 counts,
                 stand_ins,
             )
-            exchanges.append({"type": str(row.type), "amount": amount, "input": target})
+            exchanges.append(
+                {
+                    "type": str(row.type),
+                    "amount": amount,
+                    "input": target,
+                    RebuiltRecipe.ATTRIBUTE: self._source(row, multiplier),
+                }
+            )
+        if production_source is None:
+            raise RebuiltWithoutProductionError(
+                f"The ecoinvent activity {ref.code} has no production exchange in the "
+                f"exchanges snapshot, so {name!r} cannot be rebuilt from it: its production "
+                "amount would be a guess that no recipe can reproduce. Regenerate the "
+                "snapshot (BOOTSTRAP.md)."
+            )
         exchanges.insert(
             0,
             {
@@ -311,6 +339,7 @@ class UnitCopyRebuilder:
                 "unit": ref.unit,
                 "amount": production,
                 "input": product_key,
+                RebuiltRecipe.ATTRIBUTE: production_source,
             },
         )
         common = {
@@ -344,24 +373,36 @@ class UnitCopyRebuilder:
         units: dict[str, str],
         counts: dict[str, int],
         stand_ins: dict[str, str],
-    ) -> tuple[Key, float]:
+    ) -> tuple[Key, float, float]:
+        """Where an input goes, its amount there, and the unit multiplier applied."""
         if input_db != ei_db:
-            return (input_db, input_code), amount
+            return (input_db, input_code), amount, 1.0
         if input_code in adapted:
             product, adapted_unit = adapted[input_code]
             multiplier = self.unit_converter.multiplier(units.get(input_code, ""), adapted_unit)
             if multiplier is not None:
                 counts["to_adapted"] += 1
-                return product, amount * multiplier
+                return product, amount * multiplier, multiplier
             counts["unit_mismatch"] += 1
         if input_code in copies:
             counts["to_rebuilt"] += 1
-            return (agb_db, self.PRODUCT_PREFIX + input_code), amount
+            return (agb_db, self.PRODUCT_PREFIX + input_code), amount, 1.0
         if input_code in stand_ins:
             counts["to_shared_name_block"] += 1
-            return (input_db, stand_ins[input_code]), amount
+            return (input_db, stand_ins[input_code]), amount, 1.0
         counts["to_ecoinvent"] += 1
-        return (input_db, input_code), amount
+        return (input_db, input_code), amount, 1.0
+
+    @staticmethod
+    def _source(row: Any, multiplier: float = 1.0) -> dict:
+        """The ecoinvent exchange ``row`` as :attr:`RebuiltRecipe.ATTRIBUTE` records it."""
+        return {
+            "output_code": str(row.output_code),
+            "input_database": str(row.input_database),
+            "input_code": str(row.input_code),
+            "type": str(row.type),
+            "multiplier": float(multiplier),
+        }
 
     def _air_flows(self) -> set[Key]:
         """``(database, code)`` of every elementary flow whose top compartment is air."""
@@ -385,12 +426,15 @@ class UnitCopyRebuilder:
         units: dict[str, str],
         air: set[Key],
     ) -> tuple[dict, dict] | None:
-        """Air emissions of ``ref`` per kilogram of the fuel it burns."""
+        """Air emissions of ``ref`` per kilogram of the fuel it burns.
+
+        The reference amount is the largest kilogram input; its exchange is
+        recorded as the production's source."""
         rows = by_code.get(ref.code)
         if rows is None:
             return None
         fuel = [
-            float(row.amount)
+            row
             for row in rows.itertuples(index=False)
             if row.type == "technosphere"
             and row.input_database == ei_db
@@ -402,12 +446,14 @@ class UnitCopyRebuilder:
                 "type": "biosphere",
                 "amount": float(row.amount),
                 "input": (str(row.input_database), str(row.input_code)),
+                RebuiltRecipe.ATTRIBUTE: self._source(row),
             }
             for row in rows.itertuples(index=False)
             if row.type == "biosphere" and (str(row.input_database), str(row.input_code)) in air
         ]
         if not fuel or not emissions:
             return None
+        largest = max(fuel, key=lambda row: float(row.amount))
         process_key = (agb_db, self.EXTRACT_PREFIX + ref.code)
         product_key = (agb_db, self.EXTRACT_PRODUCT_PREFIX + ref.code)
         production = {
@@ -415,8 +461,9 @@ class UnitCopyRebuilder:
             "functional": True,
             "name": name,
             "unit": self.MASS_UNIT,
-            "amount": max(fuel),
+            "amount": float(largest.amount),
             "input": product_key,
+            RebuiltRecipe.ATTRIBUTE: self._source(largest),
         }
         common = {
             "database": agb_db,
@@ -430,7 +477,7 @@ class UnitCopyRebuilder:
             "code": process_key[1],
             "type": "process",
             "reference product": name,
-            "production amount": max(fuel),
+            "production amount": float(largest.amount),
             "exchanges": [production, *emissions],
         }
         product = {**common, "code": product_key[1], "type": "product", "exchanges": []}

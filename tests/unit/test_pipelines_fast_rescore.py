@@ -159,6 +159,21 @@ class TestLinkedSpCache:
         with pytest.raises(LinkedCacheStaleError, match="old cache format"):
             cache.load()
 
+    def test_a_cache_from_before_the_rebuilt_source_tags_is_stale(self, cache):
+        """Schema 1 pickles lack the source tag on rebuilt exchanges; replaying
+        one would write an empty rebuilt recipe over the package's, so it is
+        refused like any old format."""
+        import pickle
+
+        from transforms.linked_cache import LinkedCacheStaleError
+
+        sp = ParsedSimaProCsv(db_name="agb", data=[], parameters=[])
+        cache.path.write_bytes(
+            pickle.dumps({"schema": 1, "csv_stamp": cache._csv_stamp(), "sp": sp})
+        )
+        with pytest.raises(LinkedCacheStaleError, match="old cache format"):
+            cache.load()
+
     def test_truncated_pickle_raises_corrupt_error(self, cache):
         from transforms.linked_cache import LinkedCacheCorruptError
 
@@ -178,6 +193,47 @@ class TestLinkedSpCache:
         with pytest.raises(OSError):
             cache.write(ParsedSimaProCsv(db_name="agb", data=[], parameters=[]))
         assert list(cache.path.parent.glob("*.partial")) == []
+
+
+class TestLinkedSpCacheCsvRequest:
+    """The fast path replays the CSV the last ``dds-link-all`` read, also when
+    that run asked for one (``--csv``) and the fast command does not."""
+
+    @staticmethod
+    def _write_both(settings) -> None:
+        import lzma
+
+        settings.paths.agribalyse_csv.write_bytes(b"full export")
+        settings.paths.agribalyse_csv_ecoinvent_free_xz.write_bytes(lzma.compress(b"free"))
+
+    @staticmethod
+    def _sp() -> ParsedSimaProCsv:
+        return ParsedSimaProCsv(db_name="agb", data=[], parameters=[])
+
+    def test_a_cache_linked_from_the_requested_csv_replays_without_the_request(self, settings):
+        self._write_both(settings)
+        LinkedSpCache(settings=settings.with_agribalyse_csv("ecoinvent-free")).write(self._sp())
+
+        assert LinkedSpCache(settings=settings).load().db_name == "agb"
+
+    def test_a_cache_linked_under_auto_is_stale_once_the_full_export_appears(self, settings):
+        from transforms.linked_cache import LinkedCacheStaleError
+
+        settings.paths.agribalyse_csv_ecoinvent_free_xz.write_bytes(b"free")
+        LinkedSpCache(settings=settings).write(self._sp())
+        settings.paths.agribalyse_csv.write_bytes(b"full export")
+
+        with pytest.raises(LinkedCacheStaleError, match="different source CSV"):
+            LinkedSpCache(settings=settings).load()
+
+    def test_asking_for_another_csv_than_the_cache_holds_is_stale(self, settings):
+        from transforms.linked_cache import LinkedCacheStaleError
+
+        self._write_both(settings)
+        LinkedSpCache(settings=settings.with_agribalyse_csv("ecoinvent-free")).write(self._sp())
+
+        with pytest.raises(LinkedCacheStaleError, match="different source CSV"):
+            LinkedSpCache(settings=settings.with_agribalyse_csv("full")).load()
 
 
 class TestFastRescorePipeline:

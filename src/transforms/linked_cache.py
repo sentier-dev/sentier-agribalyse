@@ -27,6 +27,7 @@ from typing import Any, ClassVar
 
 from config import Settings
 from core.logging import Logging, StepTimer
+from transforms.agribalyse_csv_source import AgribalyseCsvSource
 
 
 class LinkedCacheMissingError(FileNotFoundError):
@@ -49,7 +50,10 @@ class LinkedSpCache:
 
     # Bump when the pickled payload's expected shape changes so old caches
     # fail loudly instead of mis-replaying.
-    SCHEMA_VERSION: ClassVar[int] = 1
+    # 2: the exchanges of the processes rebuilt from ecoinvent carry their
+    # source (``RebuiltRecipe.ATTRIBUTE``). Replayed, a version-1 cache would
+    # write an empty recipe over the package's good one.
+    SCHEMA_VERSION: ClassVar[int] = 2
 
     @property
     def _log(self) -> Any:
@@ -59,31 +63,18 @@ class LinkedSpCache:
     def path(self):
         return self.settings.paths.linked_cache_pkl
 
-    def _csv_stamp(self) -> tuple[int, int] | None:
-        paths = self.settings.paths
-        # Stamp the file the run was fed from: the full export when present,
-        # else the committed ecoinvent-free archive (not its cache copy).
-        csv = next(
-            (
-                p
-                for p in (paths.agribalyse_csv, paths.agribalyse_csv_ecoinvent_free_xz)
-                if p.exists()
-            ),
-            None,
-        )
-        if csv is None:
-            return None
-        stat = csv.stat()
-        return (stat.st_size, int(stat.st_mtime))
+    def _csv_stamp(self) -> tuple[str, str, int, str] | None:
+        """Stamp of the file this run reads; see ``AgribalyseCsvSource.stamp``."""
+        return AgribalyseCsvSource(settings=self.settings).stamp()
 
     def write(self, sp: Any) -> None:
         self.path.parent.mkdir(parents=True, exist_ok=True)
         partial = self.path.with_suffix(self.path.suffix + ".partial")
-        payload = {
-            "schema": self.SCHEMA_VERSION,
-            "csv_stamp": self._csv_stamp(),
-            "sp": sp,
-        }
+        # The stamp the importer recorded is the file this link parsed; hashing
+        # the CSV again here would cost another pass over it and could name a
+        # file that changed during the run.
+        stamp = getattr(sp, "csv_stamp", None) or self._csv_stamp()
+        payload = {"schema": self.SCHEMA_VERSION, "csv_stamp": stamp, "sp": sp}
         with StepTimer(self._log, "linked_cache.write", path=self.path.name):
             try:
                 with partial.open("wb") as fh:
@@ -91,6 +82,7 @@ class LinkedSpCache:
                 os.replace(partial, self.path)
             finally:
                 partial.unlink(missing_ok=True)
+        AgribalyseCsvSource(settings=self.settings).record_request()
 
     def load(self) -> Any:
         if not self.path.exists():
@@ -112,11 +104,15 @@ class LinkedSpCache:
             raise LinkedCacheStaleError(
                 f"{self.path} uses an old cache format — rerun dds-link-all to regenerate it."
             )
-        if payload.get("csv_stamp") != self._csv_stamp():
+        # A command that asks for no CSV (``dds-set-parameter --fast``) checks
+        # the one the last ``dds-link-all`` asked for (``AgribalyseCsvSource``),
+        # so a link with ``--csv ecoinvent-free`` replays while the full export
+        # stays in ``source/``.
+        expected = self._csv_stamp()
+        if payload.get("csv_stamp") != expected:
             raise LinkedCacheStaleError(
                 f"{self.path} was built from a different source CSV "
-                f"(size/mtime mismatch with the Agribalyse CSV in "
-                f"{self.settings.paths.source.name}/) — rerun "
-                f"dds-link-all to regenerate it."
+                f"({payload.get('csv_stamp')}; this run reads {expected}: variant, file, "
+                f"size, content hash) — rerun dds-link-all to regenerate it."
             )
         return payload["sp"]

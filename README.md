@@ -127,7 +127,7 @@ Flags worth knowing:
 8. View: `python -m http.server 8000 --directory dashboard`, then open `http://localhost:8000/backtest_dashboard.html`.
 9. Optional export: `uv run dds-build-bw-package` (needs the `bw` extra). `bw_package/` embeds ecoinvent data; it is gitignored and blocked by the guard.
 
-After replacing the SimaPro CSV run `uv run dds-reset`, then repeat from step 4.
+After replacing the SimaPro CSV, repeat from step 4; the parse cache notices the new file.
 
 ## The Agribalyse CSV
 
@@ -150,6 +150,7 @@ Which file is read:
 
 - `source/AGB32_final.CSV` (ADEME's full export), when you have it. It is gitignored and the guard refuses it.
 - Otherwise the shipped archive, decompressed once into `cache/`.
+- `dds-link-all --csv ecoinvent-free` reads the shipped archive although the full export is there, for a package `dds-build-skeleton` accepts; `--csv full` insists on the full export. Commands without `--csv` (`dds-set-parameter`, `dds-list-parameters`, …) read what the last `dds-link-all` asked for.
 
 `dashboard/run_report.json` records the variant under `stages.csv_source` and the rebuild under `stages.unit_copy_rebuild`.
 
@@ -194,7 +195,7 @@ Rebuilds are deterministic: after `dds-clear-parameters` the next run reproduces
 
 ### Changing parameters in SimaPro instead
 
-For structural edits (new parameters, changed formulas), edit in SimaPro, re-export with the original settings, replace `source/AGB32_final.CSV`, then run `uv run dds-reset`, `uv run dds-link-all`, `uv run dds-backtest`. `dds-reset` is required because the CSV parse cache does not hash the source file.
+For structural edits (new parameters, changed formulas), edit in SimaPro, re-export with the original settings, replace `source/AGB32_final.CSV`, then run `uv run dds-link-all`, `uv run dds-backtest`. The CSV parse cache records a hash of the file it was parsed from, so the new export is parsed again.
 
 ## Layout
 

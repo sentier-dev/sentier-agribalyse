@@ -24,6 +24,7 @@ from scoring.native_scorer import NativeLciaScorer, NativeScoreWorker, NativeWor
 from scoring.perennial_lifecycle_filter import PerennialLifecycleFilter
 from scoring.product_catalog import ProductCatalog, ProductCatalogBuilder
 from scoring.product_deduplicator import ProductDeduplicator
+from scoring.rebuilt_recipe import RebuiltRecipe
 from scoring.scorer import ScoringResult
 from scoring.scoring_package import (
     ScoringPackage,
@@ -54,6 +55,7 @@ __all__ = [
     "ProductCatalog",
     "ProductCatalogBuilder",
     "ProductDeduplicator",
+    "RebuiltRecipe",
     "ScoringPackage",
     "ScoringPackageBuilder",
     "ScoringPackageStore",

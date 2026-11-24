@@ -17,6 +17,7 @@ class Settings:
     DEFAULT_ECOINVENT_FOR_AGRIBALYSE: ClassVar[Mapping[str, str]] = MappingProxyType(
         {"3.2": "3.9.1", "4.0-beta": "3.11"}
     )
+    AGRIBALYSE_CSV_CHOICES: ClassVar[tuple[str, ...]] = ("auto", "full", "ecoinvent-free")
 
     agribalyse_version: str = "3.2"
     ecoinvent_version: str | None = None
@@ -34,6 +35,13 @@ class Settings:
 
     apply_transitive_layer: bool = False
     """The 'ecoinvent flows - EF v3.1 map' transitive sheet (806 rows). Off by default."""
+
+    agribalyse_csv: str | None = None
+    """Which Agribalyse CSV to read. ``dds-link-all --csv`` always sets it: ``auto``
+    (its default) reads ADEME's full export when it is in ``source/`` and the
+    ecoinvent-free one otherwise; ``full`` and ``ecoinvent-free`` ask for one.
+    ``None`` (every other command) follows what the last ``dds-link-all`` asked
+    for, or ``auto`` when no link recorded a request. See ``AgribalyseCsvSource``."""
 
     paths: Paths = field(default_factory=Paths)
 
@@ -69,3 +77,15 @@ class Settings:
 
     def with_no_llm(self) -> Settings:
         return replace(self, apply_llm_overrides=False)
+
+    def with_agribalyse_csv(self, variant: str) -> Settings:
+        return replace(self, agribalyse_csv=self.checked_agribalyse_csv(variant))
+
+    @classmethod
+    def checked_agribalyse_csv(cls, variant: str) -> str:
+        if variant not in cls.AGRIBALYSE_CSV_CHOICES:
+            raise ValueError(
+                f"Unknown Agribalyse CSV {variant!r}; choose one of "
+                f"{', '.join(cls.AGRIBALYSE_CSV_CHOICES)}."
+            )
+        return variant

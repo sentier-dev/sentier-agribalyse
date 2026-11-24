@@ -1,15 +1,14 @@
 """``dds-reset`` — restore the pristine baseline state.
 
 Deletes ``cache/scoring_packages/``, ``cache/importer_cache.pkl``,
-``cache/linked_cache.pkl``, and ``source/parameter_overrides.csv`` so the
-next ``dds-link-all`` run re-parses the SimaPro CSV and regenerates all
+``cache/linked_cache.pkl`` with ``cache/agribalyse_csv_request.txt`` (the CSV
+the last link asked for, which commands without ``--csv`` follow), and
+``source/parameter_overrides.csv`` so the next ``dds-link-all`` run re-parses the SimaPro CSV and regenerates all
 matrices from it, with no parameter what-ifs applied. The biosphere catalog, EF flows, and
 method-CF registries are NOT cleared — they are source-derived parquets
 that only change when you re-run ``dds-build-*``.
 
 Use this when:
-- You modified ``source/AGB32_final.CSV`` — the importer pickle carries
-  no hash of the CSV, so without a reset the old parse is silently reused.
 - You want to force a full re-link without changing the mappings.
 - You suspect the scoring package is stale (e.g. after a code refactor).
 - You want to drop all parameter overrides (``--keep-overrides`` opts out;
@@ -30,7 +29,8 @@ class ResetCli(BaseCli):
     PROG: ClassVar[str] = "cli.reset"
     DESCRIPTION: ClassVar[str] = (
         "Clear cache/scoring_packages/, cache/importer_cache.pkl, "
-        "cache/linked_cache.pkl, and source/parameter_overrides.csv so the "
+        "cache/linked_cache.pkl, cache/agribalyse_csv_request.txt and "
+        "source/parameter_overrides.csv so the "
         "next dds-link-all rebuilds the pristine baseline."
     )
 
@@ -56,6 +56,7 @@ class ResetCli(BaseCli):
         for pkl in (
             self.settings.paths.importer_cache_pkl,
             self.settings.paths.linked_cache_pkl,
+            self.settings.paths.agribalyse_csv_request,
         ):
             if pkl.exists():
                 pkl.unlink()

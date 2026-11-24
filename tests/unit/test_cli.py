@@ -195,6 +195,28 @@ class TestLinkAllCli:
         LinkAllCli(settings=settings).run(["--no-llm"])
         assert captured["settings_apply_llm"] is False
 
+    @pytest.mark.parametrize(
+        ("argv", "expected"),
+        [
+            ([], "auto"),
+            (["--csv", "ecoinvent-free"], "ecoinvent-free"),
+            (["--csv", "full"], "full"),
+        ],
+    )
+    def test_csv_flag_propagates_to_settings(self, settings, monkeypatch, argv, expected):
+        captured = {}
+
+        class _FakePipeline:
+            def __init__(self, _settings, *, options):
+                captured["agribalyse_csv"] = _settings.agribalyse_csv
+
+            def run(self):
+                return None
+
+        monkeypatch.setattr("cli.link_all.LinkAllPipeline", _FakePipeline)
+        assert LinkAllCli(settings=settings).run(argv) == 0
+        assert captured["agribalyse_csv"] == expected
+
     def test_skip_ecoinvent_flag_propagates(self, settings, monkeypatch):
         captured = {}
 
