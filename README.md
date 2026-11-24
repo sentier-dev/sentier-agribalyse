@@ -167,13 +167,13 @@ Share of the 2,451 backtested products within ±5% of ADEME's reference. "Shippe
 | Eutrophication, freshwater / marine / terrestrial | 68.6% / 88.7% / 90.7% | 100.0% / 100.0% / 96.2% | 100.0% / 100.0% / 96.2% |
 | Land use | 91.3% | 100.0% | 100.0% |
 | Energy resources / material resources | 91.7% / 88.2% | 100.0% / 100.0% | 100.0% / 100.0% |
-| Human toxicity, non-carcinogenic | 40.2% | 94.1% | 94.0% |
-| Ecotoxicity, freshwater | 42.9% | 97.4% | 97.4% |
+| Human toxicity, non-carcinogenic | 40.4% | 94.1% | 94.0% |
+| Ecotoxicity, freshwater | 43.0% | 97.4% | 97.4% |
 | Human toxicity, carcinogenic | 84.9% | 98.4% | 98.4% |
 | Water use | 22.1% | 22.8% | 29.7% |
-| **All 19 indicators** | **77.4%** | **94.8%** | **95.1%** |
+| **All 19 indicators** | **77.6%** | **94.8%** | **95.1%** |
 
-A mapping that names an elementary flow without a code is linked in the exchange's own sub-compartment, as SimaPro characterises it. Before, it was linked in whichever variant had the smallest code, and v0.4.1 and the full export differed on four indicators: freshwater ecotoxicity (95.8% v0.4.1, 52.7% full), carcinogenic toxicity (36.5%, 44.5%), non-carcinogenic toxicity (93.7%, 93.2%) and water use. All 19 indicators were at 91.4% and 89.9%. Now the two agree within 0.1 point on every indicator except water use. On this release's shipped file carcinogenic toxicity goes from 33.9% to 84.9%.
+A mapping that names an elementary flow without a code is linked in the exchange's own sub-compartment, as SimaPro characterises it. Before, it was linked in whichever variant had the smallest code, and v0.4.1 and the full export differed on four indicators: freshwater ecotoxicity (95.8% v0.4.1, 52.7% full), carcinogenic toxicity (36.5%, 44.5%), non-carcinogenic toxicity (93.8%, 93.2%) and water use. All 19 indicators were at 91.4% and 89.9%. Now the two agree within 0.1 point on every indicator except water use. On this release's shipped file carcinogenic toxicity goes from 33.9% to 84.9%.
 
 The drop against v0.4.1 is the bypassed adaptations and the unlinked inputs, and goes away when the adapted datasets are rebuilt. Water use differs between v0.4.1 and the full export for another reason: with the shipped file the ecoinvent background keeps its own sub-compartments and locations, where the embedded copies are aggregated blocks. Checked against SimaPro's own factors on the embedded copies, the ecoinvent route is the closer one on water use, and it moves the product scores away from ADEME's reference.
 
