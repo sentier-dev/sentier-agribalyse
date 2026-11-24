@@ -38,10 +38,13 @@ from tests.fixtures.bw_synthetic import (
 _IMPORTER = Path(__file__).resolve().parents[3] / "src" / "bw_import" / "import_into_brightway.py"
 
 # Per-generation dependency pins for the user-side environment. The importer
-# needs bw2data (to write) + bw2calc (to --verify) + numpy/pandas (to read).
+# needs bw2data (to write) + bw2calc (to --verify) + numpy/pandas/pyarrow (to
+# read). Legacy bw2data 3.6 uses `np.NaN`, removed in NumPy 2; pyarrow 26 needs
+# NumPy 2 without declaring it, so a NumPy-1 environment needs it pinned. These
+# are the pins the export's README gives.
 GENERATION_PINS = {
-    "legacy": ["bw2data>=3.6,<4", "bw2calc>=1.8,<2", "numpy<2", "pandas"],
-    "bw25": ["bw2data>=4.0,<5", "bw2calc>=2.0", "pandas"],
+    "legacy": ["bw2data>=3.6,<4", "bw2calc>=1.8,<2", "numpy<2", "pandas", "pyarrow<26"],
+    "bw25": ["bw2data>=4.0,<5", "bw2calc>=2.0", "pandas", "pyarrow"],
 }
 
 pytestmark = pytest.mark.skipif(
@@ -93,7 +96,15 @@ def test_importer_reconstructs_project_and_passes_parity(tmp_path, synthetic_pac
     _build_export(synthetic_package, export)
     bw_dir = tmp_path / f"bw-{generation}"
 
-    cmd = ["uv", "run", "--python", "3.11"]
+    # Only the pins, as in a user's environment (measured with uv 0.9.2):
+    # --isolated    a fresh environment. Without it uv layers the pins over the one
+    #               it finds (VIRTUAL_ENV, a virtualenv's python on PATH, or a .venv
+    #               above the working directory), which under `uv run pytest` is this
+    #               project's, with its own NumPy and pyarrow.
+    # --no-project  without it, inside this repository, --isolated builds that fresh
+    #               environment from this project and its dependencies, pyarrow
+    #               among them.
+    cmd = ["uv", "run", "--isolated", "--no-project", "--python", "3.11"]
     for pin in GENERATION_PINS[generation]:
         cmd += ["--with", pin]
     cmd += [

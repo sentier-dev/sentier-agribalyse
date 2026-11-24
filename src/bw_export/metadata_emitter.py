@@ -96,7 +96,9 @@ print(lca.score)
 ```
 
 The demand is keyed by the **product id** directly — look it up in
-`metadata/products.parquet` (column `product_id`); `metadata/methods.json` lists
+`metadata/products.parquet` (column `product_id`). It names every product: an
+AGRIBALYSE product by its own name, an ecoinvent product by its reference
+product, with the `location` of the activity that produces it. `metadata/methods.json` lists
 method keys and datapackage paths. The AWARE water-use correction is embedded as
 a synthetic biosphere flow (flagged in `metadata/biosphere.parquet`), so scores
 match the pipeline's backtested numbers exactly. `pip install pypardiso` is
@@ -108,12 +110,20 @@ strongly recommended: plain scipy works but each solve takes ~20s on this
 Run the importer **inside the same Python environment where Brightway (or
 Activity Browser) is installed** — it writes into *your* Brightway data
 directory, so it needs *your* `bw2data`. It works on both Brightway generations
-(legacy `bw2data` 3.x and `bw2data` 4.x / bw2.5); nothing here is pinned.
+(legacy `bw2data` 3.x and `bw2data` 4.x / bw2.5) and installs nothing itself.
+Besides `bw2data` and `bw2calc` it needs pandas and a parquet engine (pyarrow).
 
     # activate the env that has Activity Browser / Brightway, then:
     conda install pyarrow          # once; a fresh Activity Browser env has pandas
-                                   # but no parquet engine (pip install pyarrow in venvs)
+                                   # but no parquet engine
     python import_into_brightway.py --verify 3
+
+In a plain virtualenv, install pyarrow with pip. Legacy `bw2data` 3.x uses
+`np.NaN`, which NumPy 2 removed, but does not cap NumPy; pyarrow 26 needs NumPy 2
+without declaring it. A legacy environment therefore needs both pinned:
+
+    pip install "numpy<2" "pyarrow<26"   # legacy bw2data 3.x
+    pip install pyarrow                  # bw2data 4.x / bw2.5
 
 This creates a project (default `agribalyse-ef31`) with two databases — the
 activities database and its biosphere — and the 19 EF v3.1 methods, then
@@ -182,7 +192,7 @@ class MetadataEmitter:
         # exchange from a technosphere input at import time, so ship it.
         production_for_col = {col_idx_to_id[i]: row_idx_to_id[i] for i in col_idx_to_id}
 
-        self._emit_products(meta, written, product_catalog)
+        self._emit_products(meta, written, product_catalog, production_for_col, activity_resolver)
         self._emit_activities(meta, col_idx_to_id, production_for_col, activity_resolver)
         self._emit_biosphere(meta, embedded, bio_resolver)
         methods_json = self._emit_methods(written, out_root)
@@ -206,7 +216,12 @@ class MetadataEmitter:
         (out_root / "README.md").write_text(_README)
 
     def _emit_products(
-        self, meta: Path, written: WriteResult, product_catalog: pd.DataFrame
+        self,
+        meta: Path,
+        written: WriteResult,
+        product_catalog: pd.DataFrame,
+        production_for_col: dict[int, int],
+        activity_resolver: ActivityResolver,
     ) -> None:
         df = pd.DataFrame({"product_id": [int(p) for p in written.product_ids]})
         cols = [
@@ -217,7 +232,30 @@ class MetadataEmitter:
         cat = product_catalog[cols].copy()
         cat["product_id"] = cat["product_id"].astype("int64")
         df = df.merge(cat, on="product_id", how="left")
-        df.sort_values("product_id").to_parquet(meta / "products.parquet", index=False)
+        for col in ("name", "code", "database", "type", "unit"):
+            if col not in df.columns:
+                df[col] = pd.NA
+        # The product catalog holds the AGRIBALYSE products only. A background
+        # (ecoinvent) product is named after the activity that produces it: its
+        # reference product, unit and key, from the same ecoinvent catalog the
+        # activity table reads. Every product gets the location of its producer,
+        # which tells apart the ecoinvent products that share a reference product.
+        producer = {int(pid): int(cid) for cid, pid in production_for_col.items()}
+        names, codes, dbs, types, units, locations = [], [], [], [], [], []
+        for row in df.itertuples(index=False):
+            m = activity_resolver(producer[int(row.product_id)])
+            known = not pd.isna(row.name) and str(row.name) != ""
+            names.append(row.name if known else (m.reference_product or m.name))
+            dbs.append(row.database if known else m.key[0])
+            codes.append(row.code if known else m.key[1])
+            types.append(row.type if known else "product")
+            units.append(row.unit if known else m.unit)
+            locations.append(m.location)
+        df["name"], df["database"], df["code"] = names, dbs, codes
+        df["type"], df["unit"], df["location"] = types, units, locations
+        df = df.sort_values("product_id").reset_index(drop=True)
+        self._assert_fully_named(df, ("name", "database", "code"), "products")
+        df.to_parquet(meta / "products.parquet", index=False)
 
     def _emit_activities(
         self,
