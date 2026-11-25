@@ -92,7 +92,7 @@ Run every script as `uv run <script>`.
 | `dds-build-ecoinvent-catalog` | Write `registry/ecoinvent_catalog.parquet` from the activity snapshot. |
 | `dds-build-parameters` | Write `registry/parameters.parquet` and `registry/exchange_formulas.parquet` from the CSV. |
 | `dds-build-packages` | Author the randonneur datapackages in `source/randonneur_packages/` and the residuals review xlsx. |
-| `dds-link-all` | Full link pipeline. Writes the scoring package and `dashboard/run_report.json`, and the characterization audit receipt `dashboard/characterization_audit.json`. If the audit fails, no package is written and `run_report.json` keeps pointing at the last one. |
+| `dds-link-all` | Full link pipeline. Writes the scoring package and `dashboard/run_report.json`, and the characterization audit receipt `dashboard/characterization_audit.json`. Only a passing audit emits a package. If the headline climate method is missing or no emitted core gas is recognised, the audit receipt records the reason and `run_report.json` keeps pointing at the last package. |
 | `dds-run-end-to-end` | Smoke test: link, register LCIA, score a small sample. |
 | `dds-backtest` | Score every mapped product against ADEME. Writes `dashboard/backtest/` and `dashboard/backtest_pass1.csv`. |
 | `dds-compare-cfs` | SimaPro-vs-registry per-flow CF comparison. Writes `dashboard/cf_comparison.csv`. |

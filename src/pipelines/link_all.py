@@ -643,21 +643,17 @@ class LinkAllPipeline:
             pkg.content_hash,
             settings.paths.dashboard_characterization_audit,
         )
-        if characterization_audit["status"] == "failed":
-            # Do not repair a source value or guess fossil/non-fossil methane here.
+        status = characterization_audit["status"]
+        if status != "passed":
+            reason = characterization_audit["not_audited_reason"]
+            if status == "failed":
+                reason = (
+                    "core greenhouse gases would score zero (no source CF, or a factor of 0) "
+                    "or emitted flows lack catalog identity"
+                )
             raise ValueError(
-                "Characterization audit failed: core greenhouse gases would score zero "
-                "(no source CF, or a factor of 0) or emitted flows lack catalog identity. "
-                "No package was emitted; "
-                f"run_report.json is unchanged. See {receipt_path}."
-            )
-        if characterization_audit["status"] != "passed":
-            # No headline climate method, or no emitted flow recognised as a core gas:
-            # nothing was certified. Say so rather than let the stage read as a pass.
-            Logging.get(__name__).warning(
-                "link.characterization_audit.not_audited",
-                reason=characterization_audit["not_audited_reason"],
-                receipt=str(receipt_path),
+                f"Characterization audit {status}: {reason}. "
+                f"No package was emitted; run_report.json is unchanged. See {receipt_path}."
             )
         report.add_stage("characterization_audit", characterization_audit)
         store = ScoringPackageStore(root=settings.paths.scoring_packages_root)

@@ -112,8 +112,8 @@ def _seed_empty_ecoinvent_exchanges(settings):
     ).to_parquet(path)
 
 
-def _seed_biosphere_catalog(settings):
-    """Catalog the synthetic emitted CO2 so climate coverage can be certified."""
+def _seed_biosphere_catalog(settings, flow_name="Carbon dioxide, fossil"):
+    """Give the synthetic emitted flow its catalog identity."""
     path = settings.paths.registry_biosphere_catalog
     path.parent.mkdir(parents=True, exist_ok=True)
     pd.DataFrame(
@@ -121,7 +121,7 @@ def _seed_biosphere_catalog(settings):
             {
                 "database": "bio3",
                 "code": "co2",
-                "name": "Carbon dioxide, fossil",
+                "name": flow_name,
                 "categories": ["air"],
             }
         ]
@@ -290,28 +290,43 @@ class TestEmitScoringPackage:
         assert settings.paths.dashboard_run_report.read_bytes() == last_report
         assert not list(settings.paths.dashboard.glob("*.partial"))
 
-    def test_registry_without_a_climate_method_emits_and_says_it_was_not_audited(self, settings):
-        # Same emitted CO2 without a factor as in the failing tests, but no climate method:
-        # the audit has nothing to certify, so it must not report a pass either.
-        _seed_method_cfs_registry(
-            settings, ("ef", "v3.1", "acidification", "AE"), rows=list(self.NO_CO2_FACTOR)
-        )
+    @pytest.mark.parametrize(
+        ("method", "flow_name", "reason"),
+        [
+            (
+                ("ef", "v3.1", "acidification", "AE"),
+                "Carbon dioxide, fossil",
+                "no headline climate",
+            ),
+            (METHOD_KEY, "Ammonia", "no emitted flow was recognised as a core gas"),
+        ],
+    )
+    def test_unaudited_candidate_writes_its_reason_and_emits_no_package(
+        self, settings, method, flow_name, reason
+    ):
+        _seed_method_cfs_registry(settings, method, rows=list(self.CO2_FACTOR))
         _seed_empty_ecoinvent_exchanges(settings)
-        _seed_biosphere_catalog(settings)
+        _seed_biosphere_catalog(settings, flow_name)
         _seed_empty_ef_cf_parquet(settings)
-        report = RunReport()
-        payload = LinkAllPipeline._emit_scoring_package(
-            FakeSimaProImporter(_trivial_sp_data()), settings, report
-        )
-        assert (settings.paths.scoring_packages_root / payload["content_hash"]).is_dir()
-        assert report.stages["characterization_audit"]["status"] == "not_audited"
+        with pytest.raises(ValueError, match=reason):
+            LinkAllPipeline.emit_scoring_package(
+                FakeSimaProImporter(_trivial_sp_data()), settings, RunReport()
+            )
         receipt = json.loads(settings.paths.dashboard_characterization_audit.read_text())
         assert receipt["status"] == "not_audited"
-        assert receipt["not_audited_reason"]
+        assert reason in receipt["not_audited_reason"]
+        assert not (
+            settings.paths.scoring_packages_root / receipt["candidate_content_hash"]
+        ).exists()
+        assert not settings.paths.dashboard_run_report.exists()
 
-    def test_failed_audit_in_a_fast_rescore_keeps_the_last_run_report(self, settings):
-        # The fast path loads the last report from disk; a failed audit must not put
-        # ``status: failed`` next to the content hash of the package that passed.
+    @pytest.mark.parametrize(
+        ("method", "status"),
+        [(METHOD_KEY, "failed"), (("ef", "v3.1", "acidification", "AE"), "not_audited")],
+    )
+    def test_unsuccessful_audit_in_a_fast_rescore_keeps_the_last_run_report(
+        self, settings, method, status
+    ):
         settings.paths.agribalyse_csv.parent.mkdir(parents=True, exist_ok=True)
         settings.paths.agribalyse_csv.write_text("stand-in for the SimaPro export")
         LinkedSpCache(settings=settings).write(
@@ -321,8 +336,8 @@ class TestEmitScoringPackage:
         passed = FastRescorePipeline(settings=settings).run()
         last_good = settings.paths.dashboard_run_report.read_bytes()
 
-        self._seed(settings, self.NO_CO2_FACTOR)
-        with pytest.raises(ValueError, match="Characterization audit failed"):
+        _seed_method_cfs_registry(settings, method, rows=list(self.NO_CO2_FACTOR))
+        with pytest.raises(ValueError, match="Characterization audit"):
             FastRescorePipeline(settings=settings).run()
 
         assert settings.paths.dashboard_run_report.read_bytes() == last_good
@@ -331,7 +346,10 @@ class TestEmitScoringPackage:
             == passed.stages["scoring_package"]["content_hash"]
         )
         receipt = json.loads(settings.paths.dashboard_characterization_audit.read_text())
-        assert receipt["status"] == "failed"
+        assert receipt["status"] == status
+        assert not (
+            settings.paths.scoring_packages_root / receipt["candidate_content_hash"]
+        ).exists()
 
     def test_writes_scoring_package_and_records_content_hash(self, settings):
         method_key = ("ef", "v3.1", "climate change", "GWP100")
