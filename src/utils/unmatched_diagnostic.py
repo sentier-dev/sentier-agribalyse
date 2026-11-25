@@ -23,6 +23,7 @@ import openpyxl
 from config import Settings
 from domain import Bucket
 from matching.bio_catalog import BiosphereCatalog
+from matching.biosphere import BiosphereMatcher
 from registry import MappingRegistry
 
 
@@ -166,7 +167,7 @@ class UnmatchedFlowDiagnostic:
                 continue
 
             details: list[str] = []
-            target = self._resolve_target(cand, row.bucket, details)
+            target = self._resolve_target(cand, row, details)
             if target is None:
                 traces.append(self._trace(cand, "target_unresolved", details=details))
                 continue
@@ -257,8 +258,9 @@ class UnmatchedFlowDiagnostic:
             detail_lines=tuple(details or ()),
         )
 
-    def _resolve_target(self, cand, bucket: Bucket, details: list[str]):
+    def _resolve_target(self, cand, row: UnmatchedInputRow, details: list[str]):
         """Mirror of ``BiosphereMatcher._resolve_target`` with logging."""
+        bucket = row.bucket
         if cand.target_db and cand.target_code:
             ref = self.catalog.get(cand.target_db, cand.target_code)
             unit = ref.unit if ref is not None else cand.target_unit
@@ -287,7 +289,7 @@ class UnmatchedFlowDiagnostic:
         for db in prefs:
             hits = self.catalog.lookup_name_bucket(db, target_name, bucket)
             if hits:
-                ref = sorted(hits, key=lambda r: r.code)[0]
+                ref = BiosphereMatcher.pick_for_sub_compartment(hits, row.sub_cat or "")
                 details.append(
                     f"same-bucket lookup({db!r}, {target_name!r}, "
                     f"bucket={bucket.value}): picked {ref.code} ({ref.unit!r})"

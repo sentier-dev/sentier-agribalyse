@@ -49,7 +49,11 @@ class LinkedSpCache:
 
     # Bump when the pickled payload's expected shape changes so old caches
     # fail loudly instead of mis-replaying.
-    SCHEMA_VERSION: ClassVar[int] = 1
+    # 2: a biosphere target named without a code is linked in the
+    # exchange's own sub-compartment (``pick_for_sub_compartment``). A
+    # version-1 cache holds the links of the old resolution; replayed, the
+    # fast path would score them.
+    SCHEMA_VERSION: ClassVar[int] = 2
 
     @property
     def _log(self) -> Any:

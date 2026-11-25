@@ -16,16 +16,19 @@ from __future__ import annotations
 
 from collections.abc import Mapping
 from dataclasses import dataclass, field
+from functools import cache
 from types import MappingProxyType
 from typing import ClassVar
 
 from config import Settings
 from core.logging import Logging
 from domain import Bucket, Tier
+from ef.cf_flow_join import ContextNormaliser
 from matching.audit import AuditLog, DropTallyTracker
 from matching.bio_catalog import BioFlowRef, BiosphereCatalog
 from matching.regional_suffix import RegionalSuffixParser
 from registry import MappingRegistry
+from transforms.strategies.biosphere import _SIMAPRO_BIO_SUBCATEGORIES
 
 
 @dataclass(frozen=True)
@@ -107,6 +110,34 @@ class SubCompartmentNormaliser:
         }
     )
 
+    _EF_PREFIX: ClassVar[str] = "emissions to "
+
+    @classmethod
+    def canonical(cls, label: str | None) -> str:
+        """The ecoinvent spelling of a sub-compartment label from any of the
+        three vocabularies; ``""`` for unspecified. An unknown label is
+        returned lower-cased, so it still matches itself."""
+        text = cls._strip(label)
+        canonical, _ = cls._spellings()
+        return canonical.get(text, text)
+
+    @classmethod
+    def nearest(cls, label: str | None) -> str:
+        """The ecoinvent spelling of the sub-compartment a label belongs to:
+        its own for a label :meth:`canonical` knows, the one SimaPro folds
+        it into for an EF stack height (``urban air high stack`` ->
+        ``urban air close to ground``)."""
+        text = cls._strip(label)
+        canonical, sibling = cls._spellings()
+        return sibling.get(text, canonical.get(text, text))
+
+    @classmethod
+    def _strip(cls, label: str | None) -> str:
+        text = str(label or "").strip().lower()
+        if text.startswith(cls._EF_PREFIX):
+            text = text[len(cls._EF_PREFIX) :]
+        return text
+
     @classmethod
     def group(cls, label: str | None) -> str:
         """Return the canonical group key for a raw sub-compartment label.
@@ -118,6 +149,57 @@ class SubCompartmentNormaliser:
         if not label:
             return "unspecified"
         return cls._GROUPS.get(str(label).strip().lower(), "")
+
+    @classmethod
+    @cache
+    def _spellings(cls) -> tuple[Mapping[str, str], Mapping[str, str]]:
+        """Build the canonical and sibling lookup tables from the source vocabularies.
+
+        SimaPro labels map through the import strategy's table. An EF emission
+        label maps through the SimaPro sub-compartment ``ContextNormaliser``
+        gives it; where several EF labels share one SimaPro sub-compartment,
+        only the one that names it (``urban air close to ground``) is that
+        sub-compartment, the others are its siblings."""
+        to_ecoinvent = dict(_SIMAPRO_BIO_SUBCATEGORIES)
+
+        def ecoinvent(sp_sub: str) -> str:
+            sub = sp_sub.strip().lower()
+            return "" if sub in ("(unspecified)", "unspecified") else to_ecoinvent.get(sub, sub)
+
+        canonical: dict[str, str] = {sp.lower(): eco for sp, eco in to_ecoinvent.items()}
+        # Spellings neither table carries: the unspecified forms, a flow filed
+        # under its compartment only (``("Emissions", "Emissions to air")``),
+        # and the other spellings the registry's sources use (``_GROUPS``).
+        canonical.update(
+            {
+                "": "",
+                "(unspecified)": "",
+                "unspecified": "",
+                "air": "",
+                "water": "",
+                "soil": "",
+                "ground water": "ground-",
+                "ground water, long-term": "ground-, long-term",
+                "industrial soil": "industrial",
+                "non-agricultural": "industrial",
+                "forest": "forestry",
+            }
+        )
+        sibling: dict[str, str] = {}
+        by_sp: dict[tuple[str, str], list[str]] = {}
+        for cats, (sp_comp, sp_sub) in ContextNormaliser._EF_CATEGORIES_TO_SP_CONTEXT.items():
+            if cats[0] != "Emissions":
+                continue
+            label = cls._strip(cats[-1])
+            by_sp.setdefault((sp_comp, sp_sub), []).append(label)
+        for (_, sp_sub), labels in by_sp.items():
+            eco = ecoinvent(sp_sub)
+            for label in labels:
+                if len(labels) == 1 or label == eco:
+                    canonical[label] = eco
+                else:
+                    sibling[label] = eco
+        return MappingProxyType(canonical), MappingProxyType(sibling)
 
 
 @dataclass(frozen=True)
@@ -366,7 +448,7 @@ class BiosphereMatcher:
             if cand.tier.is_fill_only() and prior_input:
                 continue
 
-            target_db, target_code, target_unit = self._resolve_target(cand, exc_bucket)
+            target_db, target_code, target_unit = self._resolve_target(cand, exc_bucket, exc_sub)
             if not target_db or not target_code:
                 continue
 
@@ -398,8 +480,11 @@ class BiosphereMatcher:
 
         return None
 
-    def _resolve_target(self, cand, exc_bucket: Bucket) -> tuple[str, str, str]:
-        """Return ``(db, code, unit)``. Resolves missing codes via the catalog."""
+    def _resolve_target(self, cand, exc_bucket: Bucket, exc_sub: str = "") -> tuple[str, str, str]:
+        """Return ``(db, code, unit)``. Resolves missing codes via the catalog.
+
+        A target given by name only is resolved in the exchange's own
+        sub-compartment ``exc_sub`` (:meth:`pick_for_sub_compartment`)."""
         # Direct hit (registry already carries db+code).
         if cand.target_db and cand.target_code:
             ref = self.catalog.get(cand.target_db, cand.target_code)
@@ -453,7 +538,7 @@ class BiosphereMatcher:
         for db in prefs:
             hits = self.catalog.lookup_name_bucket(db, target_name, exc_bucket)
             if hits:
-                ref = self._deterministic_pick(hits)
+                ref = self.pick_for_sub_compartment(hits, exc_sub)
                 return ref.db, ref.code, ref.unit
         # UNSPECIFIED-bucket target fallback. SAFE — bio3 / EF flows in the
         # ``unspecified`` compartment are bucket-agnostic by design (generic
@@ -471,6 +556,56 @@ class BiosphereMatcher:
     def _deterministic_pick(refs: list[BioFlowRef]) -> BioFlowRef:
         """Pick the lexicographically-smallest code (replaces ``[0]`` non-determinism, fix 1.f)."""
         return sorted(refs, key=lambda r: (r.code,))[0]
+
+    @classmethod
+    def pick_for_sub_compartment(cls, refs: list[BioFlowRef], exc_sub: str) -> BioFlowRef:
+        """The variant of a flow name that an exchange in sub-compartment
+        ``exc_sub`` belongs to.
+
+        A name resolves to one flow per sub-compartment (``Water`` has five
+        in the water bucket). Picking the smallest code ignored the
+        exchange: ADEME's ``Turbined water`` (emissions to water,
+        unspecified) became a long-term groundwater release. In the 2026-11
+        build, 37,402 exchanges linked by name (36,633 of them through the
+        placeholder sheet) sat in another sub-compartment than their own
+        although their own variant existed. SimaPro
+        characterises an exchange in its own sub-compartment and, where
+        that has no factor, with the compartment's unspecified one; the
+        order here is the same:
+
+        0. the exchange's own sub-compartment, in any of the three
+           spellings (:meth:`SubCompartmentNormaliser.canonical`);
+        1. the unspecified variant (``('water',)``);
+        2. a sibling of the same group (``ground-`` for
+           ``ground-, long-term``; an EF stack height for the
+           sub-compartment SimaPro folds it into);
+        3. anything else.
+
+        The code breaks ties within a rank, as before.
+
+        ``_sub_rank`` orders differently (a same-group sibling before the
+        unspecified variant) because it answers another question: which of
+        several mapping rows to apply, each naming its own target. This
+        method only chooses among the sub-compartment variants of the one
+        flow a row names, which is the choice SimaPro makes when it
+        characterises the exchange.
+        """
+        exc_key = SubCompartmentNormaliser.canonical(exc_sub)
+        exc_group = SubCompartmentNormaliser.group(exc_key)
+
+        def rank(ref: BioFlowRef) -> int:
+            label = cls._extract_sub_compartment(tuple(ref.categories or ()))
+            key = SubCompartmentNormaliser.canonical(label)
+            if key == exc_key:
+                return 0
+            if not key:
+                return 1
+            group = SubCompartmentNormaliser.group(SubCompartmentNormaliser.nearest(label))
+            if group and group == exc_group:
+                return 2
+            return 3
+
+        return sorted(refs, key=lambda r: (rank(r), r.code))[0]
 
     def _target_db_prefs(self, cand) -> list[str]:
         """Preference order for catalog lookups: explicit ``target_db`` first

@@ -159,6 +159,24 @@ class TestLinkedSpCache:
         with pytest.raises(LinkedCacheStaleError, match="old cache format"):
             cache.load()
 
+    # max(..., 2): version 1 is always earlier, so the test fails, rather
+    # than collecting nothing, if the version is not raised.
+    @pytest.mark.parametrize("version", range(1, max(LinkedSpCache.SCHEMA_VERSION, 2)))
+    def test_cache_linked_before_the_sub_compartment_rule_is_stale(self, cache, version):
+        """A payload of any earlier version holds biosphere links resolved
+        without the exchange's sub-compartment; the fast path must not
+        score them. Every earlier version, not only 1: another change may
+        have taken a version number before this one lands."""
+        import pickle
+
+        from transforms.linked_cache import LinkedCacheStaleError
+
+        cache.write(ParsedSimaProCsv(db_name="agb", data=[], parameters=[]))
+        payload = pickle.loads(cache.path.read_bytes())
+        cache.path.write_bytes(pickle.dumps({**payload, "schema": version}))
+        with pytest.raises(LinkedCacheStaleError, match="old cache format"):
+            cache.load()
+
     def test_truncated_pickle_raises_corrupt_error(self, cache):
         from transforms.linked_cache import LinkedCacheCorruptError
 

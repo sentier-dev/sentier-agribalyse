@@ -162,18 +162,20 @@ Share of the 2,451 backtested products within ±5% of ADEME's reference. "Shippe
 | Ozone depletion | 69.5% | 100.0% | 100.0% |
 | Ionising radiation | 88.2% | 100.0% | 100.0% |
 | Photochemical ozone formation | 87.1% | 100.0% | 100.0% |
-| Particulate matter | 92.5% | 98.8% | 98.8% |
+| Particulate matter | 92.5% | 98.9% | 98.9% |
 | Acidification | 86.6% | 93.6% | 93.6% |
 | Eutrophication, freshwater / marine / terrestrial | 68.6% / 88.7% / 90.7% | 100.0% / 100.0% / 96.2% | 100.0% / 100.0% / 96.2% |
 | Land use | 91.3% | 100.0% | 100.0% |
 | Energy resources / material resources | 91.7% / 88.2% | 100.0% / 100.0% | 100.0% / 100.0% |
-| Human toxicity, non-carcinogenic | 40.1% | 93.8% | 93.2% |
-| Ecotoxicity, freshwater | 42.1% | 95.8% | 52.7% |
-| Human toxicity, carcinogenic | 33.9% | 36.5% | 44.5% |
+| Human toxicity, non-carcinogenic | 40.4% | 94.1% | 94.0% |
+| Ecotoxicity, freshwater | 43.0% | 97.4% | 97.4% |
+| Human toxicity, carcinogenic | 84.9% | 98.4% | 98.4% |
 | Water use | 22.1% | 22.8% | 29.7% |
-| **All 19 indicators** | **74.8%** | **91.4%** | **89.9%** |
+| **All 19 indicators** | **77.6%** | **94.8%** | **95.1%** |
 
-The drop against v0.4.1 is the bypassed adaptations and the unlinked inputs, and goes away when the adapted datasets are rebuilt. The differences between v0.4.1 and the full export have another cause: with the shipped file the ecoinvent background keeps its own sub-compartments and locations, where the embedded copies are aggregated blocks.
+A mapping that names an elementary flow without a code is linked in the exchange's own sub-compartment, as SimaPro characterises it. Before, it was linked in whichever variant had the smallest code, and v0.4.1 and the full export differed on four indicators: freshwater ecotoxicity (95.8% v0.4.1, 52.7% full), carcinogenic toxicity (36.5%, 44.5%), non-carcinogenic toxicity (93.8%, 93.2%) and water use. All 19 indicators were at 91.4% and 89.9%. Now the two agree within 0.1 point on every indicator except water use. On this release's shipped file carcinogenic toxicity goes from 33.9% to 84.9%.
+
+The drop against v0.4.1 is the bypassed adaptations and the unlinked inputs, and goes away when the adapted datasets are rebuilt. Water use differs between v0.4.1 and the full export for another reason: with the shipped file the ecoinvent background keeps its own sub-compartments and locations, where the embedded copies are aggregated blocks. Checked against SimaPro's own factors on the embedded copies, the ecoinvent route is the closer one on water use, and it moves the product scores away from ADEME's reference.
 
 Maintainers holding the full export rebuild the three files with `uv run dds-strip-ecoinvent`. It fails if any process of the aggregated-process deletion list survives; the commit guard refuses an archive that still holds a `Copied from` or `Adapted from Ecoinvent` block; and `tests/integration/test_ecoinvent_free_csv_shipped.py` audits the committed files.
 
