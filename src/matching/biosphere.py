@@ -16,6 +16,7 @@ from __future__ import annotations
 
 from collections.abc import Mapping
 from dataclasses import dataclass, field
+from functools import cache
 from types import MappingProxyType
 from typing import ClassVar
 
@@ -109,19 +110,6 @@ class SubCompartmentNormaliser:
         }
     )
 
-    # One sub-compartment, three spellings: ecoinvent / biosphere3 (the key
-    # every spelling maps to), SimaPro (``low. pop.``) and the JRC EF flow
-    # list, whose labels also carry an ``Emissions to`` prefix (stripped
-    # before the lookup). Derived from the two tables that already translate
-    # them, so the three cannot drift apart: SimaPro -> ecoinvent from the
-    # import strategy (``_SIMAPRO_BIO_SUBCATEGORIES``), EF -> SimaPro from
-    # the pairs ``ContextNormaliser`` uses for the characterisation factors
-    # (EF ``non-agricultural soil`` is SimaPro's and ecoinvent's
-    # ``industrial``). ``_SIBLING`` holds the EF labels SimaPro folds into
-    # another sub-compartment (the stack heights, ``non-urban air close to
-    # ground``): the same group, not the same sub-compartment.
-    _CANONICAL: ClassVar[Mapping[str, str]]
-    _SIBLING: ClassVar[Mapping[str, str]]
     _EF_PREFIX: ClassVar[str] = "emissions to "
 
     @classmethod
@@ -130,7 +118,8 @@ class SubCompartmentNormaliser:
         three vocabularies; ``""`` for unspecified. An unknown label is
         returned lower-cased, so it still matches itself."""
         text = cls._strip(label)
-        return cls._CANONICAL.get(text, text)
+        canonical, _ = cls._spellings()
+        return canonical.get(text, text)
 
     @classmethod
     def nearest(cls, label: str | None) -> str:
@@ -139,7 +128,8 @@ class SubCompartmentNormaliser:
         it into for an EF stack height (``urban air high stack`` ->
         ``urban air close to ground``)."""
         text = cls._strip(label)
-        return cls._SIBLING.get(text, cls._CANONICAL.get(text, text))
+        canonical, sibling = cls._spellings()
+        return sibling.get(text, canonical.get(text, text))
 
     @classmethod
     def _strip(cls, label: str | None) -> str:
@@ -160,61 +150,56 @@ class SubCompartmentNormaliser:
             return "unspecified"
         return cls._GROUPS.get(str(label).strip().lower(), "")
 
+    @classmethod
+    @cache
+    def _spellings(cls) -> tuple[Mapping[str, str], Mapping[str, str]]:
+        """Build the canonical and sibling lookup tables from the source vocabularies.
 
-def _sub_compartment_spellings() -> tuple[dict[str, str], dict[str, str]]:
-    """``(canonical, sibling)`` tables of :class:`SubCompartmentNormaliser`.
+        SimaPro labels map through the import strategy's table. An EF emission
+        label maps through the SimaPro sub-compartment ``ContextNormaliser``
+        gives it; where several EF labels share one SimaPro sub-compartment,
+        only the one that names it (``urban air close to ground``) is that
+        sub-compartment, the others are its siblings."""
+        to_ecoinvent = dict(_SIMAPRO_BIO_SUBCATEGORIES)
 
-    SimaPro labels map through the import strategy's table. An EF emission
-    label maps through the SimaPro sub-compartment ``ContextNormaliser``
-    gives it; where several EF labels share one SimaPro sub-compartment,
-    only the one that names it (``urban air close to ground``) is that
-    sub-compartment, the others are its siblings."""
-    to_ecoinvent = dict(_SIMAPRO_BIO_SUBCATEGORIES)
+        def ecoinvent(sp_sub: str) -> str:
+            sub = sp_sub.strip().lower()
+            return "" if sub in ("(unspecified)", "unspecified") else to_ecoinvent.get(sub, sub)
 
-    def ecoinvent(sp_sub: str) -> str:
-        sub = sp_sub.strip().lower()
-        return "" if sub in ("(unspecified)", "unspecified") else to_ecoinvent.get(sub, sub)
-
-    canonical: dict[str, str] = {sp.lower(): eco for sp, eco in to_ecoinvent.items()}
-    # Spellings neither table carries: the unspecified forms, a flow filed
-    # under its compartment only (``("Emissions", "Emissions to air")``),
-    # and the other spellings the registry's sources use (``_GROUPS``).
-    canonical.update(
-        {
-            "": "",
-            "(unspecified)": "",
-            "unspecified": "",
-            "air": "",
-            "water": "",
-            "soil": "",
-            "ground water": "ground-",
-            "ground water, long-term": "ground-, long-term",
-            "industrial soil": "industrial",
-            "non-agricultural": "industrial",
-            "forest": "forestry",
-        }
-    )
-    sibling: dict[str, str] = {}
-    by_sp: dict[tuple[str, str], list[str]] = {}
-    for cats, (sp_comp, sp_sub) in ContextNormaliser._EF_CATEGORIES_TO_SP_CONTEXT.items():
-        if cats[0] != "Emissions":
-            continue
-        label = SubCompartmentNormaliser._strip(cats[-1])
-        by_sp.setdefault((sp_comp, sp_sub), []).append(label)
-    for (_, sp_sub), labels in by_sp.items():
-        eco = ecoinvent(sp_sub)
-        for label in labels:
-            if len(labels) == 1 or label == eco:
-                canonical[label] = eco
-            else:
-                sibling[label] = eco
-    return canonical, sibling
-
-
-_canonical, _sibling = _sub_compartment_spellings()
-SubCompartmentNormaliser._CANONICAL = MappingProxyType(_canonical)
-SubCompartmentNormaliser._SIBLING = MappingProxyType(_sibling)
-del _canonical, _sibling
+        canonical: dict[str, str] = {sp.lower(): eco for sp, eco in to_ecoinvent.items()}
+        # Spellings neither table carries: the unspecified forms, a flow filed
+        # under its compartment only (``("Emissions", "Emissions to air")``),
+        # and the other spellings the registry's sources use (``_GROUPS``).
+        canonical.update(
+            {
+                "": "",
+                "(unspecified)": "",
+                "unspecified": "",
+                "air": "",
+                "water": "",
+                "soil": "",
+                "ground water": "ground-",
+                "ground water, long-term": "ground-, long-term",
+                "industrial soil": "industrial",
+                "non-agricultural": "industrial",
+                "forest": "forestry",
+            }
+        )
+        sibling: dict[str, str] = {}
+        by_sp: dict[tuple[str, str], list[str]] = {}
+        for cats, (sp_comp, sp_sub) in ContextNormaliser._EF_CATEGORIES_TO_SP_CONTEXT.items():
+            if cats[0] != "Emissions":
+                continue
+            label = cls._strip(cats[-1])
+            by_sp.setdefault((sp_comp, sp_sub), []).append(label)
+        for (_, sp_sub), labels in by_sp.items():
+            eco = ecoinvent(sp_sub)
+            for label in labels:
+                if len(labels) == 1 or label == eco:
+                    canonical[label] = eco
+                else:
+                    sibling[label] = eco
+        return MappingProxyType(canonical), MappingProxyType(sibling)
 
 
 @dataclass(frozen=True)
