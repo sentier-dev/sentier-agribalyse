@@ -66,6 +66,7 @@ from scoring import (
     ActivityLocationOverrides,
     ActivityLocationParser,
     Allocator,
+    CharacterizationAuditor,
     DanglingEdgeAuditor,
     DanglingEdgePruner,
     EcoinventExchangesIngester,
@@ -632,6 +633,29 @@ class LinkAllPipeline:
             biosphere_catalog=biosphere_catalog_df,
             aware_regional_cf_by_location=aware_regional_cf_by_location,
         )
+        auditor = CharacterizationAuditor()
+        characterization_audit = auditor.audit(pkg.biosphere, method_cfs, biosphere_catalog_df)
+        # The receipt has its own file. run_report.json is the pointer every consumer
+        # follows to the last emitted package (``ScoringPackageLocator``); a candidate
+        # that is withheld here must leave it exactly as the last good run wrote it.
+        receipt_path = auditor.write_receipt(
+            characterization_audit,
+            pkg.content_hash,
+            settings.paths.dashboard_characterization_audit,
+        )
+        status = characterization_audit["status"]
+        if status != "passed":
+            reason = characterization_audit["not_audited_reason"]
+            if status == "failed":
+                reason = (
+                    "core greenhouse gases would score zero (no source CF, or a factor of 0) "
+                    "or emitted flows lack catalog identity"
+                )
+            raise ValueError(
+                f"Characterization audit {status}: {reason}. "
+                f"No package was emitted; run_report.json is unchanged. See {receipt_path}."
+            )
+        report.add_stage("characterization_audit", characterization_audit)
         store = ScoringPackageStore(root=settings.paths.scoring_packages_root)
         package_path = store.write(pkg)
 

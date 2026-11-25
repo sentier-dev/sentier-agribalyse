@@ -1,0 +1,53 @@
+{
+  "dataset": "AGRIBALYSE",
+  "provider": "ADEME",
+  "repository": "https://github.com/sentier-dev/sentier-agribalyse",
+  "site_url": "https://sentier-dev.github.io/sentier-agribalyse/",
+  "source_ref": "main",
+  "description": "The public Sentier workspace for AGRIBALYSE imports, partner contributions, application tests, reviewed consensus and recommendations to ADEME.",
+  "sibling_name": "BAFU / UVEK",
+  "sibling_url": "https://sentier-dev.github.io/sentier-bafu/",
+  "validation_note": "Community checks use synthetic fixtures; this work does not claim a newly reproduced licensed AGRIBALYSE baseline or partner consensus.",
+  "documents": [
+    {
+      "title": "Import & use",
+      "source": "site/import.md",
+      "page": "import.html"
+    },
+    {
+      "title": "Evidence & testing",
+      "source": "community/build-validation.md",
+      "page": "testing.html"
+    },
+    {
+      "title": "Findings & shared lessons",
+      "source": "community/findings.md",
+      "page": "findings.html"
+    },
+    {
+      "title": "Contribute",
+      "source": "community/README.md",
+      "page": "contribute.html"
+    },
+    {
+      "title": "Apply a candidate layer",
+      "source": "community/application-and-testing.md",
+      "page": "application.html"
+    },
+    {
+      "title": "Consensus & recommendations",
+      "source": "community/workflow.md",
+      "page": "consensus.html"
+    },
+    {
+      "title": "Existing contribution hooks",
+      "source": "community/existing-work-assessment.md",
+      "page": "existing-work.html"
+    },
+    {
+      "title": "Data & attribution",
+      "source": "community/data-and-attribution.md",
+      "page": "terms.html"
+    }
+  ]
+}

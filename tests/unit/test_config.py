@@ -54,6 +54,8 @@ class TestPaths:
     def test_dashboard_paths_anchor_to_dashboard_dir(self, tmp_path: Path):
         p = Paths(package_root=tmp_path)
         assert p.dashboard_run_report.parent == p.dashboard
+        assert p.dashboard_characterization_audit.parent == p.dashboard
+        assert p.dashboard_characterization_audit != p.dashboard_run_report
         assert p.dashboard_override_log.parent == p.dashboard
         assert p.dashboard_suppressed_strategy_log.parent == p.dashboard
         assert p.dashboard_drop_tally.parent == p.dashboard

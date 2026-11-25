@@ -344,6 +344,15 @@ class Paths:
         return self.dashboard / "run_report.json"
 
     @property
+    def dashboard_characterization_audit(self) -> Path:
+        """Receipt of the last characterization audit that was made, passed or failed,
+        with the content hash of the candidate it describes. An audit that raises writes
+        none, so the receipt can be older than the last candidate. Kept apart from
+        :pyattr:`dashboard_run_report`, which points at the last package that was emitted
+        and is what every consumer follows."""
+        return self.dashboard / "characterization_audit.json"
+
+    @property
     def dashboard_override_log(self) -> Path:
         return self.dashboard / "override_audit.parquet"
 

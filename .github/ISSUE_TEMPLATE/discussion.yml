@@ -1,0 +1,22 @@
+name: Dataset or application discussion
+description: Discuss an import, mapping, method, scenario or recommendation.
+body:
+  - type: textarea
+    id: question
+    attributes:
+      label: Question and context
+      description: Name the release, component and decision to be made.
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Evidence and alternatives
+      description: Link reproducible tests or permitted source evidence; make uncertainty explicit.
+    validations:
+      required: true
+  - type: textarea
+    id: next
+    attributes:
+      label: Proposed next step
+      description: What measurement, application test or reviewer decision would settle this?

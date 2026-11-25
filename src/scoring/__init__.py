@@ -4,6 +4,7 @@ from scoring.activity_location_overrides import ActivityLocationOverrides
 from scoring.activity_location_parser import ActivityLocationParser
 from scoring.allocator import Allocator
 from scoring.aware_consumption_correction import AwareConsumptionCorrectionBuilder
+from scoring.characterization_audit import CharacterizationAuditor
 from scoring.dangling_edge_auditor import (
     DanglingEdgeAuditor,
     FrameSnapshot,
@@ -38,6 +39,7 @@ __all__ = [
     "AwareConsumptionCorrectionBuilder",
     "BiosphereBuilder",
     "BuiltMatrix",
+    "CharacterizationAuditor",
     "CharacterizationBuilder",
     "DanglingEdgeAuditor",
     "DanglingEdgePruner",

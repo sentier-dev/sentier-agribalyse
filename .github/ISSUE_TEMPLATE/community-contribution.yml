@@ -1,0 +1,32 @@
+name: Partner contribution or dataset improvement
+description: Connect evidence to a candidate layer, application tests and an upstream recommendation
+title: "[Contribution] "
+body:
+  - type: input
+    id: baseline
+    attributes:
+      label: Dataset release and canonical import revision
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Partner/hackathon evidence, observation and proposed layer
+      description: Link public evidence or authorized summaries. Keep restricted inputs local.
+    validations:
+      required: true
+  - type: textarea
+    id: application
+    attributes:
+      label: How to apply, compare and validate against the baseline
+    validations:
+      required: true
+  - type: textarea
+    id: review
+    attributes:
+      label: Partners, alternatives, dissent and reviewers to confirm
+  - type: textarea
+    id: upstream
+    attributes:
+      label: Proposed recommendation to BAFU or ADEME
+      description: Distinguish dataset changes from local scenarios and importer fixes.

@@ -22,12 +22,16 @@ import json
 import pandas as pd
 import pytest
 
+from pipelines.fast_rescore import FastRescorePipeline
 from pipelines.link_all import LinkAllPipeline
 from reporting import RunReport
 from scoring.activity_location_overrides import ActivityLocationOverrides
 from scoring.exchange_frame_builder import ExchangeFrameBuilder
 from scoring.method_slug import MethodSlug
+from scoring.scoring_package_locator import ScoringPackageLocator
 from tests.fixtures.builders import FakeSimaProImporter
+from transforms.linked_cache import LinkedSpCache
+from transforms.sp_csv_parser import ParsedSimaProCsv
 
 
 class TestLinkAllPipelineEfPrecondition:
@@ -108,23 +112,19 @@ def _seed_empty_ecoinvent_exchanges(settings):
     ).to_parquet(path)
 
 
-def _seed_biosphere_catalog(settings):
-    """Empty biosphere catalog with the schema AwareConsumptionCorrectionBuilder
-    expects (``database``, ``code``, ``name``, ``categories``).
-
-    The AWARE consumption correction reads this parquet to resolve the
-    SimaPro EF v3.1 (adapted) water flow set; an empty file keeps the
-    builder's gate from firing while letting the read succeed.
-    """
+def _seed_biosphere_catalog(settings, flow_name="Carbon dioxide, fossil"):
+    """Give the synthetic emitted flow its catalog identity."""
     path = settings.paths.registry_biosphere_catalog
     path.parent.mkdir(parents=True, exist_ok=True)
     pd.DataFrame(
-        {
-            "database": pd.Series([], dtype="string"),
-            "code": pd.Series([], dtype="string"),
-            "name": pd.Series([], dtype="string"),
-            "categories": pd.Series([], dtype="object"),
-        }
+        [
+            {
+                "database": "bio3",
+                "code": "co2",
+                "name": flow_name,
+                "categories": ["air"],
+            }
+        ]
     ).to_parquet(path, index=False)
 
 
@@ -215,6 +215,141 @@ def _trivial_sp_data():
 class TestEmitScoringPackage:
     """Tests on ``LinkAllPipeline._emit_scoring_package`` — exercises the
     whole tail without booting Brightway / SimaPro."""
+
+    METHOD_KEY = ("ef", "v3.1", "climate change", "GWP100")
+    CO2_FACTOR = ({"database": "bio3", "code": "co2", "amount": 1.0},)
+    NO_CO2_FACTOR = ({"database": "bio3", "code": "unused", "amount": 1.0},)
+
+    def _seed(self, settings, rows):
+        _seed_method_cfs_registry(settings, self.METHOD_KEY, rows=list(rows))
+        _seed_empty_ecoinvent_exchanges(settings)
+        _seed_biosphere_catalog(settings)
+        _seed_empty_ef_cf_parquet(settings)
+
+    def test_failed_audit_writes_its_own_receipt_and_emits_no_package(self, settings):
+        self._seed(settings, self.NO_CO2_FACTOR)
+        sp = FakeSimaProImporter(_trivial_sp_data())
+        with pytest.raises(ValueError, match="Characterization audit failed"):
+            LinkAllPipeline._emit_scoring_package(sp, settings, RunReport())
+        receipt = json.loads(settings.paths.dashboard_characterization_audit.read_text())
+        assert receipt["status"] == "failed"
+        assert receipt["methods"][0]["missing_core_gases"][0]["code"] == "co2"
+        assert len(receipt["candidate_content_hash"]) == 64
+        assert not settings.paths.dashboard_run_report.exists()
+        assert not list(settings.paths.scoring_packages_root.glob("*/technosphere.csr.npz"))
+
+    def test_failed_audit_keeps_the_pointer_to_the_last_emitted_package(self, settings):
+        # A full link run passes and records its package, as LinkAllPipeline.run() does.
+        self._seed(settings, self.CO2_FACTOR)
+        report = RunReport()
+        payload = LinkAllPipeline._emit_scoring_package(
+            FakeSimaProImporter(_trivial_sp_data()), settings, report
+        )
+        report.add_stage("scoring_package", payload)
+        report.write(settings.paths.dashboard_run_report)
+        last_good = settings.paths.dashboard_run_report.read_bytes()
+        assert report.stages["characterization_audit"]["status"] == "passed"
+        receipt = json.loads(settings.paths.dashboard_characterization_audit.read_text())
+        assert receipt["status"] == "passed"
+        assert receipt["candidate_content_hash"] == payload["content_hash"]
+
+        # The registry loses the CO2 factor; the next full run starts a fresh report.
+        self._seed(settings, self.NO_CO2_FACTOR)
+        with pytest.raises(ValueError, match="Characterization audit failed"):
+            LinkAllPipeline._emit_scoring_package(
+                FakeSimaProImporter(_trivial_sp_data()), settings, RunReport()
+            )
+
+        assert settings.paths.dashboard_run_report.read_bytes() == last_good
+        locator = ScoringPackageLocator(settings=settings)
+        assert locator.content_hash() == payload["content_hash"]
+        assert locator.load().content_hash == payload["content_hash"]
+        receipt = json.loads(settings.paths.dashboard_characterization_audit.read_text())
+        assert receipt["status"] == "failed"
+        assert receipt["candidate_content_hash"] != payload["content_hash"]
+
+    def test_an_audit_that_raises_writes_no_receipt_and_keeps_the_last_one(self, settings):
+        self._seed(settings, self.CO2_FACTOR)
+        report = RunReport()
+        payload = LinkAllPipeline._emit_scoring_package(
+            FakeSimaProImporter(_trivial_sp_data()), settings, report
+        )
+        report.add_stage("scoring_package", payload)
+        report.write(settings.paths.dashboard_run_report)
+        last_receipt = settings.paths.dashboard_characterization_audit.read_bytes()
+        last_report = settings.paths.dashboard_run_report.read_bytes()
+
+        # Two factor rows for one flow: the audit cannot be made, it raises.
+        self._seed(settings, self.CO2_FACTOR + self.CO2_FACTOR)
+        with pytest.raises(ValueError, match="Duplicate characterization flow ids"):
+            LinkAllPipeline._emit_scoring_package(
+                FakeSimaProImporter(_trivial_sp_data()), settings, RunReport()
+            )
+
+        assert settings.paths.dashboard_characterization_audit.read_bytes() == last_receipt
+        assert settings.paths.dashboard_run_report.read_bytes() == last_report
+        assert not list(settings.paths.dashboard.glob("*.partial"))
+
+    @pytest.mark.parametrize(
+        ("method", "flow_name", "reason"),
+        [
+            (
+                ("ef", "v3.1", "acidification", "AE"),
+                "Carbon dioxide, fossil",
+                "no headline climate",
+            ),
+            (METHOD_KEY, "Ammonia", "no emitted flow was recognised as a core gas"),
+        ],
+    )
+    def test_unaudited_candidate_writes_its_reason_and_emits_no_package(
+        self, settings, method, flow_name, reason
+    ):
+        _seed_method_cfs_registry(settings, method, rows=list(self.CO2_FACTOR))
+        _seed_empty_ecoinvent_exchanges(settings)
+        _seed_biosphere_catalog(settings, flow_name)
+        _seed_empty_ef_cf_parquet(settings)
+        with pytest.raises(ValueError, match=reason):
+            LinkAllPipeline.emit_scoring_package(
+                FakeSimaProImporter(_trivial_sp_data()), settings, RunReport()
+            )
+        receipt = json.loads(settings.paths.dashboard_characterization_audit.read_text())
+        assert receipt["status"] == "not_audited"
+        assert reason in receipt["not_audited_reason"]
+        assert not (
+            settings.paths.scoring_packages_root / receipt["candidate_content_hash"]
+        ).exists()
+        assert not settings.paths.dashboard_run_report.exists()
+
+    @pytest.mark.parametrize(
+        ("method", "status"),
+        [(METHOD_KEY, "failed"), (("ef", "v3.1", "acidification", "AE"), "not_audited")],
+    )
+    def test_unsuccessful_audit_in_a_fast_rescore_keeps_the_last_run_report(
+        self, settings, method, status
+    ):
+        settings.paths.agribalyse_csv.parent.mkdir(parents=True, exist_ok=True)
+        settings.paths.agribalyse_csv.write_text("stand-in for the SimaPro export")
+        LinkedSpCache(settings=settings).write(
+            ParsedSimaProCsv(db_name="agb", data=_trivial_sp_data(), parameters=[])
+        )
+        self._seed(settings, self.CO2_FACTOR)
+        passed = FastRescorePipeline(settings=settings).run()
+        last_good = settings.paths.dashboard_run_report.read_bytes()
+
+        _seed_method_cfs_registry(settings, method, rows=list(self.NO_CO2_FACTOR))
+        with pytest.raises(ValueError, match="Characterization audit"):
+            FastRescorePipeline(settings=settings).run()
+
+        assert settings.paths.dashboard_run_report.read_bytes() == last_good
+        assert (
+            ScoringPackageLocator(settings=settings).content_hash()
+            == passed.stages["scoring_package"]["content_hash"]
+        )
+        receipt = json.loads(settings.paths.dashboard_characterization_audit.read_text())
+        assert receipt["status"] == status
+        assert not (
+            settings.paths.scoring_packages_root / receipt["candidate_content_hash"]
+        ).exists()
 
     def test_writes_scoring_package_and_records_content_hash(self, settings):
         method_key = ("ef", "v3.1", "climate change", "GWP100")
